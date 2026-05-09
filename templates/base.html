@@ -1,0 +1,175 @@
+<!DOCTYPE html>
+<html lang="en" class="scroll-smooth">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="description" content="MediSlot - Smart Hospital Appointment Booking System. Book appointments, manage queues, and track your health journey.">
+    <title>{% block title %}MediSlot{% endblock %} | MediSlot</title>
+    <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🏥</text></svg>">
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+    <script src="https://cdn.socket.io/4.7.2/socket.io.min.js"></script>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    fontFamily: { sans: ['Inter', 'sans-serif'] },
+                    colors: {
+                        primary: { 50:'#eef2ff',100:'#e0e7ff',200:'#c7d2fe',300:'#a5b4fc',400:'#818cf8',500:'#6366f1',600:'#4f46e5',700:'#4338ca',800:'#3730a3',900:'#312e81' },
+                        accent: { 50:'#ecfdf5',100:'#d1fae5',200:'#a7f3d0',300:'#6ee7b7',400:'#34d399',500:'#10b981',600:'#059669' },
+                    }
+                }
+            }
+        }
+    </script>
+    <style>
+        @keyframes fadeIn { from { opacity:0; transform:translateY(10px); } to { opacity:1; transform:translateY(0); } }
+        @keyframes slideDown { from { opacity:0; transform:translateY(-20px); } to { opacity:1; transform:translateY(0); } }
+        @keyframes pulse-glow { 0%,100% { box-shadow:0 0 5px rgba(99,102,241,.4); } 50% { box-shadow:0 0 20px rgba(99,102,241,.8); } }
+        @keyframes shimmer { 0% { background-position:-200% 0; } 100% { background-position:200% 0; } }
+        .fade-in { animation: fadeIn .5s ease-out forwards; }
+        .slide-down { animation: slideDown .4s ease-out forwards; }
+        .pulse-glow { animation: pulse-glow 2s infinite; }
+        .glass { background: rgba(255,255,255,0.7); backdrop-filter: blur(12px); border: 1px solid rgba(255,255,255,0.3); }
+        .glass-dark { background: rgba(30,27,75,0.8); backdrop-filter: blur(12px); border: 1px solid rgba(99,102,241,0.2); }
+        .gradient-bg { background: linear-gradient(135deg, #1e1b4b 0%, #312e81 30%, #4338ca 60%, #6366f1 100%); }
+        .gradient-card { background: linear-gradient(135deg, #f8fafc 0%, #eef2ff 100%); }
+        .loading-spinner { border:3px solid #e0e7ff; border-top:3px solid #6366f1; border-radius:50%; width:24px; height:24px; animation:spin 0.8s linear infinite; display:none; }
+        @keyframes spin { to { transform:rotate(360deg); } }
+        .status-waiting { background:#fef3c7; color:#92400e; }
+        .status-called { background:#dbeafe; color:#1e40af; }
+        .status-seen { background:#d1fae5; color:#065f46; }
+        .status-cancelled { background:#fecaca; color:#991b1b; }
+        .status-no_show { background:#f3e8ff; color:#6b21a8; }
+    </style>
+</head>
+<body class="font-sans bg-gray-50 text-gray-800 min-h-screen flex flex-col">
+    <!-- Navbar -->
+    <nav class="sticky top-0 z-50 glass-dark text-white shadow-lg">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+            <div class="flex items-center justify-between h-16">
+                <a href="/" class="flex items-center gap-2 group">
+                    <span class="text-2xl">🏥</span>
+                    <span class="text-xl font-bold bg-gradient-to-r from-indigo-300 to-purple-300 bg-clip-text text-transparent group-hover:from-white group-hover:to-indigo-200 transition-all">MediSlot</span>
+                </a>
+                <div class="hidden lg:flex items-center gap-2 ml-4 px-3 py-1 bg-white/10 rounded-lg">
+                    <span class="text-sm font-bold text-indigo-200 tracking-wider font-mono" id="live-clock">--:--:--</span>
+                </div>
+                <div class="hidden md:flex items-center gap-6 ml-auto">
+                    {% if session.get('patient_name') %}
+                        <a href="/book" class="text-indigo-200 hover:text-white transition-colors text-sm font-medium">Book Appointment</a>
+                        <a href="/dashboard" class="text-indigo-200 hover:text-white transition-colors text-sm font-medium">Dashboard</a>
+                        <a href="/calendar" class="text-indigo-200 hover:text-white transition-colors text-sm font-medium">Calendar</a>
+                        <a href="/profile" class="text-indigo-200 hover:text-white transition-colors text-sm font-medium">Profile</a>
+                        <div class="flex items-center gap-3 ml-4 pl-4 border-l border-indigo-700">
+                            <div class="w-8 h-8 rounded-full bg-indigo-500 flex items-center justify-center text-sm font-bold">{{ session.get('patient_name','?')[0] }}</div>
+                            <span class="text-sm font-medium">{{ session.get('patient_name') }}</span>
+                            <a href="/logout" class="ml-2 px-3 py-1.5 bg-red-500/20 hover:bg-red-500/40 text-red-200 rounded-lg text-xs font-medium transition-colors">Logout</a>
+                        </div>
+                    {% elif session.get('admin_logged_in') %}
+                        <a href="/admin" class="text-indigo-200 hover:text-white transition-colors text-sm font-medium">Dashboard</a>
+                        <a href="/admin/analytics" class="text-indigo-200 hover:text-white transition-colors text-sm font-medium">Analytics</a>
+                        <a href="/admin/history" class="text-indigo-200 hover:text-white transition-colors text-sm font-medium">History</a>
+                        <div class="flex items-center gap-3 ml-4 pl-4 border-l border-indigo-700">
+                            <span class="px-2 py-1 bg-amber-500/20 text-amber-300 rounded text-xs font-bold">ADMIN</span>
+                            <a href="/logout" class="px-3 py-1.5 bg-red-500/20 hover:bg-red-500/40 text-red-200 rounded-lg text-xs font-medium transition-colors">Logout</a>
+                        </div>
+                    {% elif session.get('doctor_name') %}
+                        <span class="text-indigo-200 text-sm">Dr. Portal</span>
+                        <div class="flex items-center gap-3 ml-4 pl-4 border-l border-indigo-700">
+                            <span class="text-sm font-medium">{{ session.get('doctor_name') }}</span>
+                            <a href="/doctor/logout" class="px-3 py-1.5 bg-red-500/20 hover:bg-red-500/40 text-red-200 rounded-lg text-xs font-medium transition-colors">Logout</a>
+                        </div>
+                    {% else %}
+                        <a href="/login" class="text-indigo-200 hover:text-white transition-colors text-sm font-medium">Patient Login</a>
+                        <a href="/doctor-login" class="text-indigo-200 hover:text-white transition-colors text-sm font-medium">Doctor Login</a>
+                        <a href="/register" class="px-4 py-2 bg-indigo-500 hover:bg-indigo-400 rounded-lg text-sm font-semibold transition-all hover:shadow-lg hover:shadow-indigo-500/25">Register</a>
+                    {% endif %}
+                </div>
+                <button onclick="document.getElementById('mobile-menu').classList.toggle('hidden')" class="md:hidden text-white p-2">
+                    <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16M4 18h16"/></svg>
+                </button>
+            </div>
+        </div>
+        <div id="mobile-menu" class="hidden md:hidden px-4 pb-4 space-y-2">
+            {% if session.get('patient_name') %}
+                <a href="/book" class="block py-2 text-indigo-200 hover:text-white">Book Appointment</a>
+                <a href="/dashboard" class="block py-2 text-indigo-200 hover:text-white">Dashboard</a>
+                <a href="/calendar" class="block py-2 text-indigo-200 hover:text-white">Calendar</a>
+                <a href="/profile" class="block py-2 text-indigo-200 hover:text-white">Profile</a>
+                <a href="/logout" class="block py-2 text-red-300">Logout</a>
+            {% elif session.get('admin_logged_in') %}
+                <a href="/admin" class="block py-2 text-indigo-200">Dashboard</a>
+                <a href="/admin/analytics" class="block py-2 text-indigo-200">Analytics</a>
+                <a href="/logout" class="block py-2 text-red-300">Logout</a>
+            {% else %}
+                <a href="/login" class="block py-2 text-indigo-200">Login</a>
+                <a href="/register" class="block py-2 text-indigo-200">Register</a>
+            {% endif %}
+        </div>
+    </nav>
+
+    <!-- Flash Messages -->
+    {% with messages = get_flashed_messages(with_categories=true) %}
+    {% if messages %}
+    <div class="max-w-4xl mx-auto px-4 mt-4 space-y-2">
+        {% for category, message in messages %}
+        <div class="slide-down rounded-xl px-5 py-3 text-sm font-medium shadow-lg flex items-center gap-3
+            {% if category == 'success' %}bg-emerald-500 text-white
+            {% elif category == 'error' %}bg-red-500 text-white
+            {% elif category == 'otp' %}bg-gradient-to-r from-violet-600 to-indigo-600 text-white border-2 border-violet-400
+            {% elif category == 'info' %}bg-blue-500 text-white
+            {% else %}bg-gray-700 text-white{% endif %}">
+            {% if category == 'success' %}<span>✅</span>
+            {% elif category == 'error' %}<span>❌</span>
+            {% elif category == 'otp' %}<span class="text-xl">📱</span>
+            {% elif category == 'info' %}<span>ℹ️</span>{% endif %}
+            <span>{{ message }}</span>
+        </div>
+        {% endfor %}
+    </div>
+    {% endif %}
+    {% endwith %}
+
+    <!-- Content -->
+    <main class="flex-1 fade-in">
+        {% block content %}{% endblock %}
+    </main>
+
+    <!-- Footer -->
+    <footer class="mt-auto bg-gray-900 text-gray-400 py-8">
+        <div class="max-w-7xl mx-auto px-4 text-center">
+            <p class="text-sm">&copy; 2026 MediSlot — Smart Hospital Appointment System</p>
+        </div>
+    </footer>
+
+    <!-- Scripts -->
+    <script>
+        const socket = io();
+        
+        socket.on('connect', () => {
+            console.log('Socket.IO Connected!');
+            const liveIndicator = document.getElementById('live-indicator');
+            if(liveIndicator) liveIndicator.classList.remove('hidden');
+        });
+
+        socket.on('disconnect', () => {
+            console.log('Socket.IO Disconnected');
+            const liveIndicator = document.getElementById('live-indicator');
+            if(liveIndicator) liveIndicator.classList.add('hidden');
+        });
+
+        function updateClock() {
+            const now = new Date();
+            const timeStr = now.toLocaleTimeString('en-US', { hour12: false });
+            const clockEl = document.getElementById('live-clock');
+            if (clockEl) clockEl.textContent = timeStr;
+        }
+        setInterval(updateClock, 1000);
+        updateClock();
+    </script>
+    {% block scripts %}{% endblock %}
+</body>
+</html>

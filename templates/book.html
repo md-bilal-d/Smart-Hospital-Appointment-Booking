@@ -1,0 +1,332 @@
+{% extends 'base.html' %}
+{% block title %}Book Appointment{% endblock %}
+{% block content %}
+<div class="max-w-6xl mx-auto px-4 py-10" id="booking-app">
+    <!-- Progress Bar -->
+    <div class="mb-8">
+        <h1 class="text-3xl font-bold text-gray-900 mb-6">Book an Appointment</h1>
+        <div class="flex items-center justify-between relative">
+            <div class="absolute left-0 top-1/2 -translate-y-1/2 w-full h-1 bg-gray-200 rounded-full z-0"></div>
+            <div class="absolute left-0 top-1/2 -translate-y-1/2 h-1 bg-indigo-600 rounded-full z-0 transition-all duration-500" id="progress-bar" style="width: 0%;"></div>
+            
+            <!-- Step Indicators -->
+            <div class="step-indicator relative z-10 flex flex-col items-center bg-gray-50 px-2 cursor-pointer" onclick="goToStep(1)">
+                <div class="w-10 h-10 rounded-full flex items-center justify-center font-bold transition-all border-2 border-indigo-600 bg-indigo-600 text-white" id="step1-dot">1</div>
+                <span class="text-xs font-semibold mt-2 text-indigo-900" id="step1-label">Department</span>
+            </div>
+            <div class="step-indicator relative z-10 flex flex-col items-center bg-gray-50 px-2 cursor-pointer" onclick="goToStep(2)">
+                <div class="w-10 h-10 rounded-full flex items-center justify-center font-bold transition-all border-2 border-gray-300 bg-white text-gray-400" id="step2-dot">2</div>
+                <span class="text-xs font-semibold mt-2 text-gray-400" id="step2-label">Doctor</span>
+            </div>
+            <div class="step-indicator relative z-10 flex flex-col items-center bg-gray-50 px-2 cursor-pointer" onclick="goToStep(3)">
+                <div class="w-10 h-10 rounded-full flex items-center justify-center font-bold transition-all border-2 border-gray-300 bg-white text-gray-400" id="step3-dot">3</div>
+                <span class="text-xs font-semibold mt-2 text-gray-400" id="step3-label">Time Slot</span>
+            </div>
+            <div class="step-indicator relative z-10 flex flex-col items-center bg-gray-50 px-2 cursor-pointer" onclick="goToStep(4)">
+                <div class="w-10 h-10 rounded-full flex items-center justify-center font-bold transition-all border-2 border-gray-300 bg-white text-gray-400" id="step4-dot">4</div>
+                <span class="text-xs font-semibold mt-2 text-gray-400" id="step4-label">Confirm</span>
+            </div>
+        </div>
+    </div>
+
+    <!-- Step 1: Department -->
+    <div id="step-1" class="step-content block animate-fade-in">
+        <h2 class="text-xl font-bold mb-6 text-gray-800">Select Department</h2>
+        <div class="grid grid-cols-2 md:grid-cols-4 gap-4">
+            <button onclick="selectDepartment(null)" class="dept-btn p-6 rounded-2xl border-2 border-indigo-100 bg-indigo-50 hover:border-indigo-500 hover:shadow-lg transition-all text-center">
+                <div class="text-3xl mb-2">🏥</div>
+                <div class="font-bold text-gray-900">All Departments</div>
+            </button>
+            {% for dept in departments %}
+            <button onclick="selectDepartment({{ dept.id }})" class="dept-btn p-6 rounded-2xl border-2 border-gray-100 bg-white hover:border-indigo-500 hover:shadow-lg transition-all text-center">
+                <div class="text-3xl mb-2">⚕️</div>
+                <div class="font-bold text-gray-900">{{ dept.name }}</div>
+            </button>
+            {% endfor %}
+        </div>
+    </div>
+
+    <!-- Step 2: Doctor -->
+    <div id="step-2" class="step-content hidden animate-fade-in">
+        <div class="flex justify-between items-center mb-6">
+            <h2 class="text-xl font-bold text-gray-800">Select a Doctor</h2>
+            <button onclick="goToStep(1)" class="text-indigo-600 hover:underline text-sm font-semibold">← Back</button>
+        </div>
+        <div class="grid sm:grid-cols-2 lg:grid-cols-3 gap-6" id="doctors-container">
+            {% for doc in doctors %}
+            <div class="doctor-card bg-white rounded-3xl p-6 shadow-sm border border-gray-100 hover:shadow-xl transition-all cursor-pointer group" 
+                 data-dept="{{ doc.department_id }}" 
+                 {% if doc.is_available %}onclick="selectDoctor({{ doc.id }}, '{{ doc.name }}', '{{ doc.specialization }}')"{% endif %}
+                 style="{% if not doc.is_available %}opacity: 0.6; cursor: not-allowed;{% endif %}">
+                <div class="flex items-center gap-4 mb-4">
+                    <img src="{{ doc.profile_pic_url or 'https://ui-avatars.com/api/?name=' + doc.name + '&background=random' }}" alt="{{ doc.name }}" class="w-16 h-16 rounded-2xl shadow-md object-cover group-hover:scale-105 transition-transform">
+                    <div>
+                        <h3 class="font-bold text-gray-900 text-lg">{{ doc.name }}</h3>
+                        <p class="text-sm text-indigo-600 font-medium">{{ doc.specialization }}</p>
+                    </div>
+                </div>
+                <div class="grid grid-cols-2 gap-2 mb-4 text-center">
+                    <div class="bg-gray-50 p-2 rounded-xl">
+                        <div class="text-xs text-gray-400 uppercase font-bold">Experience</div>
+                        <div class="text-sm font-bold text-gray-900">{{ doc.experience_years }} Yrs</div>
+                    </div>
+                    <div class="bg-amber-50 p-2 rounded-xl">
+                        <div class="text-xs text-amber-600 uppercase font-bold">Rating</div>
+                        <div class="text-sm font-bold text-amber-700">⭐ 4.9 (120)</div>
+                    </div>
+                </div>
+                {% if doc.is_available %}
+                <div class="w-full text-center py-3 bg-indigo-50 text-indigo-700 font-bold rounded-xl group-hover:bg-indigo-600 group-hover:text-white transition-colors">
+                    Select Doctor
+                </div>
+                {% else %}
+                <div class="w-full text-center py-3 bg-gray-100 text-gray-400 font-bold rounded-xl">
+                    Unavailable
+                </div>
+                {% endif %}
+            </div>
+            {% endfor %}
+        </div>
+    </div>
+
+    <!-- Step 3: Slot -->
+    <div id="step-3" class="step-content hidden animate-fade-in">
+        <div class="flex justify-between items-center mb-6">
+            <div>
+                <h2 class="text-xl font-bold text-gray-800">Pick Date & Slot</h2>
+                <p class="text-indigo-600 font-medium text-sm" id="selected-doc-name"></p>
+            </div>
+            <button onclick="goToStep(2)" class="text-indigo-600 hover:underline text-sm font-semibold">← Back</button>
+        </div>
+        
+        <!-- Date Selector -->
+        <div class="flex overflow-x-auto pb-4 mb-6 gap-3 hide-scrollbar" id="date-selector">
+            <!-- Rendered by JS -->
+        </div>
+
+        <!-- Slots Grid -->
+        <div id="slots-loader" class="text-center py-10 hidden">
+            <div class="inline-block w-8 h-8 border-4 border-indigo-200 border-t-indigo-600 rounded-full animate-spin"></div>
+            <p class="mt-2 text-gray-500 font-medium">Loading slots...</p>
+        </div>
+        
+        <div class="grid grid-cols-2 md:grid-cols-4 gap-4" id="slots-container">
+            <!-- Rendered by JS -->
+        </div>
+    </div>
+
+    <!-- Step 4: Confirm -->
+    <div id="step-4" class="step-content hidden animate-fade-in">
+        <div class="flex justify-between items-center mb-6">
+            <h2 class="text-xl font-bold text-gray-800">Confirm Booking</h2>
+            <button onclick="goToStep(3)" class="text-indigo-600 hover:underline text-sm font-semibold">← Back</button>
+        </div>
+        
+        <div class="bg-white rounded-3xl p-8 shadow-xl border border-gray-100 max-w-2xl mx-auto">
+            <div class="flex items-center gap-6 pb-6 border-b border-gray-100 mb-6">
+                <div class="w-16 h-16 bg-indigo-100 rounded-2xl flex items-center justify-center text-3xl">📅</div>
+                <div>
+                    <h3 class="text-2xl font-black text-gray-900" id="confirm-time">--:--</h3>
+                    <p class="text-gray-500 font-medium" id="confirm-date">--</p>
+                </div>
+            </div>
+            
+            <form action="/book/confirm" method="POST" id="booking-form">
+                <input type="hidden" name="slot_id" id="form-slot-id">
+                
+                <div class="mb-6">
+                    <label class="block text-sm font-bold text-gray-700 mb-2">Appointment Type</label>
+                    <div class="grid grid-cols-3 gap-3">
+                        <label class="cursor-pointer">
+                            <input type="radio" name="appointment_type" value="normal" class="peer sr-only" checked>
+                            <div class="text-center p-3 rounded-xl border-2 border-gray-200 peer-checked:border-emerald-500 peer-checked:bg-emerald-50 font-semibold text-gray-700 transition-all">Normal</div>
+                        </label>
+                        <label class="cursor-pointer">
+                            <input type="radio" name="appointment_type" value="follow-up" class="peer sr-only">
+                            <div class="text-center p-3 rounded-xl border-2 border-gray-200 peer-checked:border-blue-500 peer-checked:bg-blue-50 font-semibold text-gray-700 transition-all">Follow-up</div>
+                        </label>
+                        <label class="cursor-pointer">
+                            <input type="radio" name="appointment_type" value="urgent" class="peer sr-only">
+                            <div class="text-center p-3 rounded-xl border-2 border-gray-200 peer-checked:border-red-500 peer-checked:bg-red-50 font-semibold text-gray-700 transition-all">
+                                Urgent
+                                <div class="text-[10px] text-red-500">Priority Token</div>
+                            </div>
+                        </label>
+                    </div>
+                </div>
+
+                <div class="mb-8">
+                    <label class="block text-sm font-bold text-gray-700 mb-2">Notes / Symptoms (Optional)</label>
+                    <textarea name="notes" rows="3" class="w-full px-4 py-3 rounded-xl border-2 border-gray-200 focus:border-indigo-500 focus:ring-0 outline-none resize-none" placeholder="Briefly describe your symptoms..."></textarea>
+                </div>
+
+                <button type="submit" class="w-full py-4 bg-gray-900 hover:bg-black text-white font-bold rounded-2xl shadow-xl hover:shadow-2xl transition-all text-lg flex justify-center items-center gap-2">
+                    Confirm & Book <span class="text-xl">✨</span>
+                </button>
+            </form>
+        </div>
+    </div>
+</div>
+
+<style>
+    .animate-fade-in { animation: fadeIn 0.4s ease-out forwards; }
+    @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
+    .hide-scrollbar::-webkit-scrollbar { display: none; }
+    .hide-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
+</style>
+
+<script>
+    let currentStep = 1;
+    let selectedDept = null;
+    let selectedDocId = null;
+    let cachedSlots = {};
+    let selectedDate = null;
+    let selectedSlotObj = null;
+
+    function goToStep(step) {
+        if(step > currentStep && step === 2 && selectedDept === undefined) return;
+        if(step > currentStep && step === 3 && !selectedDocId) return;
+        if(step > currentStep && step === 4 && !selectedSlotObj) return;
+
+        // Hide all
+        document.querySelectorAll('.step-content').forEach(el => el.classList.add('hidden'));
+        // Show target
+        document.getElementById('step-'+step).classList.remove('hidden');
+        currentStep = step;
+
+        // Update progress UI
+        document.getElementById('progress-bar').style.width = ((step-1) * 33.33) + '%';
+        for(let i=1; i<=4; i++) {
+            const dot = document.getElementById(`step${i}-dot`);
+            const lbl = document.getElementById(`step${i}-label`);
+            if(i <= step) {
+                dot.className = "w-10 h-10 rounded-full flex items-center justify-center font-bold transition-all border-2 border-indigo-600 bg-indigo-600 text-white";
+                lbl.className = "text-xs font-semibold mt-2 text-indigo-900";
+            } else {
+                dot.className = "w-10 h-10 rounded-full flex items-center justify-center font-bold transition-all border-2 border-gray-300 bg-white text-gray-400";
+                lbl.className = "text-xs font-semibold mt-2 text-gray-400";
+            }
+        }
+    }
+
+    function selectDepartment(deptId) {
+        selectedDept = deptId;
+        // Filter doctors
+        const cards = document.querySelectorAll('.doctor-card');
+        cards.forEach(card => {
+            if(!deptId || card.getAttribute('data-dept') == deptId) {
+                card.style.display = 'block';
+            } else {
+                card.style.display = 'none';
+            }
+        });
+        goToStep(2);
+    }
+
+    function selectDoctor(docId, docName, docSpec) {
+        selectedDocId = docId;
+        document.getElementById('selected-doc-name').textContent = `Dr. ${docName} - ${docSpec}`;
+        goToStep(3);
+        fetchSlots(docId);
+    }
+
+    function fetchSlots(docId) {
+        document.getElementById('slots-loader').classList.remove('hidden');
+        document.getElementById('slots-container').innerHTML = '';
+        document.getElementById('date-selector').innerHTML = '';
+        
+        fetch(`/api/slots/${docId}`)
+        .then(r => r.json())
+        .then(data => {
+            cachedSlots = data;
+            document.getElementById('slots-loader').classList.add('hidden');
+            const dates = Object.keys(data).sort();
+            if(dates.length === 0) return;
+            
+            // Build Date selector
+            const ds = document.getElementById('date-selector');
+            dates.forEach((dateStr, idx) => {
+                const btn = document.createElement('button');
+                btn.className = `px-5 py-3 rounded-xl font-bold text-sm whitespace-nowrap transition-all ${idx === 0 ? 'bg-indigo-600 text-white shadow-md' : 'bg-white text-gray-600 border border-gray-200'}`;
+                btn.textContent = new Date(dateStr).toLocaleDateString('en-US', {weekday:'short', month:'short', day:'numeric'});
+                btn.onclick = (e) => {
+                    // Reset styling
+                    Array.from(ds.children).forEach(c => c.className = 'px-5 py-3 rounded-xl font-bold text-sm whitespace-nowrap transition-all bg-white text-gray-600 border border-gray-200');
+                    btn.className = 'px-5 py-3 rounded-xl font-bold text-sm whitespace-nowrap transition-all bg-indigo-600 text-white shadow-md';
+                    renderSlotsForDate(dateStr);
+                };
+                ds.appendChild(btn);
+            });
+            
+            // Render first day slots
+            selectedDate = dates[0];
+            renderSlotsForDate(selectedDate);
+        });
+    }
+
+    function renderSlotsForDate(dateStr) {
+        selectedDate = dateStr;
+        const slots = cachedSlots[dateStr] || [];
+        const container = document.getElementById('slots-container');
+        container.innerHTML = '';
+        
+        if(slots.length === 0) {
+            container.innerHTML = `<div class="col-span-full py-10 text-center text-gray-400 font-medium">No slots available on this day.</div>`;
+            return;
+        }
+
+        slots.forEach(slot => {
+            const btn = document.createElement('div');
+            let colorClasses = '';
+            let statusText = '';
+            const spots = slot.available_spots;
+            
+            if(spots === 0) {
+                colorClasses = 'bg-red-50 border-red-200 text-red-400 cursor-not-allowed opacity-70';
+                statusText = 'Full';
+            } else if(spots <= 2) {
+                colorClasses = 'bg-amber-50 border-amber-300 text-amber-700 hover:border-amber-500 hover:shadow-md cursor-pointer';
+                statusText = `${spots} left`;
+            } else {
+                colorClasses = 'bg-emerald-50 border-emerald-300 text-emerald-700 hover:border-emerald-500 hover:shadow-md cursor-pointer';
+                statusText = `${spots} open`;
+            }
+
+            btn.className = `p-4 rounded-xl border-2 transition-all text-center ${colorClasses}`;
+            btn.innerHTML = `
+                <div class="text-sm font-black mb-1">${slot.time_label}</div>
+                <div class="text-[10px] font-bold uppercase tracking-wider">${statusText}</div>
+            `;
+            
+            if(spots > 0) {
+                btn.onclick = () => {
+                    selectedSlotObj = slot;
+                    document.getElementById('form-slot-id').value = slot.id;
+                    document.getElementById('confirm-time').textContent = slot.time_label;
+                    document.getElementById('confirm-date').textContent = new Date(selectedDate).toLocaleDateString('en-US', {weekday:'long', month:'long', day:'numeric', year:'numeric'});
+                    goToStep(4);
+                };
+            }
+            container.appendChild(btn);
+        });
+    }
+    // Socket Listener for Real-Time Slot Updates
+    socket.on('slot_update', (data) => {
+        console.log('Slot update received:', data);
+        let updated = false;
+        // Find and update the slot in cachedSlots
+        for (let dateStr in cachedSlots) {
+            const slotIdx = cachedSlots[dateStr].findIndex(s => s.id === data.slot_id);
+            if (slotIdx !== -1) {
+                cachedSlots[dateStr][slotIdx].available_spots = data.available;
+                updated = true;
+                // If we are currently viewing this date, re-render
+                if (dateStr === selectedDate) {
+                    renderSlotsForDate(selectedDate);
+                }
+                break;
+            }
+        }
+    });
+</script>
+{% endblock %}

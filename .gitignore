@@ -1,0 +1,17 @@
+__pycache__/
+*.py[cod]
+*$py.class
+.env
+.venv
+venv/
+ENV/
+env/
+instance/
+.pytest_cache/
+.coverage
+htmlcov/
+dist/
+build/
+*.db
+*.sqlite3
+.gemini/

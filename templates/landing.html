@@ -1,0 +1,89 @@
+{% extends 'base.html' %}
+{% block title %}Welcome{% endblock %}
+{% block content %}
+<!-- Hero -->
+<section class="gradient-bg text-white relative overflow-hidden">
+    <div class="absolute inset-0 opacity-10">
+        <div class="absolute top-20 left-10 w-72 h-72 bg-purple-400 rounded-full blur-3xl"></div>
+        <div class="absolute bottom-10 right-20 w-96 h-96 bg-indigo-400 rounded-full blur-3xl"></div>
+    </div>
+    <div class="max-w-7xl mx-auto px-4 py-24 md:py-32 relative z-10">
+        <div class="text-center max-w-3xl mx-auto">
+            <span class="inline-block px-4 py-1.5 bg-white/10 rounded-full text-sm font-medium mb-6 backdrop-blur-sm border border-white/20">✨ Smart Healthcare Scheduling</span>
+            <h1 class="text-4xl md:text-6xl font-extrabold leading-tight mb-6">
+                Book Doctor Appointments<br>
+                <span class="bg-gradient-to-r from-indigo-300 via-purple-300 to-pink-300 bg-clip-text text-transparent">Smarter & Faster</span>
+            </h1>
+            <p class="text-lg md:text-xl text-indigo-200 mb-10 max-w-2xl mx-auto">AI-powered scheduling, real-time queue tracking, and zero waiting — your health journey starts here.</p>
+            <div class="flex flex-col sm:flex-row gap-4 justify-center">
+                <a href="/register" class="px-8 py-4 bg-white text-indigo-900 font-bold rounded-2xl shadow-xl hover:shadow-2xl hover:scale-105 transition-all text-lg">Book Now →</a>
+                <a href="/login" class="px-8 py-4 bg-white/10 backdrop-blur text-white font-semibold rounded-2xl border border-white/20 hover:bg-white/20 transition-all text-lg">Sign In</a>
+            </div>
+        </div>
+    </div>
+    <div class="absolute bottom-0 left-0 right-0 h-20 bg-gradient-to-t from-gray-50 to-transparent"></div>
+</section>
+
+<!-- How It Works -->
+<section class="py-20 bg-gray-50">
+    <div class="max-w-6xl mx-auto px-4">
+        <div class="text-center mb-16">
+            <span class="text-indigo-600 font-semibold text-sm uppercase tracking-wider">Simple Process</span>
+            <h2 class="text-3xl md:text-4xl font-bold mt-2">How It Works</h2>
+        </div>
+        <div class="grid md:grid-cols-3 gap-8">
+            <div class="text-center p-8 rounded-2xl gradient-card shadow-sm hover:shadow-xl transition-all group">
+                <div class="w-16 h-16 mx-auto mb-6 rounded-2xl bg-indigo-100 flex items-center justify-center text-3xl group-hover:scale-110 transition-transform">🔍</div>
+                <h3 class="text-xl font-bold mb-3">1. Choose Doctor</h3>
+                <p class="text-gray-500">Browse by department, specialization, or get AI-powered recommendations.</p>
+            </div>
+            <div class="text-center p-8 rounded-2xl gradient-card shadow-sm hover:shadow-xl transition-all group">
+                <div class="w-16 h-16 mx-auto mb-6 rounded-2xl bg-emerald-100 flex items-center justify-center text-3xl group-hover:scale-110 transition-transform">📅</div>
+                <h3 class="text-xl font-bold mb-3">2. Pick a Slot</h3>
+                <p class="text-gray-500">See real-time availability with smart slot recommendations and instant confirmation.</p>
+            </div>
+            <div class="text-center p-8 rounded-2xl gradient-card shadow-sm hover:shadow-xl transition-all group">
+                <div class="w-16 h-16 mx-auto mb-6 rounded-2xl bg-purple-100 flex items-center justify-center text-3xl group-hover:scale-110 transition-transform">🎫</div>
+                <h3 class="text-xl font-bold mb-3">3. Get Token</h3>
+                <p class="text-gray-500">Receive your token instantly with live queue tracking and ETA countdown.</p>
+            </div>
+        </div>
+    </div>
+</section>
+
+<!-- Doctors Carousel -->
+<section class="py-20 bg-white">
+    <div class="max-w-6xl mx-auto px-4">
+        <div class="text-center mb-12">
+            <span class="text-indigo-600 font-semibold text-sm uppercase tracking-wider">Expert Care</span>
+            <h2 class="text-3xl md:text-4xl font-bold mt-2">Our Specialists</h2>
+        </div>
+        <div class="grid sm:grid-cols-2 lg:grid-cols-3 gap-6">
+            {% for doc in doctors %}
+            <div class="p-6 rounded-2xl border border-gray-100 hover:border-indigo-200 hover:shadow-xl transition-all group bg-white">
+                <div class="flex items-center gap-4 mb-4">
+                    <img src="{{ doc.profile_pic_url }}" alt="{{ doc.name }}" class="w-14 h-14 rounded-xl shadow-sm group-hover:scale-110 transition-transform">
+                    <div>
+                        <h3 class="font-bold text-gray-900">{{ doc.name }}</h3>
+                        <p class="text-sm text-indigo-600">{{ doc.specialization }}</p>
+                    </div>
+                </div>
+                <div class="flex items-center justify-between">
+                    <span class="text-xs text-gray-400">{{ doc.experience_years }} yrs experience</span>
+                    <span class="px-2.5 py-1 bg-emerald-100 text-emerald-700 rounded-full text-xs font-medium">Available</span>
+                </div>
+            </div>
+            {% endfor %}
+        </div>
+    </div>
+</section>
+
+<!-- CTA -->
+<section class="py-16 gradient-bg text-white">
+    <div class="max-w-3xl mx-auto text-center px-4">
+        <h2 class="text-3xl md:text-4xl font-bold mb-4">Ready to Book?</h2>
+        <p class="text-indigo-200 mb-8 text-lg">Join thousands of patients who trust MediSlot for hassle-free appointments.</p>
+        <a href="/register" class="inline-block px-10 py-4 bg-white text-indigo-900 font-bold rounded-2xl shadow-xl hover:shadow-2xl hover:scale-105 transition-all text-lg">Get Started Free →</a>
+    </div>
+</section>
+{% endblock %}

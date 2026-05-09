@@ -1,0 +1,12 @@
+{% extends 'base.html' %}
+{% block title %}500 Server Error{% endblock %}
+{% block content %}
+<div class="min-h-[70vh] flex items-center justify-center px-4">
+    <div class="text-center">
+        <div class="text-8xl mb-6">⚠️</div>
+        <h1 class="text-6xl font-extrabold text-red-500 mb-4">500</h1>
+        <p class="text-xl text-gray-600 mb-8">Something went wrong on our end. Please try again later.</p>
+        <a href="/" class="px-8 py-3 bg-indigo-600 text-white font-bold rounded-xl hover:bg-indigo-700 transition-all">Go Home</a>
+    </div>
+</div>
+{% endblock %}

@@ -1,0 +1,41 @@
+{% extends 'base.html' %}
+{% block title %}Slot Patients{% endblock %}
+{% block content %}
+<div class="max-w-4xl mx-auto px-4 py-10">
+    <a href="/admin" class="text-indigo-600 hover:underline text-sm font-medium">← Back to Dashboard</a>
+    <h1 class="text-2xl font-bold text-gray-900 mt-4 mb-2">{{ doctor.name }} — {{ slot.time_label }}</h1>
+    <p class="text-gray-500 mb-6">{{ slot.date }} · Capacity: {{ slot.booked_count }}/{{ slot.max_capacity }}</p>
+
+    <!-- Block/Unblock -->
+    <form method="POST" action="/admin/block-slot/{{ slot.id }}" class="mb-6 flex items-center gap-3">
+        <input type="text" name="reason" placeholder="Block reason..." class="px-4 py-2 border border-gray-200 rounded-xl text-sm flex-1">
+        <button type="submit" class="px-4 py-2 {% if slot.is_blocked %}bg-emerald-600{% else %}bg-red-500{% endif %} text-white font-semibold rounded-xl text-sm">
+            {{ 'Unblock' if slot.is_blocked else 'Block Slot' }}
+        </button>
+    </form>
+
+    <!-- Patient List -->
+    {% if patients %}
+    <div class="space-y-3">
+        {% for item in patients %}
+        <div class="bg-white rounded-2xl p-5 shadow-sm border border-gray-100 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+            <div class="flex items-center gap-4">
+                <div class="w-12 h-12 rounded-xl bg-indigo-100 flex items-center justify-center text-lg font-bold text-indigo-600">{{ item.appointment.token_number }}</div>
+                <div>
+                    <p class="font-bold text-gray-900">{{ item.patient.name }}</p>
+                    <p class="text-sm text-gray-500">{{ item.patient.phone }} · <span class="status-{{ item.appointment.status }} px-2 py-0.5 rounded-full text-xs font-semibold">{{ item.appointment.status }}</span></p>
+                </div>
+            </div>
+            <div class="flex gap-2">
+                <form method="POST" action="/admin/action/{{ item.appointment.id }}/call"><button class="px-3 py-1.5 bg-blue-100 hover:bg-blue-200 text-blue-700 text-xs font-semibold rounded-lg">📣 Call</button></form>
+                <form method="POST" action="/admin/action/{{ item.appointment.id }}/seen"><button class="px-3 py-1.5 bg-emerald-100 hover:bg-emerald-200 text-emerald-700 text-xs font-semibold rounded-lg">✅ Seen</button></form>
+                <form method="POST" action="/admin/action/{{ item.appointment.id }}/no_show"><button class="px-3 py-1.5 bg-purple-100 hover:bg-purple-200 text-purple-700 text-xs font-semibold rounded-lg">👻 No-Show</button></form>
+            </div>
+        </div>
+        {% endfor %}
+    </div>
+    {% else %}
+    <p class="text-gray-400 text-center py-10">No patients in this slot.</p>
+    {% endif %}
+</div>
+{% endblock %}

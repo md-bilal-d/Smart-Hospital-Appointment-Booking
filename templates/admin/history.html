@@ -1,0 +1,33 @@
+{% extends 'base.html' %}
+{% block title %}Appointment History{% endblock %}
+{% block content %}
+<div class="max-w-6xl mx-auto px-4 py-10">
+    <a href="/admin" class="text-indigo-600 hover:underline text-sm font-medium">← Dashboard</a>
+    <h1 class="text-2xl font-bold text-gray-900 mt-4 mb-6">Appointment History</h1>
+    <form method="GET" class="flex flex-col sm:flex-row gap-3 mb-6">
+        <input type="text" name="q" value="{{ q }}" placeholder="Search by name or phone..." class="flex-1 px-4 py-2.5 border border-gray-200 rounded-xl focus:ring-2 focus:ring-indigo-500 outline-none text-sm">
+        <input type="date" name="date" value="{{ dt }}" class="px-4 py-2.5 border border-gray-200 rounded-xl focus:ring-2 focus:ring-indigo-500 outline-none text-sm">
+        <button type="submit" class="px-6 py-2.5 bg-indigo-600 text-white font-semibold rounded-xl text-sm">Search</button>
+    </form>
+    <div class="bg-white rounded-2xl shadow-sm border border-gray-100 overflow-hidden">
+        <div class="overflow-x-auto">
+            <table class="w-full text-sm">
+                <thead class="bg-gray-50 text-gray-500 uppercase text-xs"><tr><th class="px-4 py-3 text-left">ID</th><th class="px-4 py-3 text-left">Patient</th><th class="px-4 py-3 text-left">Doctor</th><th class="px-4 py-3 text-left">Date</th><th class="px-4 py-3 text-left">Time</th><th class="px-4 py-3 text-left">Token</th><th class="px-4 py-3 text-left">Status</th></tr></thead>
+                <tbody class="divide-y divide-gray-100">
+                    {% for a in appointments %}
+                    <tr class="hover:bg-gray-50">
+                        <td class="px-4 py-3 font-mono text-xs text-gray-400">{{ a.id }}</td>
+                        <td class="px-4 py-3 font-medium">{{ a.patient.name }}</td>
+                        <td class="px-4 py-3">{{ a.slot.doctor.name }}</td>
+                        <td class="px-4 py-3">{{ a.slot.date }}</td>
+                        <td class="px-4 py-3">{{ a.slot.time_label }}</td>
+                        <td class="px-4 py-3 font-bold text-indigo-600">{{ a.token_number }}</td>
+                        <td class="px-4 py-3"><span class="px-2 py-0.5 rounded-full text-xs font-semibold status-{{ a.status }}">{{ a.status }}</span></td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+{% endblock %}

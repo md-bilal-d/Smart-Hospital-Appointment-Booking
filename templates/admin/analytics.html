@@ -1,0 +1,64 @@
+{% extends 'base.html' %}
+{% block title %}Analytics{% endblock %}
+{% block content %}
+<div class="max-w-6xl mx-auto px-4 py-10">
+    <a href="/admin" class="text-indigo-600 hover:underline text-sm font-medium">← Dashboard</a>
+    <h1 class="text-2xl font-bold text-gray-900 mt-4 mb-8">📈 Analytics</h1>
+    <div class="grid md:grid-cols-2 gap-6 mb-8">
+        <div class="bg-white rounded-2xl p-6 shadow-sm border border-gray-100">
+            <h3 class="font-bold text-gray-700 mb-4">Appointments per Day (Last 7 Days)</h3>
+            <canvas id="dailyChart" height="200"></canvas>
+        </div>
+        <div class="bg-white rounded-2xl p-6 shadow-sm border border-gray-100">
+            <h3 class="font-bold text-gray-700 mb-4">Status Breakdown</h3>
+            <canvas id="statusChart" height="200"></canvas>
+        </div>
+    </div>
+    <div class="bg-white rounded-2xl p-6 shadow-sm border border-gray-100 mb-8">
+        <h3 class="font-bold text-gray-700 mb-4">Peak Booking Hours</h3>
+        <canvas id="peakChart" height="120"></canvas>
+    </div>
+    <!-- Doctor Performance -->
+    <div class="bg-white rounded-2xl p-6 shadow-sm border border-gray-100 mb-8">
+        <h3 class="font-bold text-gray-700 mb-4">Doctor Performance</h3>
+        <div class="overflow-x-auto">
+            <table class="w-full text-sm" id="perfTable">
+                <thead class="bg-gray-50 text-gray-500 uppercase text-xs"><tr><th class="px-4 py-2 text-left">Doctor</th><th class="px-4 py-2 text-left">Specialization</th><th class="px-4 py-2 text-right">Avg Patients/Day</th><th class="px-4 py-2 text-right">No-Show Rate</th><th class="px-4 py-2 text-right">Avg Consult (min)</th></tr></thead>
+                <tbody class="divide-y divide-gray-100" id="perfBody"></tbody>
+            </table>
+        </div>
+    </div>
+    <!-- Department Popularity -->
+    <div class="bg-white rounded-2xl p-6 shadow-sm border border-gray-100">
+        <h3 class="font-bold text-gray-700 mb-4">Department Popularity</h3>
+        <div id="deptRanking" class="space-y-3"></div>
+    </div>
+</div>
+{% endblock %}
+{% block scripts %}
+<script>
+fetch('/api/analytics').then(r=>r.json()).then(data=>{
+    // Daily chart
+    new Chart(document.getElementById('dailyChart'),{type:'bar',data:{labels:data.daily.map(d=>d.date.slice(5)),datasets:[{label:'Appointments',data:data.daily.map(d=>d.count),backgroundColor:'rgba(99,102,241,0.7)',borderRadius:8}]},options:{responsive:true,plugins:{legend:{display:false}},scales:{y:{beginAtZero:true}}}});
+    // Status pie
+    const sc=data.statuses;
+    new Chart(document.getElementById('statusChart'),{type:'doughnut',data:{labels:Object.keys(sc),datasets:[{data:Object.values(sc),backgroundColor:['#fbbf24','#3b82f6','#10b981','#ef4444','#8b5cf6']}]},options:{responsive:true,plugins:{legend:{position:'bottom'}}}});
+    // Peak hours
+    new Chart(document.getElementById('peakChart'),{type:'line',data:{labels:data.peak_hours.map(p=>p.time),datasets:[{label:'Bookings',data:data.peak_hours.map(p=>p.count),borderColor:'#6366f1',backgroundColor:'rgba(99,102,241,0.1)',fill:true,tension:0.4}]},options:{responsive:true,plugins:{legend:{display:false}}}});
+    // Doctor performance table
+    const tbody=document.getElementById('perfBody');
+    data.doctor_performance.forEach(d=>{
+        const tr=document.createElement('tr');
+        tr.className='hover:bg-gray-50'+(d.high_noshow?' bg-red-50':'');
+        tr.innerHTML=`<td class="px-4 py-2 font-medium ${d.high_noshow?'text-red-700':''}">${d.name}</td><td class="px-4 py-2">${d.specialization}</td><td class="px-4 py-2 text-right">${d.avg_patients}</td><td class="px-4 py-2 text-right ${d.high_noshow?'text-red-600 font-bold':''}">${d.noshow_rate}%</td><td class="px-4 py-2 text-right">${d.avg_consult||'—'}</td>`;
+        tbody.appendChild(tr);
+    });
+    // Department ranking
+    const div=document.getElementById('deptRanking');
+    const max=Math.max(...data.department_popularity.map(d=>d.count),1);
+    data.department_popularity.forEach((d,i)=>{
+        div.innerHTML+=`<div class="flex items-center gap-4"><span class="text-sm font-bold text-gray-600 w-8">#${i+1}</span><div class="flex-1"><div class="flex items-center justify-between mb-1"><span class="text-sm font-semibold">${d.name}</span><span class="text-xs text-gray-500">${d.count} appointments</span></div><div class="w-full bg-gray-200 rounded-full h-2.5"><div class="bg-indigo-500 h-2.5 rounded-full" style="width:${(d.count/max*100)}%"></div></div></div></div>`;
+    });
+});
+</script>
+{% endblock %}

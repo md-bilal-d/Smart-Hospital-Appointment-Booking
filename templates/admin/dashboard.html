@@ -1,0 +1,166 @@
+{% extends 'base.html' %}
+{% block title %}Admin Dashboard{% endblock %}
+{% block content %}
+<div class="max-w-7xl mx-auto px-4 py-8">
+    <div class="flex flex-col lg:flex-row gap-8">
+        <!-- Main Content -->
+        <div class="lg:w-3/4">
+            <h1 class="text-3xl font-bold text-gray-900 mb-6">Admin Dashboard</h1>
+
+    <!-- Alerts -->
+    {% if noshow_alerts %}
+    <div class="mb-4 p-4 bg-red-50 rounded-xl border border-red-200">
+        <p class="font-bold text-red-700 text-sm mb-2">⚠️ High No-Show Rate Doctors:</p>
+        {% for a in noshow_alerts %}<span class="inline-block px-3 py-1 bg-red-100 text-red-800 rounded-full text-xs font-semibold mr-2">{{ a.doctor }}: {{ a.rate }}%</span>{% endfor %}
+    </div>
+    {% endif %}
+    {% if wasted_alerts %}
+    <div class="mb-4 p-4 bg-amber-50 rounded-xl border border-amber-200">
+        <p class="font-bold text-amber-700 text-sm mb-2">📊 Wasted Slot Warnings:</p>
+        {% for a in wasted_alerts %}<span class="text-xs text-amber-700">{{ a.message }} · </span>{% endfor %}
+    </div>
+    {% endif %}
+
+    <!-- Stats -->
+    <div class="grid grid-cols-2 md:grid-cols-5 gap-4 mb-8">
+        <div class="bg-white rounded-2xl p-5 shadow-sm border border-gray-100 text-center">
+            <p class="text-3xl font-extrabold text-indigo-600">{{ stats.total }}</p><p class="text-xs text-gray-500 mt-1">Total Today</p>
+        </div>
+        <div class="bg-white rounded-2xl p-5 shadow-sm border border-gray-100 text-center">
+            <p class="text-3xl font-extrabold text-emerald-600">{{ stats.seen }}</p><p class="text-xs text-gray-500 mt-1">Seen</p>
+        </div>
+        <div class="bg-white rounded-2xl p-5 shadow-sm border border-gray-100 text-center">
+            <p class="text-3xl font-extrabold text-amber-600">{{ stats.waiting }}</p><p class="text-xs text-gray-500 mt-1">Waiting</p>
+        </div>
+        <div class="bg-white rounded-2xl p-5 shadow-sm border border-gray-100 text-center">
+            <p class="text-3xl font-extrabold text-purple-600">{{ stats.no_show }}</p><p class="text-xs text-gray-500 mt-1">No-Shows</p>
+        </div>
+        <div class="bg-white rounded-2xl p-5 shadow-sm border border-gray-100 text-center">
+            <p class="text-3xl font-extrabold text-red-500">{{ stats.cancelled }}</p><p class="text-xs text-gray-500 mt-1">Cancelled</p>
+        </div>
+    </div>
+
+    <!-- Slot Grid -->
+    <div class="bg-white rounded-2xl shadow-sm border border-gray-100 p-6 mb-8 overflow-x-auto">
+        <div class="flex items-center justify-between mb-4">
+            <h2 class="font-bold text-gray-700">📊 Slot Grid — {{ today }}</h2>
+            <a href="/admin/export-csv" class="px-4 py-2 bg-emerald-600 hover:bg-emerald-700 text-white text-sm font-semibold rounded-xl transition-all">📥 Export CSV</a>
+        </div>
+        <table class="w-full text-xs">
+            <thead><tr class="bg-gray-50"><th class="px-3 py-2 text-left">Time</th>{% for doc in doctors %}<th class="px-3 py-2 text-center">{{ doc.name|truncate(12) }}</th>{% endfor %}</tr></thead>
+            <tbody class="divide-y divide-gray-100">
+                {% for tl in time_labels %}
+                <tr class="hover:bg-gray-50">
+                    <td class="px-3 py-2 font-semibold text-gray-700">{{ tl }}</td>
+                    {% for doc in doctors %}
+                    {% set cell = grid[tl][doc.id] %}
+                    {% if cell %}
+                    <td class="px-3 py-2 text-center">
+                        {% if cell.blocked %}
+                        <span class="px-2 py-1 bg-gray-200 text-gray-500 rounded text-xs">Blocked</span>
+                        {% else %}
+                        <a href="/admin/slot-patients/{{ cell.slot.id }}" id="slot-{{ cell.slot.id }}" class="inline-block px-3 py-1 rounded-lg text-xs font-bold
+                            {% if cell.count >= cell.cap %}bg-red-100 text-red-700
+                            {% elif cell.count > 0 %}bg-amber-100 text-amber-700
+                            {% else %}bg-emerald-100 text-emerald-700{% endif %}">
+                            {{ cell.count }}/{{ cell.cap }}
+                        </a>
+                        {% endif %}
+                    </td>
+                    {% else %}<td class="px-3 py-2 text-center text-gray-300">—</td>{% endif %}
+                    {% endfor %}
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+
+    <!-- Add Doctor -->
+    <div class="bg-white rounded-2xl shadow-sm border border-gray-100 p-6 mb-8">
+        <h2 class="font-bold text-gray-700 mb-4">➕ Add New Doctor</h2>
+        <form method="POST" action="/admin/add-doctor" class="grid sm:grid-cols-2 md:grid-cols-4 gap-4">
+            <input type="text" name="name" placeholder="Dr. Name" required class="px-4 py-2.5 border border-gray-200 rounded-xl focus:ring-2 focus:ring-indigo-500 outline-none text-sm">
+            <input type="text" name="specialization" placeholder="Specialization" required class="px-4 py-2.5 border border-gray-200 rounded-xl focus:ring-2 focus:ring-indigo-500 outline-none text-sm">
+            <input type="number" name="experience" placeholder="Years exp." required class="px-4 py-2.5 border border-gray-200 rounded-xl focus:ring-2 focus:ring-indigo-500 outline-none text-sm">
+            <select name="department_id" required class="px-4 py-2.5 border border-gray-200 rounded-xl focus:ring-2 focus:ring-indigo-500 outline-none text-sm">
+                {% for dept in departments %}<option value="{{ dept.id }}">{{ dept.name }}</option>{% endfor %}
+            </select>
+            <button type="submit" class="sm:col-span-2 md:col-span-4 py-2.5 bg-indigo-600 hover:bg-indigo-700 text-white font-semibold rounded-xl transition-all text-sm">Add Doctor</button>
+        </form>
+    </div>
+
+    <!-- Quick Links -->
+        <div class="flex flex-wrap gap-3">
+            <a href="/admin/analytics" class="px-5 py-2.5 bg-purple-600 hover:bg-purple-700 text-white font-semibold rounded-xl transition-all text-sm">📈 Analytics</a>
+            <a href="/admin/history" class="px-5 py-2.5 bg-gray-700 hover:bg-gray-800 text-white font-semibold rounded-xl transition-all text-sm">📋 History</a>
+        </div>
+    </div>
+
+    <!-- Live Feed Sidebar -->
+    <div class="lg:w-1/4">
+        <div class="bg-gray-900 rounded-3xl p-6 shadow-xl sticky top-24 border border-indigo-500/30">
+            <h2 class="text-lg font-bold text-white mb-4 flex items-center justify-between">
+                <span>📡 Live Feed</span>
+                <span class="flex h-2 w-2 rounded-full bg-emerald-500 animate-pulse"></span>
+            </h2>
+            <div id="admin-live-feed" class="space-y-4 max-h-[600px] overflow-y-auto pr-2 custom-scrollbar">
+                <p class="text-gray-500 text-xs italic">Waiting for activity...</p>
+            </div>
+        </div>
+    </div>
+</div>
+
+<style>
+    .custom-scrollbar::-webkit-scrollbar { width: 4px; }
+    .custom-scrollbar::-webkit-scrollbar-track { background: transparent; }
+    .custom-scrollbar::-webkit-scrollbar-thumb { background: #312e81; border-radius: 10px; }
+</style>
+{% endblock %}
+
+{% block scripts %}
+<script>
+    socket.on('admin_dashboard_update', (data) => {
+        const feed = document.getElementById('admin-live-feed');
+        
+        // Remove empty state
+        if(feed.querySelector('p.italic')) feed.innerHTML = '';
+        
+        const div = document.createElement('div');
+        div.className = "p-3 rounded-xl border-l-4 bg-white/5 border-indigo-500 animate-fade-in";
+        
+        let typeColor = "text-indigo-400";
+        if(data.type === 'booked') typeColor = "text-emerald-400";
+        if(data.type === 'cancelled') typeColor = "text-red-400";
+        
+        div.innerHTML = `
+            <div class="flex justify-between items-start mb-1">
+                <span class="text-[10px] font-bold ${typeColor} uppercase tracking-widest">${data.type || 'Activity'}</span>
+                <span class="text-[10px] text-gray-500">${data.time}</span>
+            </div>
+            <p class="text-xs text-gray-200 font-medium">${data.action}</p>
+        `;
+        
+        feed.prepend(div);
+        
+        // Keep last 10
+        if(feed.children.length > 10) {
+            feed.removeChild(feed.lastChild);
+        }
+    });
+
+    socket.on('slot_update', (data) => {
+        const el = document.getElementById(`slot-${data.slot_id}`);
+        if(!el) return;
+        
+        // We only have available spots, need total cap to display correct label.
+        // For now, let's just refresh the count label based on the current inner text
+        const [curr, cap] = el.innerText.split('/');
+        const newCount = cap - data.available;
+        el.innerText = `${newCount}/${cap}`;
+        
+        // Update color
+        el.className = "inline-block px-3 py-1 rounded-lg text-xs font-bold " + 
+            (newCount >= cap ? "bg-red-100 text-red-700" : (newCount > 0 ? "bg-amber-100 text-amber-700" : "bg-emerald-100 text-emerald-700"));
+    });
+</script>
+{% endblock %}

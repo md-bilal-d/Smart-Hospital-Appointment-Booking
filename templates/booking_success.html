@@ -1,0 +1,85 @@
+{% extends 'base.html' %}
+{% block title %}Booking Confirmed{% endblock %}
+{% block content %}
+<div class="max-w-2xl mx-auto px-4 py-16">
+    <div class="bg-white rounded-3xl shadow-xl border border-gray-100 overflow-hidden">
+        <!-- Header -->
+        <div class="bg-gradient-to-r from-emerald-500 to-teal-400 p-8 text-center text-white relative">
+            <div class="w-20 h-20 bg-white/20 rounded-full flex items-center justify-center mx-auto mb-4 backdrop-blur-sm">
+                <span class="text-4xl">🎉</span>
+            </div>
+            <h1 class="text-3xl font-bold mb-2">Booking Confirmed!</h1>
+            <p class="text-emerald-50 text-lg">Your appointment has been successfully scheduled.</p>
+            
+            <!-- Pattern Overlay -->
+            <div class="absolute inset-0 opacity-10" style="background-image: radial-gradient(circle at 2px 2px, white 1px, transparent 0); background-size: 20px 20px;"></div>
+        </div>
+
+        <!-- Ticket Body -->
+        <div class="p-8 pb-10" id="print-area">
+            <div class="text-center mb-8">
+                <p class="text-gray-500 uppercase tracking-widest text-sm font-semibold mb-1">Your Token Number</p>
+                <div class="text-6xl font-black text-indigo-600">#{{ appt.token_number }}</div>
+            </div>
+
+            <div class="grid grid-cols-2 gap-y-6 gap-x-8 border-t border-b border-gray-100 py-6 mb-8">
+                <div>
+                    <p class="text-gray-400 text-xs uppercase tracking-wider font-semibold mb-1">Patient Name</p>
+                    <p class="font-bold text-gray-900 text-lg">{{ current_user.name }}</p>
+                </div>
+                <div>
+                    <p class="text-gray-400 text-xs uppercase tracking-wider font-semibold mb-1">Doctor</p>
+                    <p class="font-bold text-gray-900 text-lg">Dr. {{ doctor.name }}</p>
+                    <p class="text-sm text-indigo-600">{{ doctor.specialization }}</p>
+                </div>
+                <div>
+                    <p class="text-gray-400 text-xs uppercase tracking-wider font-semibold mb-1">Date</p>
+                    <p class="font-bold text-gray-900 text-lg">{{ slot.date }}</p>
+                </div>
+                <div>
+                    <p class="text-gray-400 text-xs uppercase tracking-wider font-semibold mb-1">Time</p>
+                    <p class="font-bold text-gray-900 text-lg">{{ slot.time_label }}</p>
+                </div>
+                <div class="col-span-2">
+                    <p class="text-gray-400 text-xs uppercase tracking-wider font-semibold mb-1">Appointment Type</p>
+                    <span class="inline-block px-3 py-1 rounded-lg text-sm font-bold
+                        {% if appt.appointment_type == 'urgent' %}bg-red-100 text-red-700
+                        {% elif appt.appointment_type == 'follow-up' %}bg-blue-100 text-blue-700
+                        {% else %}bg-emerald-100 text-emerald-700{% endif %}">
+                        {{ appt.appointment_type | title }}
+                    </span>
+                </div>
+            </div>
+
+            <div class="flex flex-col sm:flex-row gap-4 justify-center print-hide">
+                <button onclick="window.print()" class="px-8 py-3 bg-gray-900 hover:bg-gray-800 text-white font-semibold rounded-xl transition-all flex items-center justify-center gap-2">
+                    <span>🖨️</span> Print Ticket
+                </button>
+                <a href="/dashboard" class="px-8 py-3 bg-indigo-50 hover:bg-indigo-100 text-indigo-700 font-semibold rounded-xl transition-all text-center">
+                    Go to Dashboard
+                </a>
+            </div>
+        </div>
+    </div>
+</div>
+
+<style>
+    @media print {
+        body * {
+            visibility: hidden;
+        }
+        #print-area, #print-area * {
+            visibility: visible;
+        }
+        #print-area {
+            position: absolute;
+            left: 0;
+            top: 0;
+            width: 100%;
+        }
+        .print-hide {
+            display: none !important;
+        }
+    }
+</style>
+{% endblock %}
