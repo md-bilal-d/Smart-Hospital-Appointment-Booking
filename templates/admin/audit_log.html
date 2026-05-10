@@ -1,0 +1,84 @@
+{% extends "base.html" %}
+{% block title %}Audit Logs | MediSlot{% endblock %}
+
+{% block content %}
+<div class="max-w-7xl mx-auto px-4 py-10">
+    <div class="flex items-center justify-between mb-8">
+        <div>
+            <h1 class="text-3xl font-bold text-slate-900">System Audit Logs</h1>
+            <p class="text-slate-500">Track all administrative and security actions.</p>
+        </div>
+        <div class="flex gap-4">
+            <form class="flex gap-2">
+                <input type="text" name="action" placeholder="Filter by action..." value="{{ request.args.get('action','') }}" 
+                    class="px-4 py-2 border border-slate-200 rounded-xl text-sm outline-none focus:ring-2 focus:ring-indigo-500">
+                <select name="role" class="px-4 py-2 border border-slate-200 rounded-xl text-sm outline-none focus:ring-2 focus:ring-indigo-500">
+                    <option value="">All Roles</option>
+                    <option value="super_admin" {% if request.args.get('role') == 'super_admin' %}selected{% endif %}>Super Admin</option>
+                    <option value="receptionist" {% if request.args.get('role') == 'receptionist' %}selected{% endif %}>Receptionist</option>
+                    <option value="doctor" {% if request.args.get('role') == 'doctor' %}selected{% endif %}>Doctor</option>
+                    <option value="patient" {% if request.args.get('role') == 'patient' %}selected{% endif %}>Patient</option>
+                </select>
+                <button type="submit" class="bg-indigo-600 text-white px-4 py-2 rounded-xl hover:bg-indigo-700 transition-colors">
+                    <i class="fas fa-filter"></i>
+                </button>
+            </form>
+        </div>
+    </div>
+
+    <div class="bg-white rounded-2xl shadow-sm border border-slate-200 overflow-hidden">
+        <table class="w-full text-sm">
+            <thead class="bg-slate-50 text-slate-500 uppercase text-xs font-bold">
+                <tr>
+                    <th class="px-6 py-4 text-left">Timestamp</th>
+                    <th class="px-6 py-4 text-left">User</th>
+                    <th class="px-6 py-4 text-left">Action</th>
+                    <th class="px-6 py-4 text-left">Details</th>
+                    <th class="px-6 py-4 text-left">IP Address</th>
+                </tr>
+            </thead>
+            <tbody class="divide-y divide-slate-100">
+                {% for log in logs.items %}
+                <tr class="hover:bg-slate-50 transition-colors">
+                    <td class="px-6 py-4 text-slate-500 font-mono text-xs">
+                        {{ log.timestamp.strftime('%Y-%m-%d %H:%M:%S') }}
+                    </td>
+                    <td class="px-6 py-4">
+                        <div class="flex flex-col">
+                            <span class="font-bold text-slate-800">{{ log.user_name }}</span>
+                            <span class="text-[10px] uppercase font-bold text-slate-400">{{ log.user_role }}</span>
+                        </div>
+                    </td>
+                    <td class="px-6 py-4">
+                        <span class="px-2 py-0.5 rounded-md bg-slate-100 text-slate-700 font-bold text-[10px] uppercase">
+                            {{ log.action }}
+                        </span>
+                    </td>
+                    <td class="px-6 py-4 text-slate-600 max-w-xs truncate" title="{{ log.details }}">
+                        {{ log.details }}
+                    </td>
+                    <td class="px-6 py-4 text-slate-400 font-mono text-xs">{{ log.ip_address }}</td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+
+    <!-- Pagination -->
+    <div class="mt-6 flex items-center justify-between">
+        <p class="text-sm text-slate-500">
+            Showing {{ logs.items|length }} of {{ logs.total }} logs
+        </p>
+        <div class="flex gap-2">
+            {% if logs.has_prev %}
+            <a href="{{ url_for('superadmin.audit_log', page=logs.prev_num, role=request.args.get('role'), action=request.args.get('action')) }}" 
+               class="px-4 py-2 border border-slate-200 rounded-xl hover:bg-slate-50 text-slate-600">Previous</a>
+            {% endif %}
+            {% if logs.has_next %}
+            <a href="{{ url_for('superadmin.audit_log', page=logs.next_num, role=request.args.get('role'), action=request.args.get('action')) }}" 
+               class="px-4 py-2 border border-slate-200 rounded-xl hover:bg-slate-50 text-slate-600">Next</a>
+            {% endif %}
+        </div>
+    </div>
+</div>
+{% endblock %}

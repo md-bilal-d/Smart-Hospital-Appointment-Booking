@@ -1,0 +1,67 @@
+{% extends "base.html" %}
+{% block title %}My Schedule | MediSlot{% endblock %}
+
+{% block content %}
+<div class="max-w-6xl mx-auto px-4 py-10">
+    <div class="flex items-center justify-between mb-8">
+        <div>
+            <h1 class="text-3xl font-bold text-slate-900">Weekly Schedule</h1>
+            <p class="text-slate-500 font-medium">Slots for {{ doctor.name }} (Next 7 Days)</p>
+        </div>
+        <a href="{{ url_for('doctor.doctor_dashboard', doctor_id=doctor.id) }}" class="px-6 py-2 bg-slate-100 hover:bg-slate-200 text-slate-600 rounded-xl font-bold transition-all flex items-center gap-2">
+            <i class="fas fa-arrow-left"></i> Back to Dashboard
+        </a>
+    </div>
+
+    <div class="bg-white rounded-3xl shadow-sm border border-slate-100 overflow-hidden">
+        <div class="overflow-x-auto">
+            <table class="w-full text-left">
+                <thead class="bg-slate-50 border-b border-slate-100">
+                    <tr>
+                        <th class="px-8 py-4 text-xs font-bold text-slate-400 uppercase tracking-wider">Date</th>
+                        <th class="px-8 py-4 text-xs font-bold text-slate-400 uppercase tracking-wider">Time</th>
+                        <th class="px-8 py-4 text-xs font-bold text-slate-400 uppercase tracking-wider">Booked</th>
+                        <th class="px-8 py-4 text-xs font-bold text-slate-400 uppercase tracking-wider">Status</th>
+                        <th class="px-8 py-4 text-xs font-bold text-slate-400 uppercase tracking-wider">Patients</th>
+                    </tr>
+                </thead>
+                <tbody class="divide-y divide-slate-100">
+                    {% for item in schedule %}
+                    <tr class="hover:bg-slate-50 transition-colors">
+                        <td class="px-8 py-6 font-bold text-slate-800">{{ item.slot.date }}</td>
+                        <td class="px-8 py-6">
+                            <span class="px-3 py-1 bg-indigo-50 text-indigo-600 rounded-lg text-xs font-bold">{{ item.slot.time_label }}</span>
+                        </td>
+                        <td class="px-8 py-6 font-mono font-bold text-slate-600">
+                            {{ item.booked }} / {{ item.capacity }}
+                        </td>
+                        <td class="px-8 py-6">
+                            <span class="px-3 py-1 rounded-lg text-[10px] font-black uppercase
+                                {% if item.status == 'open' %} bg-emerald-100 text-emerald-600
+                                {% elif item.status == 'full' %} bg-amber-100 text-amber-600
+                                {% else %} bg-red-100 text-red-600 {% endif %}">
+                                {{ item.status }}
+                            </span>
+                        </td>
+                        <td class="px-8 py-6">
+                            {% if item.patients %}
+                            <div class="space-y-1">
+                                {% for p in item.patients %}
+                                <div class="text-xs font-medium text-slate-700 flex items-center gap-2">
+                                    <span class="w-6 h-6 rounded-md bg-slate-100 flex items-center justify-center font-bold text-[10px]">#{{ p.token }}</span>
+                                    {{ p.name }}
+                                </div>
+                                {% endfor %}
+                            </div>
+                            {% else %}
+                            <span class="text-xs text-slate-300 italic">No patients yet</span>
+                            {% endif %}
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+{% endblock %}

@@ -1,73 +1,526 @@
 {% extends 'base.html' %}
-{% block title %}Dr. {{ doctor.name }}{% endblock %}
+{% block title %}Doctor Dashboard | MediSlot{% endblock %}
 {% block content %}
-<div class="max-w-5xl mx-auto px-4 py-10">
-    <div class="flex flex-col sm:flex-row sm:items-center justify-between mb-8 gap-4">
-        <div class="flex items-center gap-4">
-            <img src="{{ doctor.profile_pic_url }}" class="w-14 h-14 rounded-xl shadow">
-            <div>
-                <h1 class="text-2xl font-bold text-gray-900">{{ doctor.name }}</h1>
-                <p class="text-gray-500">{{ doctor.specialization }}</p>
-            </div>
-        </div>
-        <div class="flex gap-3">
-            <form method="POST" action="/doctor/{{ doctor.id }}/toggle-availability">
-                <button class="px-4 py-2 {% if doctor.is_available %}bg-emerald-100 text-emerald-700{% else %}bg-red-100 text-red-700{% endif %} font-semibold rounded-xl text-sm">
-                    {{ '🟢 Available' if doctor.is_available else '🔴 Unavailable' }}
-                </button>
-            </form>
-            <form method="POST" action="/doctor/{{ doctor.id }}/call-next">
-                <button class="px-5 py-2 bg-indigo-600 hover:bg-indigo-700 text-white font-bold rounded-xl text-sm transition-all shadow-lg shadow-indigo-200">📣 Call Next</button>
-            </form>
-        </div>
-    </div>
 
-    <!-- Today's Queue -->
-    <div class="bg-white rounded-2xl shadow-sm border border-gray-100 p-6 mb-8">
-        <h2 class="font-bold text-gray-700 mb-4">📋 Today's Queue — {{ today }}</h2>
-        {% if queue %}
-        <div class="space-y-3">
-            {% for item in queue %}
-            <div class="flex flex-col sm:flex-row sm:items-center justify-between p-4 rounded-xl border
-                {% if item.appointment.status == 'called' %}border-blue-300 bg-blue-50
-                {% elif item.appointment.status == 'seen' %}border-emerald-200 bg-emerald-50
-                {% elif item.appointment.status == 'no_show' %}border-purple-200 bg-purple-50
-                {% else %}border-gray-200 bg-white{% endif %} gap-4">
-                <div class="flex items-center gap-4">
-                    <div class="w-10 h-10 rounded-lg bg-indigo-100 flex items-center justify-center text-sm font-bold text-indigo-600">{{ item.appointment.token_number }}</div>
-                    <div>
-                        <p class="font-semibold text-gray-900">{{ item.patient.name }}</p>
-                        <p class="text-xs text-gray-500">{{ item.slot.time_label }} · {{ item.patient.phone }}</p>
+<!-- Chart.js CDN -->
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+
+<div class="max-w-[1600px] mx-auto px-4 py-12">
+    
+    <div class="flex flex-col lg:flex-row gap-8 mb-12">
+        
+        <!-- LEFT PANEL: Profile & Stats -->
+        <div class="lg:w-1/3 space-y-8">
+            
+            <!-- Doctor Profile Card -->
+            <div class="glass p-10 text-center relative overflow-hidden group">
+                <div class="absolute -right-10 -top-10 w-40 h-40 bg-indigo-500/10 rounded-full blur-3xl"></div>
+                
+                <!-- Avatar with Glowing Ring -->
+                <div class="relative w-32 h-32 mx-auto mb-6">
+                    <div class="absolute inset-0 rounded-full bg-gradient-to-tr from-indigo-500 to-purple-500 animate-avatar-pulse p-1">
+                        <div class="w-full h-full rounded-full bg-deep-900 flex items-center justify-center text-4xl font-black text-white">
+                            {{ doctor.name.split(' ')[1][0] if 'Dr.' in doctor.name else doctor.name[0] }}
+                        </div>
                     </div>
-                    <span class="px-2 py-0.5 rounded-full text-xs font-semibold status-{{ item.appointment.status }}">{{ item.appointment.status }}</span>
-                    <span class="px-2 py-0.5 rounded-full text-xs bg-gray-100 text-gray-600 capitalize">{{ item.appointment.appointment_type }}</span>
                 </div>
-                <div class="flex items-center gap-2">
-                    <form method="POST" action="/doctor/{{ doctor.id }}/add-notes/{{ item.appointment.id }}" class="flex gap-2">
-                        <input type="text" name="notes" value="{{ item.appointment.notes or '' }}" placeholder="Add notes..." class="px-3 py-1.5 border border-gray-200 rounded-lg text-xs w-40 focus:ring-2 focus:ring-indigo-500 outline-none">
-                        <button type="submit" class="px-3 py-1.5 bg-gray-100 hover:bg-gray-200 text-gray-700 text-xs font-medium rounded-lg">💾</button>
-                    </form>
+
+                <h1 class="text-3xl font-black text-white mb-1">{{ doctor.name }}</h1>
+                <p class="text-transparent bg-clip-text bg-gradient-to-r from-indigo-400 to-purple-400 font-bold uppercase tracking-widest text-xs mb-4">
+                    {{ doctor.specialization }}
+                </p>
+                
+                <div class="inline-flex items-center gap-2 px-4 py-2 glass rounded-full text-[10px] font-black text-white/60 uppercase tracking-widest mb-8">
+                    <span>🏥</span> {{ doctor.department.name }}
+                </div>
+
+                <!-- Stats Row -->
+                <div class="grid grid-cols-3 gap-3 mb-8">
+                    <div class="glass p-4 border-white/5">
+                        <p class="text-[9px] font-black text-white/40 uppercase mb-1">Today</p>
+                        <p class="text-xl font-black text-white" id="stat-today">{{ patients_today }}</p>
+                    </div>
+                    <div class="glass p-4 border-emerald-500/20">
+                        <p class="text-[9px] font-black text-emerald-400/60 uppercase mb-1">Seen</p>
+                        <p class="text-xl font-black text-emerald-400" id="stat-seen">{{ seen_today }}</p>
+                    </div>
+                    <div class="glass p-4 border-indigo-500/20">
+                        <p class="text-[9px] font-black text-indigo-400/60 uppercase mb-1">Waiting</p>
+                        <p class="text-xl font-black text-indigo-400" id="stat-waiting">{{ waiting_today }}</p>
+                    </div>
+                </div>
+
+                <!-- Actions -->
+                <div class="space-y-4">
+                    <button onclick="toggleAvailability()" id="availability-btn" class="w-full py-4 rounded-2xl font-black uppercase tracking-widest text-xs transition-all flex items-center justify-center gap-3 {% if doctor.is_available %}bg-emerald-500/20 text-emerald-400 shadow-[0_0_20px_rgba(16,185,129,0.2)] border border-emerald-500/30{% else %}bg-red-500/20 text-red-400 shadow-[0_0_20px_rgba(239,68,68,0.2)] border border-red-500/30{% endif %}">
+                        <span class="w-2 h-2 rounded-full animate-pulse {% if doctor.is_available %}bg-emerald-400{% else %}bg-red-400{% endif %}"></span>
+                        {% if doctor.is_available %}Available Now{% else %}Unavailable{% endif %}
+                    </button>
+                    
+                    <a href="{{ url_for('doctor.doctor_schedule', doctor_id=doctor.id) }}" class="block w-full py-4 glass border-white/10 hover:bg-white/5 text-white/80 hover:text-white font-black uppercase tracking-widest text-xs transition-all">
+                        View Full Schedule
+                    </a>
                 </div>
             </div>
-            {% endfor %}
+
+            <!-- Graph 1: Queue Progress (Doughnut) -->
+            <div class="glass p-8">
+                <div class="flex justify-between items-center mb-6">
+                    <h3 class="text-xs font-black text-white/40 uppercase tracking-widest">Queue Distribution</h3>
+                    <span class="text-[10px] text-white/20" id="queue-updated">Just now</span>
+                </div>
+                <div class="relative h-[200px] flex items-center justify-center">
+                    <canvas id="queueChart"></canvas>
+                    <div class="absolute inset-0 flex flex-col items-center justify-center pointer-events-none">
+                        <span class="text-2xl font-black text-white" id="queue-total">{{ patients_today }}</span>
+                        <span class="text-[9px] font-black text-white/40 uppercase">Total</span>
+                    </div>
+                </div>
+            </div>
+
         </div>
-        {% else %}
-        <p class="text-gray-400 text-center py-8">No patients in today's queue.</p>
-        {% endif %}
+
+        <!-- RIGHT PANEL: Queue & Real-time Patients -->
+        <div class="lg:w-2/3 space-y-8">
+            
+            <div class="glass p-10 min-h-[600px] relative flex flex-col">
+                <div class="flex flex-col md:flex-row justify-between items-start md:items-center gap-6 mb-10">
+                    <div>
+                        <h2 class="text-3xl font-black text-white mb-1">Live Patient Queue</h2>
+                        <p class="text-white/40 font-bold text-xs uppercase tracking-widest">Managing incoming appointments for today</p>
+                    </div>
+                    <div class="flex items-center gap-3">
+                        <div class="px-4 py-2 bg-indigo-500/20 rounded-xl text-indigo-400 text-[10px] font-black uppercase tracking-widest border border-indigo-500/30">
+                            Live Status
+                        </div>
+                    </div>
+                </div>
+
+                <div id="patient-queue-list" class="space-y-4 flex-1">
+                    {% if queue %}
+                        {% for appt in queue %}
+                        <div class="glass p-6 border-white/5 group hover:border-indigo-500/30 transition-all flex flex-col md:flex-row justify-between items-center gap-6">
+                            <div class="flex items-center gap-6 w-full md:w-auto">
+                                <div class="w-16 h-16 rounded-full btn-gradient flex flex-col items-center justify-center shadow-xl">
+                                    <span class="text-[9px] font-black text-white/60 uppercase">Token</span>
+                                    <span class="text-2xl font-black text-white">#{{ appt.token_number }}</span>
+                                </div>
+                                <div>
+                                    <h4 class="text-lg font-black text-white group-hover:text-indigo-400 transition-colors">{{ appt.patient.name }}</h4>
+                                    <div class="flex items-center gap-3 mt-1">
+                                        <span class="text-xs text-white/40 font-bold uppercase tracking-widest">{{ appt.slot.time_label }}</span>
+                                        <span class="w-1 h-1 bg-white/20 rounded-full"></span>
+                                        <span class="px-2 py-0.5 bg-white/5 rounded text-[9px] font-black text-white/60 uppercase">{{ appt.appointment_type }}</span>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <div class="flex items-center gap-3 w-full md:w-auto">
+                                {% if appt.status == 'waiting' %}
+                                    <form method="POST" action="{{ url_for('doctor.call_patient', appt_id=appt.id) }}" class="flex-1 md:flex-none">
+                                        <button type="submit" class="w-full md:w-auto px-6 py-3 bg-emerald-500 hover:bg-emerald-600 text-white text-[10px] font-black uppercase tracking-widest rounded-xl shadow-lg shadow-emerald-500/20 transition-all">Call Next</button>
+                                    </form>
+                                {% elif appt.status == 'called' %}
+                                    <div class="px-4 py-3 bg-indigo-500/20 text-indigo-400 text-[10px] font-black uppercase tracking-widest rounded-xl border border-indigo-500/30 animate-pulse">Now Calling...</div>
+                                {% endif %}
+                                
+                                <button onclick="openMarkSeenModal({{ appt.id }})" class="px-6 py-3 bg-indigo-500/20 hover:bg-indigo-500/40 text-indigo-300 text-[10px] font-black uppercase tracking-widest rounded-xl transition-all border border-indigo-500/20">Mark Seen</button>
+                                
+                                <form method="POST" action="{{ url_for('doctor.no_show_appointment', appt_id=appt.id) }}">
+                                    <button type="submit" class="px-4 py-3 bg-red-500/10 hover:bg-red-500/20 text-red-400/60 hover:text-red-400 text-[10px] font-black uppercase tracking-widest rounded-xl transition-all border border-red-500/10">No Show</button>
+                                </form>
+                            </div>
+                        </div>
+                        {% endfor %}
+                    {% else %}
+                        <div class="flex-1 flex flex-col items-center justify-center text-center opacity-40">
+                            <div class="text-6xl mb-4">🏥</div>
+                            <p class="text-lg font-black text-white uppercase tracking-widest">No patients scheduled for today</p>
+                            <p class="text-sm font-medium">All queues are clear.</p>
+                        </div>
+                    {% endif %}
+                </div>
+            </div>
+
+        </div>
     </div>
 
-    <!-- Weekly View -->
-    <div class="bg-white rounded-2xl shadow-sm border border-gray-100 p-6">
-        <h2 class="font-bold text-gray-700 mb-4">📅 Weekly Overview</h2>
-        <div class="grid grid-cols-7 gap-3">
-            {% for day, count in weekly.items() %}
-            <div class="text-center p-4 rounded-xl {% if loop.first %}bg-indigo-50 border-2 border-indigo-200{% else %}bg-gray-50{% endif %}">
-                <p class="text-xs text-gray-500 mb-1">{{ day[5:] }}</p>
-                <p class="text-2xl font-bold {% if count > 0 %}text-indigo-600{% else %}text-gray-300{% endif %}">{{ count }}</p>
-                <p class="text-xs text-gray-400">patients</p>
+    <!-- ANALYTICS GRID -->
+    <div class="grid grid-cols-1 md:grid-cols-2 gap-8 mb-12">
+        
+        <!-- Weekly Volume -->
+        <div class="glass p-8">
+            <div class="flex justify-between items-center mb-8">
+                <div>
+                    <h3 class="text-lg font-black text-white uppercase tracking-tighter">Weekly Patient Volume</h3>
+                    <p class="text-[10px] text-white/40 uppercase font-bold tracking-widest">Completed Consultations</p>
+                </div>
+                <div class="w-10 h-10 bg-indigo-500/20 rounded-xl flex items-center justify-center text-indigo-400">
+                    <i class="fas fa-chart-bar"></i>
+                </div>
             </div>
-            {% endfor %}
+            <div class="h-[300px]">
+                <canvas id="weeklyChart"></canvas>
+            </div>
         </div>
+
+        <!-- Hourly Slot Load -->
+        <div class="glass p-8">
+            <div class="flex justify-between items-center mb-8">
+                <div>
+                    <h3 class="text-lg font-black text-white uppercase tracking-tighter">Hourly Slot Load</h3>
+                    <p class="text-[10px] text-white/40 uppercase font-bold tracking-widest">Today's Booking Density</p>
+                </div>
+                <div class="w-10 h-10 bg-purple-500/20 rounded-xl flex items-center justify-center text-purple-400">
+                    <i class="fas fa-clock"></i>
+                </div>
+            </div>
+            <div class="h-[300px]">
+                <canvas id="hourlyChart"></canvas>
+            </div>
+        </div>
+
+        <!-- Monthly Performance Trend -->
+        <div class="glass p-8">
+            <div class="flex justify-between items-center mb-8">
+                <div>
+                    <h3 class="text-lg font-black text-white uppercase tracking-tighter">Efficiency Trend</h3>
+                    <p class="text-[10px] text-white/40 uppercase font-bold tracking-widest">Scheduled vs Actually Seen (30 Days)</p>
+                </div>
+                <div class="w-10 h-10 bg-emerald-500/20 rounded-xl flex items-center justify-center text-emerald-400">
+                    <i class="fas fa-trending-up"></i>
+                </div>
+            </div>
+            <div class="h-[300px]">
+                <canvas id="monthlyChart"></canvas>
+            </div>
+        </div>
+
+        <!-- Case Type Breakdown -->
+        <div class="glass p-8">
+            <div class="flex justify-between items-center mb-8">
+                <div>
+                    <h3 class="text-lg font-black text-white uppercase tracking-tighter">Case Breakdown</h3>
+                    <p class="text-[10px] text-white/40 uppercase font-bold tracking-widest">Consultation Type Distribution</p>
+                </div>
+                <div class="w-10 h-10 bg-pink-500/20 rounded-xl flex items-center justify-center text-pink-400">
+                    <i class="fas fa-stethoscope"></i>
+                </div>
+            </div>
+            <div class="h-[300px]">
+                <canvas id="typesChart"></canvas>
+            </div>
+        </div>
+
+    </div>
+
+    <!-- BOTTOM SECTION: Timeline & Quick Stats -->
+    <div class="grid grid-cols-1 lg:grid-cols-4 gap-8">
+        
+        <!-- Timeline -->
+        <div class="lg:col-span-3 glass p-8">
+            <h3 class="text-xs font-black text-white/40 uppercase tracking-widest mb-8">Today's Schedule Timeline</h3>
+            <div class="flex gap-4 overflow-x-auto pb-4 hide-scrollbar">
+                {% for slot in timeline %}
+                <div class="min-w-[140px] glass p-4 border-white/5 relative">
+                    <div class="absolute top-0 left-0 bottom-0 w-1 {% if slot.is_full %}bg-red-500{% elif slot.is_empty %}bg-white/10{% else %}bg-indigo-500{% endif %}"></div>
+                    <p class="text-[10px] font-black text-white/40 uppercase mb-2">{{ slot.time }}</p>
+                    <div class="flex items-end justify-between">
+                        <span class="text-lg font-black text-white">{{ slot.count }}</span>
+                        <span class="text-[9px] font-black text-white/20 uppercase">/ {{ slot.capacity }}</span>
+                    </div>
+                </div>
+                {% endfor %}
+            </div>
+        </div>
+
+        <!-- Quick Stats Card -->
+        <div class="glass p-8 space-y-6">
+            <div>
+                <p class="text-[10px] font-black text-white/40 uppercase tracking-widest mb-1">Total This Week</p>
+                <div class="flex items-center gap-3">
+                    <span class="text-2xl font-black text-white" id="quick-week">0</span>
+                    <span class="text-[10px] font-black text-emerald-400">↑ 12%</span>
+                </div>
+            </div>
+            <div>
+                <p class="text-[10px] font-black text-white/40 uppercase tracking-widest mb-1">Avg Patients/Day</p>
+                <span class="text-2xl font-black text-white" id="quick-avg">0</span>
+            </div>
+            <div>
+                <p class="text-[10px] font-black text-white/40 uppercase tracking-widest mb-1">No-Show Rate</p>
+                <div class="flex items-center gap-3">
+                    <span class="text-2xl font-black text-red-400" id="quick-noshow">0%</span>
+                    <span class="w-16 h-1 bg-white/10 rounded-full overflow-hidden">
+                        <span id="noshow-bar" class="block h-full bg-red-500" style="width: 0%"></span>
+                    </span>
+                </div>
+            </div>
+        </div>
+
+    </div>
+
+</div>
+
+<!-- Mark Seen / Prescription Modal -->
+<div id="markSeenModal" class="fixed inset-0 bg-black/80 backdrop-blur-md hidden items-center justify-center z-50 p-4">
+    <div class="glass p-10 max-w-lg w-full border-white/10 relative">
+        <button onclick="closeMarkSeenModal()" class="absolute top-6 right-6 text-white/40 hover:text-white text-2xl">&times;</button>
+        <h3 class="text-2xl font-black text-white mb-2">Complete Consultation</h3>
+        <p class="text-white/40 text-sm mb-8 font-medium">Add clinical notes and upload prescription.</p>
+        
+        <form method="POST" action="" id="completeForm" enctype="multipart/form-data" class="space-y-6">
+            <div>
+                <label class="block text-[10px] font-black text-white/40 uppercase tracking-widest mb-3">Clinical Notes</label>
+                <textarea name="notes" rows="4" class="w-full glass border-white/10 rounded-2xl p-5 text-white focus:border-indigo-500 transition-all outline-none" placeholder="Diagnosis, medication, advice..."></textarea>
+            </div>
+            <div>
+                <label class="block text-[10px] font-black text-white/40 uppercase tracking-widest mb-3">Upload Prescription (Image/PDF)</label>
+                <div class="glass border-dashed border-white/20 p-8 text-center rounded-2xl hover:border-indigo-500 transition-all cursor-pointer relative group">
+                    <input type="file" name="prescription" class="absolute inset-0 opacity-0 cursor-pointer">
+                    <div class="text-3xl mb-2">📄</div>
+                    <p class="text-xs font-bold text-white/60 group-hover:text-white transition-colors">Drop file here or click to browse</p>
+                </div>
+            </div>
+            <button type="submit" class="w-full py-4 btn-gradient rounded-2xl text-white font-black uppercase tracking-widest text-xs shadow-xl transition-all hover:scale-[1.02]">
+                Finalize & Mark Seen
+            </button>
+        </form>
     </div>
 </div>
+
+<style>
+    @keyframes avatar-pulse {
+        0% { box-shadow: 0 0 0 0 rgba(79, 70, 229, 0.4); }
+        70% { box-shadow: 0 0 0 20px rgba(79, 70, 229, 0); }
+        100% { box-shadow: 0 0 0 0 rgba(79, 70, 229, 0); }
+    }
+    .animate-avatar-pulse {
+        animation: avatar-pulse 3s infinite;
+    }
+    .hide-scrollbar::-webkit-scrollbar { display: none; }
+    .hide-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
+</style>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/socket.io/4.0.1/socket.io.js"></script>
+<script>
+    const doctorId = {{ doctor.id }};
+    let charts = {};
+
+    document.addEventListener('DOMContentLoaded', () => {
+        initCharts();
+        updateStats();
+        
+        // Refresh charts every 60s
+        setInterval(updateStats, 60000);
+        
+        // Socket updates
+        const socket = io();
+        socket.on('queue_update', (data) => {
+            console.log('Queue updated, refreshing stats...');
+            updateStats();
+            // Refresh page if current slot is affected (optional, but keep live)
+            // window.location.reload(); 
+        });
+    });
+
+    async function updateStats() {
+        try {
+            const res = await fetch(`/api/doctor/${doctorId}/stats`);
+            const data = await res.json();
+            
+            updateChartData(data);
+            updateQuickStats(data.quick_stats);
+            document.getElementById('queue-updated').textContent = 'Just now';
+        } catch (e) {
+            console.error('Failed to fetch stats', e);
+        }
+    }
+
+    function initCharts() {
+        Chart.defaults.color = '#ffffff66';
+        Chart.defaults.font.family = 'Inter, sans-serif';
+
+        // 1. Queue Doughnut
+        charts.queue = new Chart(document.getElementById('queueChart'), {
+            type: 'doughnut',
+            data: {
+                labels: ['Waiting', 'Seen', 'No-Show', 'Called'],
+                datasets: [{
+                    data: [0, 0, 0, 0],
+                    backgroundColor: ['#6366f1', '#10b981', '#ef4444', '#f59e0b'],
+                    borderWidth: 0,
+                    cutout: '80%'
+                }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                plugins: { legend: { display: false } },
+                animation: { duration: 400 }
+            }
+        });
+
+        // 2. Weekly Bar
+        charts.weekly = new Chart(document.getElementById('weeklyChart'), {
+            type: 'bar',
+            data: {
+                labels: [],
+                datasets: [{
+                    label: 'Seen',
+                    data: [],
+                    backgroundColor: '#6366f199',
+                    borderRadius: 8,
+                }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                plugins: { legend: { display: false } },
+                scales: {
+                    x: { grid: { display: false }, ticks: { color: '#ffffff44' } },
+                    y: { grid: { color: '#ffffff11' }, ticks: { precision: 0 } }
+                }
+            }
+        });
+
+        // 3. Hourly Line
+        charts.hourly = new Chart(document.getElementById('hourlyChart'), {
+            type: 'line',
+            data: {
+                labels: [],
+                datasets: [{
+                    label: 'Bookings',
+                    data: [],
+                    borderColor: '#a855f7',
+                    backgroundColor: '#a855f722',
+                    fill: true,
+                    tension: 0.4,
+                    pointBackgroundColor: '#fff'
+                }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                plugins: { legend: { display: false } },
+                scales: {
+                    x: { grid: { display: false } },
+                    y: { grid: { color: '#ffffff11' }, ticks: { precision: 0 } }
+                }
+            }
+        });
+
+        // 4. Monthly Efficiency
+        charts.monthly = new Chart(document.getElementById('monthlyChart'), {
+            type: 'line',
+            data: {
+                labels: [],
+                datasets: [
+                    { label: 'Scheduled', data: [], borderColor: '#6366f1', tension: 0.4 },
+                    { label: 'Seen', data: [], borderColor: '#10b981', tension: 0.4 }
+                ]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                plugins: { legend: { labels: { color: '#fff', boxWidth: 10 } } },
+                scales: {
+                    x: { grid: { display: false } },
+                    y: { grid: { color: '#ffffff11' } }
+                }
+            }
+        });
+
+        // 5. Types Polar
+        charts.types = new Chart(document.getElementById('typesChart'), {
+            type: 'polarArea',
+            data: {
+                labels: ['Normal', 'Urgent', 'Follow-up'],
+                datasets: [{
+                    data: [0, 0, 0],
+                    backgroundColor: ['#6366f133', '#ec489933', '#a855f733'],
+                    borderColor: ['#6366f1', '#ec4899', '#a855f7']
+                }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                scales: { r: { grid: { color: '#ffffff11' }, ticks: { display: false } } },
+                plugins: { legend: { position: 'bottom', labels: { color: '#fff' } } }
+            }
+        });
+    }
+
+    function updateChartData(data) {
+        // Queue
+        charts.queue.data.datasets[0].data = [
+            data.queue.waiting, data.queue.seen, data.queue.no_show, data.queue.called
+        ];
+        charts.queue.update();
+        
+        const total = data.queue.waiting + data.queue.seen + data.queue.no_show + data.queue.called;
+        document.getElementById('queue-total').textContent = total;
+        document.getElementById('stat-today').textContent = total;
+        document.getElementById('stat-seen').textContent = data.queue.seen;
+        document.getElementById('stat-waiting').textContent = data.queue.waiting;
+
+        // Weekly
+        charts.weekly.data.labels = data.weekly.map(d => d.day);
+        charts.weekly.data.datasets[0].data = data.weekly.map(d => d.count);
+        charts.weekly.data.datasets[0].backgroundColor = data.weekly.map(d => d.is_today ? '#10b981' : '#6366f199');
+        charts.weekly.update();
+
+        // Hourly
+        charts.hourly.data.labels = data.hourly.map(d => d.hour);
+        charts.hourly.data.datasets[0].data = data.hourly.map(d => d.count);
+        charts.hourly.update();
+
+        // Monthly
+        charts.monthly.data.labels = data.monthly.map(d => d.date);
+        charts.monthly.data.datasets[0].data = data.monthly.map(d => d.scheduled);
+        charts.monthly.data.datasets[1].data = data.monthly.map(d => d.seen);
+        charts.monthly.update();
+
+        // Types
+        charts.types.data.datasets[0].data = [
+            data.types.Normal, data.types.Urgent, data.types['Follow-up']
+        ];
+        charts.types.update();
+    }
+
+    function updateQuickStats(stats) {
+        document.getElementById('quick-week').textContent = stats.total_week;
+        document.getElementById('quick-avg').textContent = stats.avg_patients;
+        document.getElementById('quick-noshow').textContent = stats.no_show_rate + '%';
+        document.getElementById('noshow-bar').style.width = stats.no_show_rate + '%';
+    }
+
+    function toggleAvailability() {
+        fetch(`/doctor/${doctorId}/toggle-availability`, { method: 'POST' })
+        .then(r => r.json())
+        .then(data => {
+            const btn = document.getElementById('availability-btn');
+            const dot = btn.querySelector('span');
+            if(data.is_available) {
+                btn.className = 'w-full py-4 rounded-2xl font-black uppercase tracking-widest text-xs transition-all flex items-center justify-center gap-3 bg-emerald-500/20 text-emerald-400 shadow-[0_0_20px_rgba(16,185,129,0.2)] border border-emerald-500/30';
+                btn.innerHTML = '<span class="w-2 h-2 rounded-full animate-pulse bg-emerald-400"></span> Available Now';
+            } else {
+                btn.className = 'w-full py-4 rounded-2xl font-black uppercase tracking-widest text-xs transition-all flex items-center justify-center gap-3 bg-red-500/20 text-red-400 shadow-[0_0_20px_rgba(239,68,68,0.2)] border border-red-500/30';
+                btn.innerHTML = '<span class="w-2 h-2 rounded-full animate-pulse bg-red-400"></span> Unavailable';
+            }
+        });
+    }
+
+    function openMarkSeenModal(apptId) {
+        document.getElementById('completeForm').action = `/doctor/complete/${apptId}`;
+        document.getElementById('markSeenModal').classList.remove('hidden');
+        document.getElementById('markSeenModal').classList.add('flex');
+    }
+
+    function closeMarkSeenModal() {
+        document.getElementById('markSeenModal').classList.add('hidden');
+        document.getElementById('markSeenModal').classList.remove('flex');
+    }
+</script>
+
 {% endblock %}

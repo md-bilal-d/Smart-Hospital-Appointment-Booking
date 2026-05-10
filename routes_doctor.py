@@ -1,115 +1,188 @@
-"""Doctor routes: dashboard, queue management, notes, availability"""
-from flask import Blueprint, render_template, request, redirect, url_for, flash, session
-from models import db, Doctor, Slot, Appointment, QueueLog, Patient
+"""Doctor routes: dashboard, queue management, prescription uploads"""
+import os
+from flask import Blueprint, render_template, request, redirect, url_for, flash, session, current_app, jsonify
+from models import db, Doctor, Slot, Appointment, QueueLog, Patient, Prescription
 from datetime import date, timedelta, datetime
 from extensions import socketio
+from auth_utils import role_required
+from utils import audit_logger
+from werkzeug.utils import secure_filename
 
 doctor_bp = Blueprint('doctor', __name__)
 
-def doctor_required(f):
-    from functools import wraps
-    @wraps(f)
-    def decorated(*args, **kwargs):
-        if 'doctor_id' not in session:
-            flash('Doctor login required.', 'error')
-            return redirect(url_for('auth.doctor_login'))
-        return f(*args, **kwargs)
-    return decorated
-
 @doctor_bp.route('/doctor/<int:doctor_id>')
-@doctor_required
-def dashboard(doctor_id):
-    if session.get('doctor_id') != doctor_id:
-        flash('Unauthorized.', 'error')
+@role_required(['doctor', 'super_admin'])
+def doctor_dashboard(doctor_id):
+    if session.get('user_role') == 'super_admin':
+        pass # Allow super admins to view
+    elif session.get('user_role') != 'doctor' or session.get('doctor_id') != doctor_id:
+        flash('Unauthorized access to this dashboard. Please login as the correct doctor.', 'error')
         return redirect(url_for('auth.doctor_login'))
+        
     doctor = Doctor.query.get_or_404(doctor_id)
-    today = date.today().isoformat()
-    slots_today = Slot.query.filter_by(doctor_id=doctor_id, date=today)\
+    today = date.today()
+    today_str = today.isoformat()
+    
+    # Accurate counts from DB
+    patients_today = Appointment.query.join(Slot).filter(
+        Slot.doctor_id == doctor_id, Slot.date == today_str
+    ).count()
+    
+    seen_today = Appointment.query.join(Slot).filter(
+        Slot.doctor_id == doctor_id, Slot.date == today_str, Appointment.status == 'seen'
+    ).count()
+    
+    waiting_today = Appointment.query.join(Slot).filter(
+        Slot.doctor_id == doctor_id, Slot.date == today_str, Appointment.status == 'waiting'
+    ).count()
+    
+    # Queue for today (waiting or called)
+    queue_appts = Appointment.query.join(Slot).filter(
+        Slot.doctor_id == doctor_id,
+        Slot.date == today_str,
+        Appointment.status.in_(['waiting', 'called'])
+    ).order_by(Appointment.token_number).all()
+    
+    # Timeline data (slots for today)
+    slots_today = Slot.query.filter_by(doctor_id=doctor_id, date=today_str)\
         .order_by(Slot.time_label).all()
-    queue = []
+    
+    timeline = []
     for s in slots_today:
-        appts = Appointment.query.filter_by(slot_id=s.id)\
-            .order_by(Appointment.token_number).all()
-        for a in appts:
-            p = Patient.query.get(a.patient_id)
-            queue.append({'appointment': a, 'patient': p, 'slot': s})
-    # Weekly view
-    weekly = {}
-    for d in range(7):
-        dt = (date.today() + timedelta(days=d)).isoformat()
-        count = 0
-        day_slots = Slot.query.filter_by(doctor_id=doctor_id, date=dt).all()
-        for s in day_slots:
-            count += Appointment.query.filter_by(slot_id=s.id)\
-                .filter(Appointment.status.notin_(['cancelled'])).count()
-        weekly[dt] = count
-    return render_template('doctor/dashboard.html', doctor=doctor, queue=queue,
-                           today=today, weekly=weekly)
+        timeline.append({
+            'time': s.time_label,
+            'count': s.booked_count,
+            'capacity': s.max_capacity,
+            'is_full': s.booked_count >= s.max_capacity,
+            'is_empty': s.booked_count == 0
+        })
 
-@doctor_bp.route('/doctor/<int:doctor_id>/call-next', methods=['POST'])
-@doctor_required
-def call_next(doctor_id):
-    today = date.today().isoformat()
-    # Mark current called as seen
-    slots = Slot.query.filter_by(doctor_id=doctor_id, date=today).all()
-    for s in slots:
-        called = Appointment.query.filter_by(slot_id=s.id, status='called').first()
-        if called:
-            called.status = 'seen'
-            log = QueueLog(appointment_id=called.id, action='seen')
-            db.session.add(log)
-            db.session.commit()
-            
-            socketio.emit('queue_update', {'slot_id': s.id})
-            socketio.emit('admin_dashboard_update', {
-                'action': f"Appointment #{called.token_number} marked as seen",
-                'time': datetime.now().strftime("%I:%M:%S %p"),
-                'type': 'seen'
-            })
-    # Find next waiting
-    for s in slots:
-        nxt = Appointment.query.filter_by(slot_id=s.id, status='waiting')\
-            .order_by(Appointment.token_number).first()
-        if nxt:
-            nxt.status = 'called'
-            log = QueueLog(appointment_id=nxt.id, action='called')
-            db.session.add(log)
-            db.session.commit()
-            
-            socketio.emit('queue_update', {'slot_id': s.id})
-            socketio.emit('admin_dashboard_update', {
-                'action': f"Appointment #{nxt.token_number} called",
-                'time': datetime.now().strftime("%I:%M:%S %p"),
-                'type': 'called'
-            })
-            p = Patient.query.get(nxt.patient_id)
-            flash(f'Calling Token #{nxt.token_number} - {p.name}', 'success')
-            return redirect(url_for('doctor.dashboard', doctor_id=doctor_id))
-    db.session.commit()
-    flash('No more patients in queue.', 'info')
-    return redirect(url_for('doctor.dashboard', doctor_id=doctor_id))
+    return render_template('doctor/dashboard.html', 
+                         doctor=doctor, 
+                         queue=queue_appts,
+                         today=today_str,
+                         patients_today=patients_today,
+                         seen_today=seen_today,
+                         waiting_today=waiting_today,
+                         timeline=timeline)
 
-@doctor_bp.route('/doctor/<int:doctor_id>/add-notes/<int:appt_id>', methods=['POST'])
-@doctor_required
-def add_notes(doctor_id, appt_id):
+@doctor_bp.route('/doctor/call/<int:appt_id>', methods=['POST'])
+@role_required(['doctor'])
+def call_patient(appt_id):
     appt = Appointment.query.get_or_404(appt_id)
-    appt.notes = request.form.get('notes', '')
+    doctor_id = session.get('doctor_id')
+    
+    # Verify doctor owns this appt
+    if appt.slot.doctor_id != doctor_id:
+        return jsonify({"error": "Unauthorized"}), 403
+        
+    # Mark others as seen if they were called
+    current_called = Appointment.query.join(Slot).filter(
+        Slot.doctor_id == doctor_id,
+        Appointment.status == 'called'
+    ).first()
+    if current_called:
+        current_called.status = 'seen'
+        
+    appt.status = 'called'
     db.session.commit()
-    flash('Notes saved.', 'success')
-    return redirect(url_for('doctor.dashboard', doctor_id=doctor_id))
+    
+    socketio.emit('queue_update', {'slot_id': appt.slot_id})
+    audit_logger.log_action('call_patient', f"Called patient for Appt #{appt.id}")
+    
+    flash(f"Calling token #{appt.token_number}", "success")
+    return redirect(url_for('doctor.doctor_dashboard', doctor_id=doctor_id))
+
+@doctor_bp.route('/doctor/complete/<int:appt_id>', methods=['POST'])
+@role_required(['doctor'])
+def complete_appointment(appt_id):
+    appt = Appointment.query.get_or_404(appt_id)
+    notes = request.form.get('notes', '')
+    
+    appt.status = 'seen'
+    appt.notes = notes
+    
+    # Handle prescription upload
+    file = request.files.get('prescription')
+    if file and file.filename != '':
+        filename = secure_filename(f"presc_{appt.id}_{file.filename}")
+        os.makedirs(os.path.join(current_app.root_path, 'static', 'prescriptions'), exist_ok=True)
+        path = os.path.join('static', 'prescriptions', filename)
+        file.save(os.path.join(current_app.root_path, path))
+        
+        presc = Prescription(appointment_id=appt.id, doctor_id=doctor_id, patient_id=appt.patient_id, file_path=path)
+        db.session.add(presc)
+        
+    db.session.commit()
+    socketio.emit('queue_update', {'slot_id': appt.slot_id})
+    audit_logger.log_action('complete_appointment', f"Completed Appt #{appt.id}")
+    
+    flash("Appointment completed successfully.", "success")
+    return redirect(url_for('doctor.doctor_dashboard', doctor_id=session.get('doctor_id')))
 
 @doctor_bp.route('/doctor/<int:doctor_id>/toggle-availability', methods=['POST'])
-@doctor_required
+@role_required(['doctor'])
 def toggle_availability(doctor_id):
-    doc = Doctor.query.get_or_404(doctor_id)
-    doc.is_available = not doc.is_available
+    if session.get('doctor_id') != doctor_id:
+        return jsonify({"error": "Unauthorized"}), 403
+    doctor = Doctor.query.get_or_404(doctor_id)
+    doctor.is_available = not doctor.is_available
     db.session.commit()
-    status = 'available' if doc.is_available else 'unavailable'
-    flash(f'You are now {status}.', 'info')
-    return redirect(url_for('doctor.dashboard', doctor_id=doctor_id))
+    return jsonify({ 'success': True, 'is_available': doctor.is_available })
 
-@doctor_bp.route('/doctor/logout')
-def doctor_logout():
-    session.pop('doctor_id', None)
-    session.pop('doctor_name', None)
-    return redirect(url_for('auth.landing'))
+@doctor_bp.route('/doctor/<int:doctor_id>/schedule')
+@role_required(['doctor', 'super_admin'])
+def doctor_schedule(doctor_id):
+    if session.get('user_role') != 'super_admin' and session.get('doctor_id') != doctor_id:
+        flash('Unauthorized access to this schedule.', 'error')
+        return redirect(url_for('auth.login'))
+        
+    doctor = Doctor.query.get_or_404(doctor_id)
+    today = date.today().isoformat()
+    end_date = (date.today() + timedelta(days=7)).isoformat()
+    
+    slots = Slot.query.filter(
+        Slot.doctor_id == doctor_id,
+        Slot.date >= today,
+        Slot.date <= end_date
+    ).order_by(Slot.date, Slot.time_label).all()
+    
+    schedule_data = []
+    for s in slots:
+        appts = Appointment.query.filter_by(slot_id=s.id).all()
+        patients = []
+        for a in appts:
+            p = Patient.query.get(a.patient_id)
+            patients.append({'name': p.name, 'token': a.token_number})
+        
+        status = 'open'
+        if s.is_blocked: status = 'blocked'
+        elif s.booked_count >= s.max_capacity: status = 'full'
+        
+        schedule_data.append({
+            'slot': s,
+            'patients': patients,
+            'booked': s.booked_count,
+            'capacity': s.max_capacity,
+            'status': status
+        })
+        
+    return render_template('doctor/schedule.html', doctor=doctor, schedule=schedule_data)
+
+@doctor_bp.route('/doctor/no-show/<int:appt_id>', methods=['POST'])
+@role_required(['doctor'])
+def no_show_appointment(appt_id):
+    appt = Appointment.query.get_or_404(appt_id)
+    doctor_id = session.get('doctor_id')
+    
+    if appt.slot.doctor_id != doctor_id:
+        return jsonify({"error": "Unauthorized"}), 403
+        
+    appt.status = 'no_show'
+    db.session.commit()
+    
+    socketio.emit('queue_update', {'slot_id': appt.slot_id})
+    audit_logger.log_action('no_show', f"Marked Appt #{appt.id} as No Show")
+    
+    flash("Appointment marked as No Show.", "info")
+    return redirect(url_for('doctor.doctor_dashboard', doctor_id=doctor_id))

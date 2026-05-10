@@ -39,7 +39,9 @@ def get_doctor_slots(doctor_id):
         Slot.doctor_id == doctor_id, 
         Slot.date.in_(dates), 
         Slot.is_blocked == False
-    ).order_by(Slot.date, Slot.time_label).all()
+    ).all()
+    # Sort chronologically: date first, then parse time label
+    slots.sort(key=lambda x: (x.date, datetime.strptime(x.time_label, "%I:%M %p")))
     
     slots_by_date = {d: [] for d in dates}
     for s in slots:
@@ -50,6 +52,20 @@ def get_doctor_slots(doctor_id):
             'max_capacity': s.max_capacity
         })
     return jsonify(slots_by_date)
+
+@api_bp.route('/api/slots/<int:doctor_id>/<string:selected_date>')
+def get_slots_by_date(doctor_id, selected_date):
+    slots = Slot.query.filter_by(doctor_id=doctor_id, date=selected_date, is_blocked=False).all()
+    slots.sort(key=lambda x: datetime.strptime(x.time_label, "%I:%M %p"))
+    
+    result = []
+    for s in slots:
+        result.append({
+            'id': s.id,
+            'time': s.time_label,
+            'available': s.available_spots
+        })
+    return jsonify({'slots': result})
 
 @api_bp.route('/api/appointments')
 @login_required
@@ -136,10 +152,110 @@ def analytics():
         dept_pop.append({'name': dept.name, 'count': count})
     dept_pop.sort(key=lambda x: x['count'], reverse=True)
 
+@api_bp.route('/api/doctor/<int:doctor_id>/stats')
+def get_doctor_stats(doctor_id):
+    today_str = date.today().isoformat()
+    
+    # 1. Today's Queue Progress (Doughnut)
+    # Waiting, Called, Seen, No-Show
+    queue_data = db.session.query(
+        Appointment.status, func.count(Appointment.id)
+    ).join(Slot).filter(
+        Slot.doctor_id == doctor_id,
+        Slot.date == today_str
+    ).group_by(Appointment.status).all()
+    
+    queue_stats = {s: 0 for s in ['waiting', 'called', 'seen', 'no_show']}
+    for status, count in queue_data:
+        if status in queue_stats:
+            queue_stats[status] = count
+
+    # 2. Weekly Patient Volume (Bar)
+    weekly_volume = []
+    for i in range(6, -1, -1):
+        d = (date.today() - timedelta(days=i))
+        count = Appointment.query.join(Slot).filter(
+            Slot.doctor_id == doctor_id,
+            Slot.date == d.isoformat(),
+            Appointment.status == 'seen'
+        ).count()
+        weekly_volume.append({
+            'day': d.strftime('%a'),
+            'count': count,
+            'is_today': i == 0
+        })
+
+    # 3. Hourly Slot Load (Line)
+    # Assume 9AM to 5PM (17:00)
+    hourly_load = []
+    for hour in range(9, 18):
+        # Match time labels like "09:00 AM", "09:30 AM"
+        h12 = hour % 12 or 12
+        ampm = 'AM' if hour < 12 else 'PM'
+        pattern = f"{h12:02d}:%" # Rough match for Slot.time_label
+        
+        count = Appointment.query.join(Slot).filter(
+            Slot.doctor_id == doctor_id,
+            Slot.date == today_str,
+            Slot.time_label.like(f"{h12:02d}:%"),
+            Slot.time_label.like(f"%{ampm}")
+        ).count()
+        hourly_load.append({'hour': f"{h12}{ampm}", 'count': count})
+
+    # 4. Monthly Performance (Line) - last 30 days
+    monthly_trend = []
+    for i in range(29, -1, -1):
+        d = (date.today() - timedelta(days=i)).isoformat()
+        scheduled = Appointment.query.join(Slot).filter(
+            Slot.doctor_id == doctor_id,
+            Slot.date == d
+        ).count()
+        seen = Appointment.query.join(Slot).filter(
+            Slot.doctor_id == doctor_id,
+            Slot.date == d,
+            Appointment.status == 'seen'
+        ).count()
+        monthly_trend.append({'date': d[-5:], 'scheduled': scheduled, 'seen': seen})
+
+    # 5. Appointment Type Breakdown (Polar)
+    type_data = db.session.query(
+        Appointment.appointment_type, func.count(Appointment.id)
+    ).join(Slot).filter(
+        Slot.doctor_id == doctor_id
+    ).group_by(Appointment.appointment_type).all()
+    
+    type_breakdown = {t: 0 for t in ['Normal', 'Urgent', 'Follow-up']}
+    for t, count in type_data:
+        if t in type_breakdown:
+            type_breakdown[t] = count
+
+    # Quick Stats
+    total_week = Appointment.query.join(Slot).filter(
+        Slot.doctor_id == doctor_id,
+        Slot.date >= (date.today() - timedelta(days=7)).isoformat()
+    ).count()
+    
+    avg_patients = round(Appointment.query.join(Slot).filter(
+        Slot.doctor_id == doctor_id,
+        Appointment.status == 'seen'
+    ).count() / 30, 1) # Simple avg over 30 days
+
+    no_show_total = Appointment.query.join(Slot).filter(
+        Slot.doctor_id == doctor_id,
+        Appointment.status == 'no_show'
+    ).count()
+    total_appts = Appointment.query.join(Slot).filter(Slot.doctor_id == doctor_id).count()
+    no_show_rate = round((no_show_total / total_appts * 100), 1) if total_appts else 0
+
     return jsonify({
-        'daily': daily,
-        'statuses': statuses,
-        'peak_hours': peak,
-        'doctor_performance': doc_perf,
-        'department_popularity': dept_pop
+        'queue': queue_stats,
+        'weekly': weekly_volume,
+        'hourly': hourly_load,
+        'monthly': monthly_trend,
+        'types': type_breakdown,
+        'quick_stats': {
+            'total_week': total_week,
+            'avg_patients': avg_patients,
+            'no_show_rate': no_show_rate
+        }
     })

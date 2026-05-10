@@ -17,6 +17,7 @@ class Patient(UserMixin, db.Model):
     phone = db.Column(db.String(20), nullable=False, unique=True)
     email = db.Column(db.String(120), nullable=False, unique=True)
     password_hash = db.Column(db.String(200), nullable=False)
+    role = db.Column(db.String(20), default='patient')  # patient
     created_at = db.Column(db.DateTime, default=datetime.utcnow)
 
     appointments = db.relationship('Appointment', backref='patient', lazy=True)
@@ -25,10 +26,28 @@ class Patient(UserMixin, db.Model):
         return f"patient_{self.id}"
 
 
+class Staff(UserMixin, db.Model):
+    __tablename__ = 'staff'
+    id = db.Column(db.Integer, primary_key=True)
+    name = db.Column(db.String(100), nullable=False)
+    email = db.Column(db.String(120), nullable=False, unique=True)
+    password_hash = db.Column(db.String(200), nullable=False)
+    role = db.Column(db.String(20), nullable=False)  # super_admin, doctor, receptionist
+    doctor_id = db.Column(db.Integer, db.ForeignKey('doctors.id'), nullable=True)
+    is_active = db.Column(db.Boolean, default=True)
+    last_login = db.Column(db.DateTime, nullable=True)
+
+    def get_id(self):
+        return f"staff_{self.id}"
+
+
 class Doctor(db.Model):
     __tablename__ = 'doctors'
     id = db.Column(db.Integer, primary_key=True)
     name = db.Column(db.String(100), nullable=False)
+    email = db.Column(db.String(120), unique=True, nullable=True)
+    password_hash = db.Column(db.String(200), nullable=True)
+    is_active = db.Column(db.Boolean, default=True)
     specialization = db.Column(db.String(100), nullable=False)
     experience_years = db.Column(db.Integer, nullable=False)
     profile_pic_url = db.Column(db.String(300), default='')
@@ -91,6 +110,26 @@ class Appointment(db.Model):
     booked_at = db.Column(db.DateTime, default=datetime.utcnow)
     notes = db.Column(db.Text, default='')
     reminder_sent = db.Column(db.Boolean, default=False)
+    risk_flag = db.Column(db.String(10), default='low')  # low/medium/high
+    
+    # New Features
+    preferred_language = db.Column(db.String(20), default='English')
+    consultation_mode = db.Column(db.String(20), default='In-Person')
+    emergency_contact_name = db.Column(db.String(100), nullable=True)
+    emergency_contact_phone = db.Column(db.String(20), nullable=True)
+
+
+class Prescription(db.Model):
+    __tablename__ = 'prescriptions'
+    id = db.Column(db.Integer, primary_key=True)
+    appointment_id = db.Column(db.Integer, db.ForeignKey('appointments.id'), nullable=False)
+    doctor_id = db.Column(db.Integer, db.ForeignKey('doctors.id'), nullable=False)
+    patient_id = db.Column(db.Integer, db.ForeignKey('patients.id'), nullable=False)
+    file_path = db.Column(db.String(300), nullable=False)
+    notes = db.Column(db.Text, default='')
+    uploaded_at = db.Column(db.DateTime, default=datetime.utcnow)
+
+    appointment = db.relationship('Appointment', backref='prescription', uselist=False)
 
 
 class QueueLog(db.Model):
@@ -101,3 +140,16 @@ class QueueLog(db.Model):
     timestamp = db.Column(db.DateTime, default=datetime.utcnow)
 
     appointment = db.relationship('Appointment', backref='logs')
+
+
+class AuditLog(db.Model):
+    __tablename__ = 'audit_logs'
+    id = db.Column(db.Integer, primary_key=True)
+    user_id = db.Column(db.String(50), nullable=False)
+    user_name = db.Column(db.String(100), nullable=True)
+    user_role = db.Column(db.String(20), nullable=False)
+    action = db.Column(db.String(100), nullable=False)
+    details = db.Column(db.Text, nullable=True)
+    ip_address = db.Column(db.String(50), nullable=True)
+    timestamp = db.Column(db.DateTime, default=datetime.utcnow)
+

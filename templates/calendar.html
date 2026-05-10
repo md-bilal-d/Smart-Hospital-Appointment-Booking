@@ -6,15 +6,15 @@
         
         <!-- Sidebar: Upcoming Appointments -->
         <div class="lg:w-1/3">
-            <div class="bg-white rounded-3xl p-6 shadow-sm border border-gray-100 sticky top-20">
-                <h3 class="text-xl font-bold text-gray-900 mb-6 flex items-center gap-2">
-                    <span class="text-indigo-600">📅</span> Upcoming
+            <div class="glass p-6 sticky top-20">
+                <h3 class="text-xl font-bold text-white mb-6 flex items-center gap-2">
+                    <span class="text-indigo-400">📅</span> Upcoming
                 </h3>
                 <div id="upcoming-list" class="space-y-4">
-                    <div class="text-center py-10 text-gray-400 font-medium">Loading...</div>
+                    <div class="text-center py-10 text-white/40 font-medium">Loading...</div>
                 </div>
-                <div class="mt-6 pt-6 border-t border-gray-100">
-                    <a href="/book" class="block w-full py-3 bg-indigo-50 text-indigo-700 text-center font-bold rounded-xl hover:bg-indigo-600 hover:text-white transition-all">
+                <div class="mt-6 pt-6 border-t border-white/10">
+                    <a href="/book" class="block w-full py-3 bg-indigo-500/20 text-indigo-300 text-center font-bold rounded-xl hover:bg-indigo-600 hover:text-white transition-all uppercase tracking-widest text-xs">
                         + New Appointment
                     </a>
                 </div>
@@ -23,18 +23,18 @@
 
         <!-- Main Calendar -->
         <div class="lg:w-2/3">
-            <div class="bg-white rounded-3xl p-6 shadow-sm border border-gray-100">
+            <div class="glass p-6">
                 
                 <!-- Toolbar -->
                 <div class="flex flex-col sm:flex-row justify-between items-center mb-8 gap-4">
                     <div class="flex items-center gap-4">
-                        <button onclick="changePeriod(-1)" class="w-10 h-10 rounded-xl bg-gray-50 text-gray-600 hover:bg-indigo-50 hover:text-indigo-600 font-bold flex items-center justify-center transition-all">&lt;</button>
-                        <h2 id="current-month-year" class="text-2xl font-black text-gray-900 min-w-[200px] text-center">Month Year</h2>
-                        <button onclick="changePeriod(1)" class="w-10 h-10 rounded-xl bg-gray-50 text-gray-600 hover:bg-indigo-50 hover:text-indigo-600 font-bold flex items-center justify-center transition-all">&gt;</button>
+                        <button onclick="changePeriod(-1)" class="w-10 h-10 rounded-xl bg-white/5 text-white/60 hover:bg-indigo-500/20 hover:text-indigo-300 font-bold flex items-center justify-center transition-all border border-white/10">&lt;</button>
+                        <h2 id="current-month-year" class="text-2xl font-black text-white min-w-[200px] text-center uppercase tracking-tighter">Month Year</h2>
+                        <button onclick="changePeriod(1)" class="w-10 h-10 rounded-xl bg-white/5 text-white/60 hover:bg-indigo-500/20 hover:text-indigo-300 font-bold flex items-center justify-center transition-all border border-white/10">&gt;</button>
                     </div>
-                    <div class="flex bg-gray-100 p-1 rounded-xl">
-                        <button onclick="setView('month')" id="btn-month" class="px-6 py-2 rounded-lg font-bold text-sm bg-white shadow-sm text-indigo-600 transition-all">Month</button>
-                        <button onclick="setView('week')" id="btn-week" class="px-6 py-2 rounded-lg font-bold text-sm text-gray-500 hover:text-gray-700 transition-all">Week</button>
+                    <div class="flex bg-white/5 p-1 rounded-xl border border-white/10">
+                        <button onclick="setView('month')" id="btn-month" class="px-6 py-2 rounded-lg font-bold text-sm bg-indigo-600 shadow-lg text-white transition-all">Month</button>
+                        <button onclick="setView('week')" id="btn-week" class="px-6 py-2 rounded-lg font-bold text-sm text-white/40 hover:text-white transition-all">Week</button>
                     </div>
                 </div>
 
@@ -49,38 +49,38 @@
 </div>
 
 <!-- Appointment Modal -->
-<div id="appt-modal" class="fixed inset-0 bg-gray-900/50 backdrop-blur-sm hidden items-center justify-center z-50 animate-fade-in">
-    <div class="bg-white rounded-3xl p-8 max-w-md w-full mx-4 shadow-2xl relative">
-        <button onclick="closeModal()" class="absolute top-6 right-6 text-gray-400 hover:text-gray-900 text-2xl leading-none">&times;</button>
-        <div class="flex items-center gap-4 mb-6 pb-6 border-b border-gray-100">
+<div id="appt-modal" class="fixed inset-0 bg-black/60 backdrop-blur-sm hidden items-center justify-center z-50 animate-fade-in">
+    <div class="glass p-8 max-w-md w-full mx-4 shadow-2xl relative border-white/20">
+        <button onclick="closeModal()" class="absolute top-6 right-6 text-white/40 hover:text-white text-2xl leading-none">&times;</button>
+        <div class="flex items-center gap-4 mb-6 pb-6 border-b border-white/10">
             <div class="w-16 h-16 rounded-2xl flex items-center justify-center text-3xl" id="modal-icon">🩺</div>
             <div>
-                <h3 class="text-xl font-bold text-gray-900" id="modal-doctor">Dr. Name</h3>
-                <p class="text-gray-500 font-medium text-sm" id="modal-date-time">Date • Time</p>
+                <h3 class="text-xl font-bold text-white" id="modal-doctor">Dr. Name</h3>
+                <p class="text-white/60 font-medium text-sm" id="modal-date-time">Date • Time</p>
             </div>
         </div>
         
         <div class="space-y-4 mb-8">
-            <div class="flex justify-between items-center p-4 bg-gray-50 rounded-xl">
-                <span class="text-gray-500 font-semibold text-sm">Status</span>
-                <span id="modal-status" class="px-3 py-1 rounded-lg text-sm font-bold">Status</span>
+            <div class="flex justify-between items-center p-4 bg-white/5 rounded-xl border border-white/5">
+                <span class="text-white/40 font-bold text-xs uppercase tracking-widest">Status</span>
+                <span id="modal-status" class="px-3 py-1 rounded-lg text-xs font-black uppercase">Status</span>
             </div>
-            <div class="flex justify-between items-center p-4 bg-gray-50 rounded-xl">
-                <span class="text-gray-500 font-semibold text-sm">Token</span>
-                <span id="modal-token" class="font-black text-indigo-600 text-lg">#0</span>
+            <div class="flex justify-between items-center p-4 bg-white/5 rounded-xl border border-white/5">
+                <span class="text-white/40 font-bold text-xs uppercase tracking-widest">Token</span>
+                <span id="modal-token" class="font-black text-indigo-400 text-lg">#0</span>
             </div>
-            <div class="flex justify-between items-center p-4 bg-gray-50 rounded-xl">
-                <span class="text-gray-500 font-semibold text-sm">Type</span>
-                <span id="modal-type" class="font-bold text-gray-900">Normal</span>
+            <div class="flex justify-between items-center p-4 bg-white/5 rounded-xl border border-white/5">
+                <span class="text-white/40 font-bold text-xs uppercase tracking-widest">Type</span>
+                <span id="modal-type" class="font-black text-white text-xs uppercase tracking-widest">Normal</span>
             </div>
         </div>
 
         <div class="flex flex-col gap-3" id="modal-actions">
             <!-- Form to cancel -->
             <form method="POST" action="/cancel/0" id="cancel-form">
-                <button type="submit" onclick="return confirm('Are you sure you want to cancel this appointment?')" class="w-full py-3 bg-red-50 hover:bg-red-100 text-red-600 font-bold rounded-xl transition-all">Cancel Appointment</button>
+                <button type="submit" onclick="return confirm('Are you sure you want to cancel this appointment?')" class="w-full py-3 bg-red-500/10 hover:bg-red-500/20 text-red-400 font-bold rounded-xl transition-all uppercase tracking-widest text-xs">Cancel Appointment</button>
             </form>
-            <button onclick="reschedule()" class="w-full py-3 bg-indigo-600 hover:bg-indigo-700 text-white font-bold rounded-xl shadow-lg shadow-indigo-200 transition-all">Reschedule</button>
+            <button onclick="reschedule()" class="w-full py-3 btn-gradient text-white font-bold rounded-xl shadow-lg transition-all uppercase tracking-widest text-xs">Reschedule</button>
         </div>
     </div>
 </div>
@@ -90,6 +90,9 @@
     @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
     .cal-day { min-height: 120px; }
     .week-day { min-height: 400px; }
+    
+    .hide-scrollbar::-webkit-scrollbar { display: none; }
+    .hide-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
 </style>
 
 <script>
@@ -114,8 +117,16 @@
 
     function setView(view) {
         currentView = view;
-        document.getElementById('btn-month').className = view === 'month' ? 'px-6 py-2 rounded-lg font-bold text-sm bg-white shadow-sm text-indigo-600 transition-all' : 'px-6 py-2 rounded-lg font-bold text-sm text-gray-500 hover:text-gray-700 transition-all';
-        document.getElementById('btn-week').className = view === 'week' ? 'px-6 py-2 rounded-lg font-bold text-sm bg-white shadow-sm text-indigo-600 transition-all' : 'px-6 py-2 rounded-lg font-bold text-sm text-gray-500 hover:text-gray-700 transition-all';
+        const btnMonth = document.getElementById('btn-month');
+        const btnWeek = document.getElementById('btn-week');
+        
+        if (view === 'month') {
+            btnMonth.className = 'px-6 py-2 rounded-lg font-bold text-sm bg-indigo-600 shadow-lg text-white transition-all';
+            btnWeek.className = 'px-6 py-2 rounded-lg font-bold text-sm text-white/40 hover:text-white transition-all';
+        } else {
+            btnWeek.className = 'px-6 py-2 rounded-lg font-bold text-sm bg-indigo-600 shadow-lg text-white transition-all';
+            btnMonth.className = 'px-6 py-2 rounded-lg font-bold text-sm text-white/40 hover:text-white transition-all';
+        }
         renderCalendar();
     }
 
@@ -132,26 +143,25 @@
         const list = document.getElementById('upcoming-list');
         list.innerHTML = '';
         
-        const now = new Date();
         const upcoming = appointments.filter(a => a.status === 'waiting' || a.status === 'called')
             .sort((a,b) => new Date(a.date + 'T00:00:00') - new Date(b.date + 'T00:00:00'))
             .slice(0, 5);
 
         if(upcoming.length === 0) {
-            list.innerHTML = '<div class="text-center py-6 text-gray-400 font-medium bg-gray-50 rounded-xl">No upcoming appointments</div>';
+            list.innerHTML = '<div class="text-center py-6 text-white/30 font-medium bg-white/5 rounded-xl border border-white/5">No upcoming appointments</div>';
             return;
         }
 
         upcoming.forEach(a => {
             const div = document.createElement('div');
-            div.className = "p-4 rounded-xl border border-gray-100 hover:shadow-md transition-all cursor-pointer bg-white group";
+            div.className = "p-4 rounded-xl border border-white/10 hover:border-white/30 transition-all cursor-pointer bg-white/5 group";
             div.onclick = () => openModal(a);
             div.innerHTML = `
                 <div class="flex justify-between items-start mb-2">
-                    <div class="font-bold text-gray-900 group-hover:text-indigo-600 transition-colors">Dr. ${a.doctor_name}</div>
-                    <div class="text-xs font-black text-indigo-600 bg-indigo-50 px-2 py-1 rounded">#${a.token}</div>
+                    <div class="font-bold text-white group-hover:text-indigo-400 transition-colors">Dr. ${a.doctor_name}</div>
+                    <div class="text-[10px] font-black text-indigo-400 bg-indigo-500/20 px-2 py-1 rounded">#${a.token}</div>
                 </div>
-                <div class="text-sm text-gray-500 font-medium">
+                <div class="text-xs text-white/40 font-bold uppercase tracking-widest">
                     ${new Date(a.date).toLocaleDateString('en-US', {month:'short', day:'numeric'})} • ${a.time}
                 </div>
             `;
@@ -172,39 +182,35 @@
             const firstDay = new Date(year, month, 1).getDay();
             const daysInMonth = new Date(year, month + 1, 0).getDate();
             
-            let html = `<div class="grid grid-cols-7 gap-px bg-gray-200 border border-gray-200 rounded-2xl overflow-hidden">`;
+            let html = `<div class="grid grid-cols-7 gap-px bg-white/10 border border-white/10 rounded-2xl overflow-hidden shadow-2xl">`;
             
-            // Headers
             const days = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
             days.forEach(d => {
-                html += `<div class="bg-gray-50 py-3 text-center text-xs font-bold text-gray-500 uppercase tracking-wider">${d}</div>`;
+                html += `<div class="bg-white/5 py-3 text-center text-[10px] font-black text-white/40 uppercase tracking-widest">${d}</div>`;
             });
 
-            // Empty slots
             for(let i=0; i<firstDay; i++) {
-                html += `<div class="bg-white cal-day opacity-50"></div>`;
+                html += `<div class="bg-deep-900/40 cal-day opacity-20"></div>`;
             }
 
-            // Days
             for(let d=1; d<=daysInMonth; d++) {
                 const dateStr = `${year}-${String(month+1).padStart(2,'0')}-${String(d).padStart(2,'0')}`;
                 const dayAppts = appointments.filter(a => a.date === dateStr);
-                
                 let isToday = new Date().toISOString().split('T')[0] === dateStr;
                 
-                html += `<div class="bg-white cal-day p-2 hover:bg-gray-50 transition-colors relative">
+                html += `<div class="bg-white/5 cal-day p-2 hover:bg-white/10 transition-colors relative group">
                     <div class="text-right mb-2">
-                        <span class="inline-flex w-7 h-7 items-center justify-center rounded-full text-sm font-semibold ${isToday ? 'bg-indigo-600 text-white' : 'text-gray-700'}">${d}</span>
+                        <span class="inline-flex w-7 h-7 items-center justify-center rounded-full text-xs font-black ${isToday ? 'bg-indigo-600 text-white shadow-[0_0_15px_rgba(79,70,229,0.5)]' : 'text-white/60'}">${d}</span>
                     </div>
-                    <div class="space-y-1">`;
+                    <div class="space-y-1 overflow-y-auto max-h-[80px] hide-scrollbar">`;
                 
                 dayAppts.forEach(a => {
-                    let color = 'bg-blue-100 text-blue-700';
-                    if(a.status === 'seen') color = 'bg-emerald-100 text-emerald-700';
-                    if(a.status === 'cancelled' || a.status === 'no_show') color = 'bg-red-100 text-red-700';
+                    let color = 'bg-indigo-500/20 text-indigo-300 border-indigo-500/20';
+                    if(a.status === 'seen') color = 'bg-emerald-500/20 text-emerald-300 border-emerald-500/20';
+                    if(a.status === 'cancelled' || a.status === 'no_show') color = 'bg-red-500/20 text-red-300 border-red-500/20';
                     
-                    html += `<div onclick='openModalById(${a.id})' class="text-xs px-2 py-1 rounded truncate cursor-pointer font-semibold ${color} hover:opacity-80 transition-opacity">
-                        ${a.time} - Dr. ${a.doctor_name}
+                    html += `<div onclick='openModalById(${a.id})' class="text-[9px] px-2 py-1 rounded truncate cursor-pointer font-black uppercase tracking-tighter border ${color} hover:brightness-125 transition-all">
+                        ${a.time} - Dr. ${a.doctor_name.split(' ')[0]}
                     </div>`;
                 });
                 
@@ -214,11 +220,9 @@
             html += `</div>`;
             grid.innerHTML = html;
         } else {
-            // Week View
             const curr = new Date(currentDate);
             const first = curr.getDate() - curr.getDay();
             const firstDayOfWeek = new Date(curr.setDate(first));
-            
             let endOfWeek = new Date(firstDayOfWeek);
             endOfWeek.setDate(firstDayOfWeek.getDate() + 6);
             
@@ -229,7 +233,6 @@
             document.getElementById('current-month-year').textContent = `${monthStr} ${year}`;
 
             let html = `<div class="grid grid-cols-7 gap-4">`;
-            
             for(let i=0; i<7; i++) {
                 const d = new Date(firstDayOfWeek);
                 d.setDate(d.getDate() + i);
@@ -237,21 +240,21 @@
                 const dayAppts = appointments.filter(a => a.date === dateStr);
                 let isToday = new Date().toISOString().split('T')[0] === dateStr;
 
-                html += `<div class="bg-gray-50 rounded-2xl p-3 week-day border ${isToday ? 'border-indigo-300 shadow-sm' : 'border-gray-100'}">
-                    <div class="text-center pb-3 border-b border-gray-200 mb-3">
-                        <div class="text-xs font-bold text-gray-500 uppercase">${d.toLocaleDateString('en-US', {weekday: 'short'})}</div>
-                        <div class="text-2xl font-black ${isToday ? 'text-indigo-600' : 'text-gray-900'}">${d.getDate()}</div>
+                html += `<div class="glass p-3 week-day border ${isToday ? 'border-indigo-500 shadow-[0_0_20px_rgba(79,70,229,0.2)]' : 'border-white/5'}">
+                    <div class="text-center pb-3 border-b border-white/10 mb-3">
+                        <div class="text-[10px] font-black text-white/40 uppercase tracking-widest">${d.toLocaleDateString('en-US', {weekday: 'short'})}</div>
+                        <div class="text-2xl font-black ${isToday ? 'text-indigo-400' : 'text-white'}">${d.getDate()}</div>
                     </div>
                     <div class="space-y-2">`;
                 
                 dayAppts.forEach(a => {
-                    let color = 'bg-blue-100 text-blue-700 border-blue-200';
-                    if(a.status === 'seen') color = 'bg-emerald-100 text-emerald-700 border-emerald-200';
-                    if(a.status === 'cancelled' || a.status === 'no_show') color = 'bg-red-100 text-red-700 border-red-200';
+                    let color = 'bg-indigo-500/20 text-indigo-300 border-indigo-500/20';
+                    if(a.status === 'seen') color = 'bg-emerald-500/20 text-emerald-300 border-emerald-500/20';
+                    if(a.status === 'cancelled' || a.status === 'no_show') color = 'bg-red-500/20 text-red-300 border-red-500/20';
                     
-                    html += `<div onclick='openModalById(${a.id})' class="text-sm p-3 rounded-xl border cursor-pointer ${color} hover:shadow-md transition-all">
-                        <div class="font-bold mb-1">Dr. ${a.doctor_name}</div>
-                        <div class="flex justify-between items-center text-xs opacity-80 font-semibold">
+                    html += `<div onclick='openModalById(${a.id})' class="p-3 rounded-xl border cursor-pointer ${color} hover:scale-[1.05] transition-all">
+                        <div class="font-black text-[10px] uppercase mb-1">Dr. ${a.doctor_name}</div>
+                        <div class="flex justify-between items-center text-[9px] font-black opacity-80 uppercase tracking-widest">
                             <span>${a.time}</span>
                             <span>#${a.token}</span>
                         </div>
@@ -275,28 +278,34 @@
         document.getElementById('modal-doctor').textContent = `Dr. ${appt.doctor_name}`;
         document.getElementById('modal-date-time').textContent = `${new Date(appt.date).toLocaleDateString('en-US', {month:'long', day:'numeric'})} • ${appt.time}`;
         document.getElementById('modal-token').textContent = `#${appt.token}`;
-        document.getElementById('modal-type').textContent = appt.type.charAt(0).toUpperCase() + appt.type.slice(1);
+        document.getElementById('modal-type').textContent = appt.type.toUpperCase();
         
         const statusEl = document.getElementById('modal-status');
-        let statusText = appt.status.charAt(0).toUpperCase() + appt.status.slice(1).replace('_', ' ');
+        let statusText = appt.status.toUpperCase().replace('_', ' ');
         if(appt.status === 'waiting' || appt.status === 'called') {
-            statusEl.className = 'px-3 py-1 rounded-lg text-sm font-bold bg-blue-100 text-blue-700';
-            document.getElementById('modal-actions').style.display = 'flex';
+            statusEl.className = 'px-3 py-1 rounded-lg text-[10px] font-black bg-indigo-500/20 text-indigo-300 border border-indigo-500/20';
+            document.getElementById('modal-actions').classList.remove('hidden');
+            document.getElementById('modal-actions').classList.add('flex');
             document.getElementById('cancel-form').action = `/cancel/${appt.id}`;
         } else if(appt.status === 'seen') {
-            statusEl.className = 'px-3 py-1 rounded-lg text-sm font-bold bg-emerald-100 text-emerald-700';
-            document.getElementById('modal-actions').style.display = 'none';
+            statusEl.className = 'px-3 py-1 rounded-lg text-[10px] font-black bg-emerald-500/20 text-emerald-300 border border-emerald-500/20';
+            document.getElementById('modal-actions').classList.add('hidden');
+            document.getElementById('modal-actions').classList.remove('flex');
         } else {
-            statusEl.className = 'px-3 py-1 rounded-lg text-sm font-bold bg-red-100 text-red-700';
-            document.getElementById('modal-actions').style.display = 'none';
+            statusEl.className = 'px-3 py-1 rounded-lg text-[10px] font-black bg-red-500/20 text-red-300 border border-red-500/20';
+            document.getElementById('modal-actions').classList.add('hidden');
+            document.getElementById('modal-actions').classList.remove('flex');
         }
         statusEl.textContent = statusText;
         
         let icon = '🩺';
-        if(appt.status === 'seen') icon = '✅';
-        if(appt.status === 'cancelled') icon = '❌';
-        document.getElementById('modal-icon').textContent = icon;
-        document.getElementById('modal-icon').className = `w-16 h-16 rounded-2xl flex items-center justify-center text-3xl ${appt.status==='seen'?'bg-emerald-100':(appt.status==='cancelled'?'bg-red-100':'bg-indigo-100')}`;
+        let iconBg = 'bg-indigo-500/20';
+        if(appt.status === 'seen') { icon = '✅'; iconBg = 'bg-emerald-500/20'; }
+        if(appt.status === 'cancelled') { icon = '❌'; iconBg = 'bg-red-500/20'; }
+        
+        const iconContainer = document.getElementById('modal-icon');
+        iconContainer.textContent = icon;
+        iconContainer.className = `w-16 h-16 rounded-2xl flex items-center justify-center text-3xl ${iconBg} border border-white/5 shadow-2xl`;
 
         document.getElementById('appt-modal').classList.remove('hidden');
         document.getElementById('appt-modal').classList.add('flex');
@@ -308,10 +317,14 @@
     }
 
     function reschedule() {
-        fetch(`/cancel/${currentApptId}`, { method: 'POST' })
-        .then(() => {
-            window.location.href = '/book';
-        });
+        if(confirm("To reschedule, we will cancel your current appointment and take you to the booking page. Proceed?")) {
+            const form = document.createElement('form');
+            form.method = 'POST';
+            form.action = `/cancel/${currentApptId}`;
+            document.body.appendChild(form);
+            form.submit();
+            // Note: reschedule redirect logic should ideally be handled by the backend or a specific flag
+        }
     }
 </script>
 {% endblock %}

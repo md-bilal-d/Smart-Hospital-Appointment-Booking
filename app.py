@@ -1,28 +1,36 @@
-"""MediSlot - Smart Hospital Appointment Booking System"""
-import eventlet
-eventlet.monkey_patch()
-
+import os, atexit
 from flask import Flask
 from flask_login import LoginManager
-from models import db, Patient, Doctor
+from flask_jwt_extended import JWTManager
+from flask_limiter import Limiter
+from flask_limiter.util import get_remote_address
 from apscheduler.schedulers.background import BackgroundScheduler
-import atexit
 from extensions import socketio
+from models import db, Patient, Staff, Doctor
 
 login_manager = LoginManager()
+jwt = JWTManager()
+limiter = Limiter(key_func=get_remote_address)
 
 def create_app():
     app = Flask(__name__)
     app.config.from_pyfile('config.py')
+    
     db.init_app(app)
     login_manager.init_app(app)
+    jwt.init_app(app)
+    limiter.init_app(app)
+    
     login_manager.login_view = 'auth.login'
 
     @login_manager.user_loader
     def load_user(user_id):
-        if user_id and user_id.startswith('patient_'):
-            pid = int(user_id.split('_')[1])
-            return Patient.query.get(pid)
+        if not user_id:
+            return None
+        if user_id.startswith('patient_'):
+            return Patient.query.get(int(user_id.split('_')[1]))
+        elif user_id.startswith('staff_'):
+            return Staff.query.get(int(user_id.split('_')[1]))
         return None
 
     from routes_auth import auth_bp
@@ -30,12 +38,26 @@ def create_app():
     from routes_admin import admin_bp
     from routes_doctor import doctor_bp
     from routes_api import api_bp
+    from routes_superadmin import superadmin_bp
+    from routes_analytics import analytics_bp
 
     app.register_blueprint(auth_bp)
     app.register_blueprint(patient_bp)
     app.register_blueprint(admin_bp)
     app.register_blueprint(doctor_bp)
     app.register_blueprint(api_bp)
+    app.register_blueprint(superadmin_bp)
+    app.register_blueprint(analytics_bp)
+    
+    @app.route('/debug-paths')
+    def debug_paths():
+        import routes_doctor
+        return f"Doctor BP File: {routes_doctor.__file__}"
+
+
+
+    # Ensure directories exist
+    os.makedirs(os.path.join(app.root_path, 'static', 'prescriptions'), exist_ok=True)
 
     socketio.init_app(app, cors_allowed_origins="*")
 
@@ -49,14 +71,29 @@ def create_app():
         from flask import render_template
         return render_template('500.html'), 500
 
-    # APScheduler for appointment reminders
+    # APScheduler for appointment reminders & No-Show alerts
     def check_reminders():
         with app.app_context():
             from datetime import datetime, timedelta, date as dt_date
             from models import Appointment, Slot
             now = datetime.now()
-            target = now + timedelta(minutes=30)
+            
+            # High Risk Reminder Logic
+            target_1h = now + timedelta(hours=1)
+            target_time_1h = f"{target_1h.hour % 12 or 12}:{30 if target_1h.minute >= 30 else 0:02d} {'AM' if target_1h.hour < 12 else 'PM'}"
             today = dt_date.today().isoformat()
+            
+            risk_appts = Appointment.query.join(Slot).filter(
+                Slot.date == today,
+                Slot.time_label == target_time_1h,
+                Appointment.risk_flag == 'high',
+                Appointment.status == 'waiting'
+            ).all()
+            for ra in risk_appts:
+                print(f"🚨 HIGH RISK REMINDER: Call {ra.patient.name} at {ra.patient.phone} for {ra.slot.time_label} appointment.")
+
+            # Normal Reminders (30 mins before)
+            target = now + timedelta(minutes=30)
             target_time_h = target.hour % 12 or 12
             target_ampm = 'AM' if target.hour < 12 else 'PM'
             for m in [0, 30]:
@@ -81,4 +118,5 @@ def create_app():
 
 if __name__ == '__main__':
     app = create_app()
-    socketio.run(app, debug=True, port=5000, use_reloader=False)
+    socketio.run(app, debug=True, port=5000, use_reloader=True)
+
