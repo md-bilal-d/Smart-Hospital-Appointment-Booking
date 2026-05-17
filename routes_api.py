@@ -5,6 +5,7 @@ from models import db, Appointment, Slot, Doctor, Patient, QueueLog, Department
 from smart_scheduling import calculate_live_eta
 from datetime import date, timedelta, datetime
 from sqlalchemy import func
+import re
 
 api_bp = Blueprint('api', __name__)
 
@@ -258,4 +259,41 @@ def get_doctor_stats(doctor_id):
             'avg_patients': avg_patients,
             'no_show_rate': no_show_rate
         }
+    })
+
+@api_bp.route('/api/chat', methods=['POST'])
+def chat():
+    data = request.json
+    if not data or 'message' not in data:
+        return jsonify({'error': 'No message provided'}), 400
+    
+    msg = data['message'].lower()
+    
+    rules = {
+        'Cardiology': ['heart', 'chest pain', 'palpitations', 'blood pressure'],
+        'Neurology': ['headache', 'migraine', 'dizziness', 'numbness', 'seizure'],
+        'Orthopedic': ['bone', 'fracture', 'joint', 'back pain', 'knee', 'muscle'],
+        'Pediatric': ['child', 'baby', 'toddler', 'fever', 'vaccine'],
+        'Dermatology': ['skin', 'rash', 'acne', 'itching', 'mole'],
+        'General': ['fever', 'cough', 'cold', 'fatigue', 'weakness']
+    }
+    
+    suggested_dept = None
+    for dept_name, keywords in rules.items():
+        if any(re.search(rf"\b{kw}\b", msg) for kw in keywords):
+            suggested_dept = dept_name
+            break
+            
+    if suggested_dept:
+        dept = Department.query.filter(Department.name.ilike(f"%{suggested_dept}%")).first()
+        if dept:
+            return jsonify({
+                'reply': f"Based on your symptoms, I recommend booking an appointment with the **{dept.name}** department.",
+                'department_id': dept.id,
+                'department_name': dept.name
+            })
+            
+    return jsonify({
+        'reply': "I'm an AI assistant, and I couldn't clearly match your symptoms. Could you provide more details, or would you like to see a General Physician?",
+        'department_id': None
     })

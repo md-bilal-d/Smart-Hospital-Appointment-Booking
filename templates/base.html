@@ -138,6 +138,45 @@
         {% block content %}{% endblock %}
     </main>
 
+    <!-- AI Chatbot Widget -->
+    <div id="ai-chatbot" class="fixed bottom-6 right-6 z-50">
+        <!-- Chat Button -->
+        <button id="chatbot-toggle" class="w-14 h-14 rounded-full btn-gradient shadow-2xl flex items-center justify-center hover:scale-110 transition-transform">
+            <i class="fas fa-robot text-2xl text-white"></i>
+        </button>
+
+        <!-- Chat Window -->
+        <div id="chatbot-window" class="hidden absolute bottom-16 right-0 w-80 sm:w-96 glass shadow-2xl flex flex-col overflow-hidden transition-all transform origin-bottom-right" style="height: 450px;">
+            <!-- Header -->
+            <div class="bg-indigo-600/50 backdrop-blur-md p-4 border-b border-white/10 flex justify-between items-center">
+                <div class="flex items-center gap-2">
+                    <i class="fas fa-robot text-xl text-indigo-300"></i>
+                    <h3 class="font-bold text-white tracking-wide">MediSlot AI Triage</h3>
+                </div>
+                <button id="chatbot-close" class="text-white/60 hover:text-white transition-colors">
+                    <i class="fas fa-times"></i>
+                </button>
+            </div>
+            
+            <!-- Chat Messages -->
+            <div id="chatbot-messages" class="flex-1 overflow-y-auto p-4 space-y-4 flex flex-col">
+                <div class="self-start bg-white/10 rounded-2xl rounded-tl-sm px-4 py-2 max-w-[85%] text-sm text-white/90 border border-white/5">
+                    Hi! I'm your AI Medical Assistant. Please describe your symptoms, and I'll help you find the right department.
+                </div>
+            </div>
+
+            <!-- Input Area -->
+            <div class="p-3 border-t border-white/10 bg-black/20">
+                <form id="chatbot-form" class="flex gap-2 relative">
+                    <input type="text" id="chatbot-input" class="w-full bg-white/5 border border-white/10 rounded-full px-4 py-2 text-sm text-white placeholder-white/40 focus:outline-none focus:border-indigo-400" placeholder="E.g., I have a severe headache..." autocomplete="off">
+                    <button type="submit" class="absolute right-1 top-1 w-8 h-8 rounded-full btn-gradient flex items-center justify-center shadow-lg">
+                        <i class="fas fa-paper-plane text-xs"></i>
+                    </button>
+                </form>
+            </div>
+        </div>
+    </div>
+
     <!-- Footer -->
     <footer class="mt-auto bg-black/30 backdrop-blur-md border-t border-white/5 py-10">
         <div class="max-w-7xl mx-auto px-4 text-center">
@@ -158,6 +197,78 @@
         }
         setInterval(updateClock, 1000);
         updateClock();
+
+        // AI Chatbot Logic
+        const chatToggle = document.getElementById('chatbot-toggle');
+        const chatClose = document.getElementById('chatbot-close');
+        const chatWindow = document.getElementById('chatbot-window');
+        const chatForm = document.getElementById('chatbot-form');
+        const chatInput = document.getElementById('chatbot-input');
+        const chatMessages = document.getElementById('chatbot-messages');
+
+        function toggleChat() {
+            chatWindow.classList.toggle('hidden');
+            if(!chatWindow.classList.contains('hidden')) {
+                chatInput.focus();
+            }
+        }
+
+        if(chatToggle) chatToggle.addEventListener('click', toggleChat);
+        if(chatClose) chatClose.addEventListener('click', toggleChat);
+
+        function appendMessage(text, isUser=false) {
+            const div = document.createElement('div');
+            div.className = isUser 
+                ? 'self-end btn-gradient rounded-2xl rounded-tr-sm px-4 py-2 max-w-[85%] text-sm text-white shadow-lg' 
+                : 'self-start bg-white/10 rounded-2xl rounded-tl-sm px-4 py-2 max-w-[85%] text-sm text-white/90 border border-white/5';
+            
+            div.innerHTML = text; // Allow HTML for bold text and buttons
+            chatMessages.appendChild(div);
+            chatMessages.scrollTop = chatMessages.scrollHeight;
+        }
+
+        if(chatForm) {
+            chatForm.addEventListener('submit', async (e) => {
+                e.preventDefault();
+                const msg = chatInput.value.trim();
+                if(!msg) return;
+
+                appendMessage(msg, true);
+                chatInput.value = '';
+
+                // Show loading typing indicator
+                const loadingId = 'loading-' + Date.now();
+                const loadingDiv = document.createElement('div');
+                loadingDiv.id = loadingId;
+                loadingDiv.className = 'self-start bg-white/10 rounded-2xl rounded-tl-sm px-4 py-2 text-sm text-white/60 border border-white/5 flex gap-1 items-center';
+                loadingDiv.innerHTML = '<div class="w-1.5 h-1.5 bg-white/60 rounded-full animate-bounce"></div><div class="w-1.5 h-1.5 bg-white/60 rounded-full animate-bounce" style="animation-delay: 0.1s"></div><div class="w-1.5 h-1.5 bg-white/60 rounded-full animate-bounce" style="animation-delay: 0.2s"></div>';
+                chatMessages.appendChild(loadingDiv);
+                chatMessages.scrollTop = chatMessages.scrollHeight;
+
+                try {
+                    const res = await fetch('/api/chat', {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({ message: msg })
+                    });
+                    const data = await res.json();
+                    
+                    // Remove loading
+                    document.getElementById(loadingId).remove();
+                    
+                    let replyHtml = data.reply;
+                    if(data.department_id) {
+                        replyHtml += `<br><a href="/book?department=${data.department_id}" class="inline-block mt-2 px-3 py-1.5 bg-indigo-500 hover:bg-indigo-400 text-white text-xs font-bold rounded-lg transition-colors">Book Appointment Now</a>`;
+                    }
+                    
+                    appendMessage(replyHtml, false);
+
+                } catch (err) {
+                    document.getElementById(loadingId).remove();
+                    appendMessage("Sorry, I'm having trouble connecting to the server.", false);
+                }
+            });
+        }
     </script>
     {% block scripts %}{% endblock %}
 </body>
