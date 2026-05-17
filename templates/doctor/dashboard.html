@@ -35,7 +35,7 @@
                 </div>
 
                 <!-- Stats Row -->
-                <div class="grid grid-cols-3 gap-3 mb-8">
+                <div class="grid grid-cols-2 gap-3 mb-8">
                     <div class="glass p-4 border-white/5">
                         <p class="text-[9px] font-black text-white/40 uppercase mb-1">Today</p>
                         <p class="text-xl font-black text-white" id="stat-today">{{ patients_today }}</p>
@@ -48,18 +48,41 @@
                         <p class="text-[9px] font-black text-indigo-400/60 uppercase mb-1">Waiting</p>
                         <p class="text-xl font-black text-indigo-400" id="stat-waiting">{{ waiting_today }}</p>
                     </div>
+                    <div class="glass p-4 border-yellow-500/20">
+                        <p class="text-[9px] font-black text-yellow-400/60 uppercase mb-1">Rating</p>
+                        <p class="text-xl font-black text-yellow-400">{{ avg_rating }} <span class="text-xs">★</span></p>
+                    </div>
                 </div>
 
-                <!-- Actions -->
                 <div class="space-y-4">
                     <button onclick="toggleAvailability()" id="availability-btn" class="w-full py-4 rounded-2xl font-black uppercase tracking-widest text-xs transition-all flex items-center justify-center gap-3 {% if doctor.is_available %}bg-emerald-500/20 text-emerald-400 shadow-[0_0_20px_rgba(16,185,129,0.2)] border border-emerald-500/30{% else %}bg-red-500/20 text-red-400 shadow-[0_0_20px_rgba(239,68,68,0.2)] border border-red-500/30{% endif %}">
                         <span class="w-2 h-2 rounded-full animate-pulse {% if doctor.is_available %}bg-emerald-400{% else %}bg-red-400{% endif %}"></span>
                         {% if doctor.is_available %}Available Now{% else %}Unavailable{% endif %}
                     </button>
                     
-                    <a href="{{ url_for('doctor.doctor_schedule', doctor_id=doctor.id) }}" class="block w-full py-4 glass border-white/10 hover:bg-white/5 text-white/80 hover:text-white font-black uppercase tracking-widest text-xs transition-all">
+                    <a href="{{ url_for('doctor.doctor_schedule', doctor_id=doctor.id) }}" class="block w-full py-4 glass border-white/10 hover:bg-white/5 text-white/80 hover:text-white font-black uppercase tracking-widest text-xs transition-all text-center">
                         View Full Schedule
                     </a>
+                </div>
+
+                <!-- Recent Reviews -->
+                <div class="mt-8 text-left">
+                    <h3 class="text-xs font-black text-white/40 uppercase tracking-widest mb-4">Recent Feedback</h3>
+                    {% if reviews %}
+                    <div class="space-y-3 max-h-48 overflow-y-auto pr-2 hide-scrollbar">
+                        {% for review in reviews %}
+                        <div class="glass p-4 rounded-xl border border-white/5">
+                            <div class="flex justify-between items-center mb-1">
+                                <span class="text-xs font-black text-white/80">{{ review.patient.name }}</span>
+                                <span class="text-yellow-400 text-xs drop-shadow-[0_0_10px_rgba(250,204,21,0.5)]">{% for i in range(review.rating) %}★{% endfor %}</span>
+                            </div>
+                            <p class="text-[10px] font-medium text-white/60 italic">"{{ review.feedback or 'No comments provided.' }}"</p>
+                        </div>
+                        {% endfor %}
+                    </div>
+                    {% else %}
+                    <p class="text-[10px] text-white/30 italic">No reviews yet.</p>
+                    {% endif %}
                 </div>
             </div>
 

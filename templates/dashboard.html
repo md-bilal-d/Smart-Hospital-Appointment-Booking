@@ -180,6 +180,7 @@
                             <th class="px-8 py-5 text-left">Doctor / Specialty</th>
                             <th class="px-8 py-5 text-left">Mode</th>
                             <th class="px-8 py-5 text-left">Status</th>
+                            <th class="px-8 py-5 text-left">Action</th>
                         </tr>
                     </thead>
                     <tbody class="divide-y divide-white/5">
@@ -197,6 +198,18 @@
                                 <span class="px-3 py-1 rounded-full text-[10px] font-black uppercase status-{{ appt.status }}">
                                     {{ appt.status }}
                                 </span>
+                            </td>
+                            <td class="px-8 py-5">
+                                {% if appt.status == 'seen' and not appt.review %}
+                                <button onclick="openReviewModal({{ appt.id }}, '{{ appt.slot.doctor.name }}')" 
+                                        class="px-4 py-2 bg-indigo-500/20 text-indigo-400 hover:bg-indigo-500/40 text-[10px] font-black uppercase tracking-widest rounded-lg transition-all">
+                                    Rate
+                                </button>
+                                {% elif appt.review %}
+                                <span class="text-yellow-400 text-xs">
+                                    {% for i in range(appt.review.rating) %}★{% endfor %}
+                                </span>
+                                {% endif %}
                             </td>
                         </tr>
                         {% endfor %}
@@ -233,6 +246,36 @@
             <button onclick="closeRescheduleModal()" class="flex-1 px-6 py-3 glass hover:bg-white/10 text-white font-black uppercase tracking-widest text-xs">Cancel</button>
             <button onclick="submitReschedule()" id="confirmReschedBtn" disabled class="flex-1 px-6 py-3 btn-gradient opacity-50 cursor-not-allowed rounded-xl font-black uppercase tracking-widest text-xs transition-all">Confirm Change</button>
         </div>
+    </div>
+</div>
+
+<!-- Review Modal -->
+<div id="reviewModal" class="hidden fixed inset-0 z-[100] flex items-center justify-center p-4 bg-black/80 backdrop-blur-sm">
+    <div class="glass w-full max-w-lg p-8 animate-card-entrance">
+        <div class="flex items-center justify-between mb-8">
+            <h2 class="text-2xl font-black text-white">Rate Your Visit</h2>
+            <button onclick="closeReviewModal()" class="text-white/40 hover:text-white transition-colors text-2xl">&times;</button>
+        </div>
+        
+        <p class="text-white/60 font-bold mb-6">How was your experience with <span id="reviewDoctorName" class="text-white"></span>?</p>
+        
+        <form id="reviewForm" action="" method="POST">
+            <div class="mb-6 flex gap-2 justify-center" id="starRatingContainer">
+                <input type="hidden" name="rating" id="ratingValue" value="5">
+                <button type="button" onclick="setRating(1)" class="star-btn text-4xl text-yellow-400 transition-transform hover:scale-110">★</button>
+                <button type="button" onclick="setRating(2)" class="star-btn text-4xl text-yellow-400 transition-transform hover:scale-110">★</button>
+                <button type="button" onclick="setRating(3)" class="star-btn text-4xl text-yellow-400 transition-transform hover:scale-110">★</button>
+                <button type="button" onclick="setRating(4)" class="star-btn text-4xl text-yellow-400 transition-transform hover:scale-110">★</button>
+                <button type="button" onclick="setRating(5)" class="star-btn text-4xl text-yellow-400 transition-transform hover:scale-110">★</button>
+            </div>
+            
+            <textarea name="feedback" rows="3" placeholder="Leave a review (optional)..." class="w-full glass p-4 text-white text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500 mb-6"></textarea>
+            
+            <div class="flex gap-4">
+                <button type="button" onclick="closeReviewModal()" class="flex-1 px-6 py-3 glass hover:bg-white/10 text-white font-black uppercase tracking-widest text-xs">Cancel</button>
+                <button type="submit" class="flex-1 px-6 py-3 btn-gradient rounded-xl font-black uppercase tracking-widest text-xs transition-all">Submit Review</button>
+            </div>
+        </form>
     </div>
 </div>
 
@@ -346,6 +389,32 @@ function closeRescheduleModal() {
 
 function submitReschedule() {
     document.getElementById('rescheduleForm').submit();
+}
+
+// Review Logic
+function openReviewModal(apptId, doctorName) {
+    document.getElementById('reviewModal').classList.remove('hidden');
+    document.getElementById('reviewDoctorName').textContent = 'Dr. ' + doctorName;
+    document.getElementById('reviewForm').action = '/review/' + apptId;
+    setRating(5); // default
+}
+
+function closeReviewModal() {
+    document.getElementById('reviewModal').classList.add('hidden');
+}
+
+function setRating(rating) {
+    document.getElementById('ratingValue').value = rating;
+    const btns = document.querySelectorAll('.star-btn');
+    btns.forEach((btn, index) => {
+        if (index < rating) {
+            btn.classList.remove('text-white/20');
+            btn.classList.add('text-yellow-400');
+        } else {
+            btn.classList.remove('text-yellow-400');
+            btn.classList.add('text-white/20');
+        }
+    });
 }
 
 refresh();

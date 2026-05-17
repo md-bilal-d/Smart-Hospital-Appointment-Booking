@@ -1,7 +1,7 @@
 """Doctor routes: dashboard, queue management, prescription uploads"""
 import os
 from flask import Blueprint, render_template, request, redirect, url_for, flash, session, current_app, jsonify
-from models import db, Doctor, Slot, Appointment, QueueLog, Patient, Prescription
+from models import db, Doctor, Slot, Appointment, QueueLog, Patient, Prescription, Review
 from datetime import date, timedelta, datetime
 from extensions import socketio
 from auth_utils import role_required
@@ -57,6 +57,13 @@ def doctor_dashboard(doctor_id):
             'is_empty': s.booked_count == 0
         })
 
+    # Fetch reviews
+    reviews = Review.query.filter_by(doctor_id=doctor_id).order_by(Review.created_at.desc()).limit(10).all()
+    avg_rating = 0
+    if reviews:
+        total_rating = sum(r.rating for r in reviews)
+        avg_rating = round(total_rating / len(reviews), 1)
+
     return render_template('doctor/dashboard.html', 
                          doctor=doctor, 
                          queue=queue_appts,
@@ -64,7 +71,9 @@ def doctor_dashboard(doctor_id):
                          patients_today=patients_today,
                          seen_today=seen_today,
                          waiting_today=waiting_today,
-                         timeline=timeline)
+                         timeline=timeline,
+                         reviews=reviews,
+                         avg_rating=avg_rating)
 
 @doctor_bp.route('/doctor/call/<int:appt_id>', methods=['POST'])
 @role_required(['doctor'])

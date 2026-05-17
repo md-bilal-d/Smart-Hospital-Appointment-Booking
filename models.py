@@ -153,3 +153,18 @@ class AuditLog(db.Model):
     ip_address = db.Column(db.String(50), nullable=True)
     timestamp = db.Column(db.DateTime, default=datetime.utcnow)
 
+class Review(db.Model):
+    __tablename__ = 'reviews'
+    id = db.Column(db.Integer, primary_key=True)
+    appointment_id = db.Column(db.Integer, db.ForeignKey('appointments.id'), nullable=False)
+    patient_id = db.Column(db.Integer, db.ForeignKey('patients.id'), nullable=False)
+    doctor_id = db.Column(db.Integer, db.ForeignKey('doctors.id'), nullable=False)
+    rating = db.Column(db.Integer, nullable=False) # 1 to 5
+    feedback = db.Column(db.Text, nullable=True)
+    created_at = db.Column(db.DateTime, default=datetime.utcnow)
+    
+    appointment = db.relationship('Appointment', backref=db.backref('review', uselist=False))
+    patient = db.relationship('Patient', backref='reviews')
+    doctor = db.relationship('Doctor', backref='reviews')
+
+

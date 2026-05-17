@@ -1,6 +1,6 @@
 from flask import Blueprint, render_template, request, redirect, url_for, flash, session
 from flask_login import login_required, current_user
-from models import db, Doctor, Department, Slot, Appointment, QueueLog, Patient, Prescription
+from models import db, Doctor, Department, Slot, Appointment, QueueLog, Patient, Prescription, Review
 from smart_scheduling import recommend_slot, recommend_alternative_doctor, assign_token
 from datetime import datetime, date, timedelta
 from extensions import socketio
@@ -299,4 +299,37 @@ def reschedule(appt_id):
     audit_logger.log_action('Appointment Rescheduled', f'From slot {old_appt.slot_id} to {new_slot_id}')
     
     flash('Appointment rescheduled successfully!', 'success')
+    return redirect(url_for('patient.dashboard'))
+
+@patient_bp.route('/review/<int:appt_id>', methods=['POST'])
+@login_required
+def submit_review(appt_id):
+    appt = Appointment.query.get_or_404(appt_id)
+    if appt.patient_id != current_user.id:
+        return {"error": "Unauthorized"}, 403
+        
+    if appt.status != 'seen':
+        flash('You can only review completed appointments.', 'error')
+        return redirect(url_for('patient.dashboard'))
+        
+    rating = request.form.get('rating', type=int)
+    feedback = request.form.get('feedback', '')
+    
+    if not rating or rating < 1 or rating > 5:
+        flash('Invalid rating.', 'error')
+        return redirect(url_for('patient.dashboard'))
+        
+    # Check if already reviewed
+    existing = Review.query.filter_by(appointment_id=appt.id).first()
+    if existing:
+        flash('You have already reviewed this appointment.', 'error')
+        return redirect(url_for('patient.dashboard'))
+        
+    doctor_id = appt.slot.doctor_id
+    review = Review(appointment_id=appt.id, patient_id=current_user.id, doctor_id=doctor_id, rating=rating, feedback=feedback)
+    db.session.add(review)
+    db.session.commit()
+    
+    audit_logger.log_action('Review Submitted', f'Patient {current_user.name} rated Doctor {doctor_id} with {rating} stars')
+    flash('Thank you for your feedback!', 'success')
     return redirect(url_for('patient.dashboard'))
