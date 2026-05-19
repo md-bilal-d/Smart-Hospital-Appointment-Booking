@@ -1,10 +1,12 @@
-from flask import Blueprint, render_template, request, redirect, url_for, flash, session
+import os
+from flask import Blueprint, render_template, request, redirect, url_for, flash, session, current_app
 from flask_login import login_required, current_user
-from models import db, Doctor, Department, Slot, Appointment, QueueLog, Patient, Prescription, Review
+from models import db, Doctor, Department, Slot, Appointment, QueueLog, Patient, Prescription, Review, MedicalRecord
 from smart_scheduling import recommend_slot, recommend_alternative_doctor, assign_token
 from datetime import datetime, date, timedelta
 from extensions import socketio
 from utils import audit_logger, predict_no_show
+from werkzeug.utils import secure_filename
 patient_bp = Blueprint('patient', __name__)
 @patient_bp.route('/book')
 @login_required
@@ -241,9 +243,11 @@ def profile():
     fav_dept = max(dept_counts, key=dept_counts.get) if dept_counts else 'N/A'
     
     prescriptions = Prescription.query.filter_by(patient_id=current_user.id).order_by(Prescription.uploaded_at.desc()).all()
+    records = MedicalRecord.query.filter_by(patient_id=current_user.id).order_by(MedicalRecord.uploaded_at.desc()).all()
     
     return render_template('profile.html', patient=current_user, appointments=all_appts,
-                           total_visits=total_visits, fav_doc=fav_doc, fav_dept=fav_dept, prescriptions=prescriptions)
+                           total_visits=total_visits, fav_doc=fav_doc, fav_dept=fav_dept, 
+                           prescriptions=prescriptions, records=records)
 
 @patient_bp.route('/reschedule/<int:appt_id>', methods=['POST'])
 @login_required
@@ -333,3 +337,114 @@ def submit_review(appt_id):
     audit_logger.log_action('Review Submitted', f'Patient {current_user.name} rated Doctor {doctor_id} with {rating} stars')
     flash('Thank you for your feedback!', 'success')
     return redirect(url_for('patient.dashboard'))
+
+
+@patient_bp.route('/symptom-checker', methods=['GET', 'POST'])
+@login_required
+def symptom_checker():
+    recommendation = None
+    department = None
+    query = ""
+    
+    if request.method == 'POST':
+        query = request.form.get('symptoms', '').strip().lower()
+        symptom_map = {
+            'chest pain': 'Cardiology',
+            'palpitations': 'Cardiology',
+            'heart': 'Cardiology',
+            'cardio': 'Cardiology',
+            
+            'bone': 'Orthopedics',
+            'joint': 'Orthopedics',
+            'fracture': 'Orthopedics',
+            'muscle': 'Orthopedics',
+            'back pain': 'Orthopedics',
+            'sprain': 'Orthopedics',
+            
+            'skin': 'Dermatology',
+            'rash': 'Dermatology',
+            'acne': 'Dermatology',
+            'itching': 'Dermatology',
+            'hair': 'Dermatology',
+            
+            'headache': 'Neurology',
+            'migraine': 'Neurology',
+            'seizure': 'Neurology',
+            'brain': 'Neurology',
+            'paralysis': 'Neurology',
+            
+            'fever': 'General Medicine',
+            'cold': 'General Medicine',
+            'cough': 'General Medicine',
+            'flu': 'General Medicine',
+            'stomach': 'General Medicine',
+            'infection': 'General Medicine',
+            
+            'ear': 'ENT',
+            'nose': 'ENT',
+            'throat': 'ENT',
+            'hearing': 'ENT',
+            'sinus': 'ENT',
+            
+            'pregnancy': 'Gynecology',
+            'menstrual': 'Gynecology',
+            'period': 'Gynecology',
+            'gyne': 'Gynecology',
+            
+            'child': 'Pediatrics',
+            'baby': 'Pediatrics',
+            'pediatric': 'Pediatrics',
+            'kid': 'Pediatrics'
+        }
+        
+        # Match keywords
+        matched_dept = None
+        for keyword, dept in symptom_map.items():
+            if keyword in query:
+                matched_dept = dept
+                break
+                
+        if matched_dept:
+            department = Department.query.filter_by(name=matched_dept).first()
+            if department:
+                recommendation = {
+                    'department': department,
+                    'doctors': Doctor.query.filter_by(department_id=department.id, is_available=True).all()
+                }
+        
+        if not recommendation:
+            # Default fallback to General Medicine
+            department = Department.query.filter_by(name='General Medicine').first()
+            if department:
+                recommendation = {
+                    'department': department,
+                    'doctors': Doctor.query.filter_by(department_id=department.id, is_available=True).all(),
+                    'is_fallback': True
+                }
+
+    return render_template('symptom_checker.html', query=query, recommendation=recommendation)
+
+
+@patient_bp.route('/upload-record', methods=['POST'])
+@login_required
+def upload_record():
+    file = request.files.get('medical_record')
+    description = request.form.get('description', '')
+    
+    if not file or file.filename == '':
+        flash('No file selected.', 'error')
+        return redirect(url_for('patient.profile'))
+        
+    filename = secure_filename(f"record_{current_user.id}_{datetime.now().strftime('%Y%m%d%H%M%S')}_{file.filename}")
+    os.makedirs(os.path.join(current_app.root_path, 'static', 'records'), exist_ok=True)
+    path = os.path.join('static', 'records', filename)
+    file.save(os.path.join(current_app.root_path, path))
+    
+    record = MedicalRecord(patient_id=current_user.id, file_path=path, description=description)
+    db.session.add(record)
+    db.session.commit()
+    
+    audit_logger.log_action('Medical Record Uploaded', f'Patient {current_user.name} uploaded record: {description}')
+    flash('Medical record uploaded successfully!', 'success')
+    return redirect(url_for('patient.profile'))
+

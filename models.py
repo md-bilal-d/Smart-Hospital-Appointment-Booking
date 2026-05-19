@@ -168,3 +168,15 @@ class Review(db.Model):
     doctor = db.relationship('Doctor', backref='reviews')
 
 
+class MedicalRecord(db.Model):
+    __tablename__ = 'medical_records'
+    id = db.Column(db.Integer, primary_key=True)
+    patient_id = db.Column(db.Integer, db.ForeignKey('patients.id'), nullable=False)
+    file_path = db.Column(db.String(300), nullable=False)
+    description = db.Column(db.String(200), default='')
+    uploaded_at = db.Column(db.DateTime, default=datetime.utcnow)
+
+    patient = db.relationship('Patient', backref='medical_records')
+
+
+

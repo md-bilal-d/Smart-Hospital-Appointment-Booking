@@ -107,6 +107,7 @@ def call_patient(appt_id):
 def complete_appointment(appt_id):
     appt = Appointment.query.get_or_404(appt_id)
     notes = request.form.get('notes', '')
+    doctor_id = session.get('doctor_id')
     
     appt.status = 'seen'
     appt.notes = notes
@@ -127,7 +128,7 @@ def complete_appointment(appt_id):
     audit_logger.log_action('complete_appointment', f"Completed Appt #{appt.id}")
     
     flash("Appointment completed successfully.", "success")
-    return redirect(url_for('doctor.doctor_dashboard', doctor_id=session.get('doctor_id')))
+    return redirect(url_for('doctor.doctor_dashboard', doctor_id=doctor_id))
 
 @doctor_bp.route('/doctor/<int:doctor_id>/toggle-availability', methods=['POST'])
 @role_required(['doctor'])
@@ -195,3 +196,30 @@ def no_show_appointment(appt_id):
     
     flash("Appointment marked as No Show.", "info")
     return redirect(url_for('doctor.doctor_dashboard', doctor_id=doctor_id))
+
+@doctor_bp.route('/doctor/patient/<int:patient_id>/records')
+@role_required(['doctor', 'super_admin'])
+def get_patient_records(patient_id):
+    patient = Patient.query.get_or_404(patient_id)
+    from models import MedicalRecord
+    records = MedicalRecord.query.filter_by(patient_id=patient_id).order_by(MedicalRecord.uploaded_at.desc()).all()
+    records_list = [{
+        'id': r.id,
+        'description': r.description,
+        'file_path': url_for('static', filename=r.file_path),
+        'uploaded_at': r.uploaded_at.strftime('%Y-%m-%d %H:%M')
+    } for r in records]
+    
+    prescriptions = Prescription.query.filter_by(patient_id=patient_id).order_by(Prescription.uploaded_at.desc()).all()
+    prescriptions_list = [{
+        'id': p.id,
+        'doctor_name': p.doctor.name if p.doctor else 'General',
+        'file_path': url_for('static', filename=p.file_path),
+        'uploaded_at': p.uploaded_at.strftime('%Y-%m-%d %H:%M')
+    } for p in prescriptions]
+
+    return jsonify({
+        'patient_name': patient.name,
+        'records': records_list,
+        'prescriptions': prescriptions_list
+    })

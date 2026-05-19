@@ -1,0 +1,86 @@
+{% extends 'base.html' %}
+{% block title %}AI Symptom Checker{% endblock %}
+{% block content %}
+<div class="max-w-4xl mx-auto px-4 py-12">
+    <div class="text-center mb-12">
+        <span class="px-4 py-1.5 bg-indigo-500/10 text-indigo-300 border border-indigo-500/20 rounded-full text-xs font-bold tracking-widest uppercase">AI Clinical Triaging</span>
+        <h1 class="text-5xl font-black text-white mt-4 tracking-tighter uppercase">AI Symptom Checker</h1>
+        <p class="text-white/60 mt-3 text-lg">Describe your symptoms in simple language, and we will instantly recommend the right medical specialty.</p>
+    </div>
+
+    <!-- Symptom Form -->
+    <div class="glass p-10 mb-10 relative overflow-hidden">
+        <div class="absolute top-0 right-0 w-64 h-64 bg-indigo-600/10 rounded-full blur-3xl pointer-events-none"></div>
+        <div class="absolute bottom-0 left-0 w-64 h-64 bg-purple-600/10 rounded-full blur-3xl pointer-events-none"></div>
+        
+        <h3 class="text-lg font-bold text-white mb-6 flex items-center gap-2">
+            <i class="fas fa-stethoscope text-indigo-400"></i>
+            How are you feeling today?
+        </h3>
+        
+        <form method="POST" class="space-y-6">
+            <div>
+                <label class="block text-[10px] font-black text-white/40 uppercase tracking-widest mb-3 ml-1">Describe Symptoms (e.g., severe headache, chest pain, rash on arm)</label>
+                <textarea name="symptoms" rows="4" class="w-full glass-input px-5 py-4" placeholder="Briefly describe what you are experiencing..." required>{{ query }}</textarea>
+            </div>
+            
+            <div>
+                <button type="submit" class="w-full py-4 btn-gradient text-white font-black uppercase tracking-widest text-sm rounded-xl shadow-2xl transition-all flex items-center justify-center gap-2">
+                    <i class="fas fa-microchip"></i>
+                    Analyze Symptoms
+                </button>
+            </div>
+        </form>
+    </div>
+
+    <!-- Recommendations Result -->
+    {% if recommendation %}
+    <div class="glass p-10 border-l-4 {% if recommendation.is_fallback %}border-amber-500/50{% else %}border-emerald-500/50{% endif %} animate-fadeIn">
+        <div class="flex items-start justify-between border-b border-white/5 pb-6 mb-8">
+            <div>
+                <span class="px-3 py-1 rounded-full text-[10px] font-black uppercase {% if recommendation.is_fallback %}bg-amber-500/10 text-amber-300 border border-amber-500/20{% else %}bg-emerald-500/10 text-emerald-300 border border-emerald-500/20{% endif %}">
+                    {% if recommendation.is_fallback %}General Guidance{% else %}Specialty Recommendation Matched{% endif %}
+                </span>
+                <h2 class="text-3xl font-black text-white mt-2 tracking-tight">Recommended Department: {{ recommendation.department.name }}</h2>
+                <p class="text-white/60 mt-1 text-sm">{{ recommendation.department.description }}</p>
+            </div>
+            <div class="text-4xl text-white/20">
+                <i class="fas {% if recommendation.department.name == 'Cardiology' %}fa-heartbeat{% elif recommendation.department.name == 'Neurology' %}fa-brain{% elif recommendation.department.name == 'Dermatology' %}fa-allergies{% elif recommendation.department.name == 'Orthopedics' %}fa-bone{% else %}fa-user-md{% endif %}"></i>
+            </div>
+        </div>
+
+        {% if recommendation.is_fallback %}
+        <div class="bg-amber-500/10 border border-amber-500/25 rounded-xl p-5 mb-8 flex gap-3 text-amber-200/90 text-sm">
+            <i class="fas fa-exclamation-triangle mt-0.5"></i>
+            <div>
+                <strong>Notice:</strong> We couldn't match a specific specialty to your description. We suggest starting with a <strong>General Physician</strong>, who can evaluate you and provide direct referrals.
+            </div>
+        </div>
+        {% endif %}
+
+        <h3 class="text-xs font-black text-white/40 uppercase tracking-widest mb-6">Available Specialists in {{ recommendation.department.name }}</h3>
+        
+        <div class="grid md:grid-cols-2 gap-6">
+            {% for doctor in recommendation.doctors %}
+            <div class="glass p-6 flex items-center justify-between group hover:border-indigo-500/30 transition-all">
+                <div class="flex items-center gap-4">
+                    <img src="{{ doctor.profile_pic_url or 'https://api.dicebear.com/9.x/initials/svg?seed=' ~ doctor.name }}" class="w-14 h-14 rounded-full border border-white/10 shadow-lg object-cover">
+                    <div>
+                        <h4 class="font-bold text-white group-hover:text-indigo-300 transition-colors text-lg">{{ doctor.name }}</h4>
+                        <p class="text-xs text-white/40 font-semibold">{{ doctor.experience_years }} Years Experience</p>
+                    </div>
+                </div>
+                <a href="/book?department={{ recommendation.department.id }}" class="px-4 py-2.5 bg-indigo-500/20 hover:bg-indigo-500/40 text-indigo-200 hover:text-white rounded-lg text-xs font-black uppercase tracking-wider border border-indigo-500/20 transition-all">
+                    Book
+                </a>
+            </div>
+            {% else %}
+            <div class="col-span-2 text-center py-6 text-white/40 text-sm">
+                No doctors currently active in this department. Please contact reception.
+            </div>
+            {% endfor %}
+        </div>
+    </div>
+    {% endif %}
+</div>
+{% endblock %}

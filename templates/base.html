@@ -101,6 +101,7 @@
                 </div>
                 <div class="hidden md:flex items-center gap-6 ml-auto">
                     {% if session.get('patient_id') %}
+                        <a href="/symptom-checker" class="text-indigo-300 hover:text-white transition-colors text-sm font-bold uppercase tracking-wider flex items-center gap-1.5"><i class="fas fa-stethoscope"></i> Symptom Checker</a>
                         <a href="/book" class="text-white/70 hover:text-white transition-colors text-sm font-bold uppercase tracking-wider">Book</a>
                         <a href="/dashboard" class="text-white/70 hover:text-white transition-colors text-sm font-bold uppercase tracking-wider">Dashboard</a>
                         <a href="/calendar" class="text-white/70 hover:text-white transition-colors text-sm font-bold uppercase tracking-wider">Calendar</a>
