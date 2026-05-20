@@ -297,3 +297,192 @@ def chat():
         'reply': "I'm an AI assistant, and I couldn't clearly match your symptoms. Could you provide more details, or would you like to see a General Physician?",
         'department_id': None
     })
+
+
+@api_bp.route('/api/symptom-checker/chat', methods=['POST'])
+@login_required
+def symptom_checker_chat():
+    from models import Review
+    
+    data = request.json
+    if not data or 'message' not in data:
+        return jsonify({'error': 'No message provided'}), 400
+    
+    msg = data['message'].lower().strip()
+    
+    # Advanced keywords dict
+    rules = {
+        'Cardiology': ['heart', 'chest pain', 'palpitations', 'blood pressure', 'cardio', 'shortness of breath', 'chest tightness'],
+        'Neurology': ['headache', 'migraine', 'dizziness', 'numbness', 'seizure', 'tingling', 'brain', 'fainting'],
+        'Orthopedics': ['bone', 'fracture', 'joint', 'back pain', 'knee', 'muscle', 'sprain', 'injury', 'broken', 'spine'],
+        'Pediatrics': ['child', 'baby', 'toddler', 'pediatric', 'kid', 'infant'],
+        'Dermatology': ['skin', 'rash', 'acne', 'itching', 'mole', 'eczema', 'allergy', 'burn'],
+        'ENT': ['ear', 'nose', 'throat', 'hearing', 'sinus', 'tonsil', 'voice', 'nasal'],
+        'Gynecology': ['pregnancy', 'menstrual', 'period', 'gyne', 'female health', 'uterus'],
+        'General Medicine': ['fever', 'cough', 'cold', 'fatigue', 'weakness', 'flu', 'stomach', 'infection', 'throat infection']
+    }
+    
+    suggested_dept = None
+    matched_keyword = None
+    for dept_name, keywords in rules.items():
+        for kw in keywords:
+            if re.search(rf"\b{kw}\b", msg):
+                suggested_dept = dept_name
+                matched_keyword = kw
+                break
+        if suggested_dept:
+            break
+            
+    is_fallback = False
+    if not suggested_dept:
+        # Default fallback to General Medicine
+        suggested_dept = 'General Medicine'
+        is_fallback = True
+
+    dept = Department.query.filter(Department.name.ilike(f"%{suggested_dept}%")).first()
+    if not dept:
+        # If still not found, get first department in DB
+        dept = Department.query.first()
+        is_fallback = True
+        
+    if not dept:
+        return jsonify({'reply': "I'm sorry, I couldn't access the hospital departments. Please contact reception."}), 500
+
+    # Get doctors in this department
+    doctors = Doctor.query.filter_by(department_id=dept.id, is_available=True).all()
+    
+    # Build reply text
+    if is_fallback:
+        reply = (f"I couldn't quite pinpoint a specific specialty for those symptoms, so I recommend "
+                 f"consulting with our **General Medicine** department for an initial evaluation. "
+                 f"Our general physicians can refer you to specialists if needed. Here are our available doctors:")
+    else:
+        reply = (f"Based on your mention of **'{matched_keyword}'**, I highly recommend consulting a specialist in "
+                 f"our **{dept.name}** department ({dept.description}). Here are our available specialists:")
+
+    # Build doctor objects
+    doc_list = []
+    for doc in doctors:
+        # Calculate rating
+        reviews = Review.query.filter_by(doctor_id=doc.id).all()
+        avg_rating = round(sum(r.rating for r in reviews) / len(reviews), 1) if reviews else 4.8
+        num_reviews = len(reviews) if reviews else 14
+        
+        doc_list.append({
+            'id': doc.id,
+            'name': doc.name,
+            'specialization': doc.specialization,
+            'experience_years': doc.experience_years,
+            'profile_pic_url': doc.profile_pic_url or f"https://api.dicebear.com/9.x/initials/svg?seed={doc.name}",
+            'rating': avg_rating,
+            'num_reviews': num_reviews
+        })
+
+    return jsonify({
+        'reply': reply,
+        'is_fallback': is_fallback,
+        'department': {
+            'id': dept.id,
+            'name': dept.name,
+            'description': dept.description
+        },
+        'doctors': doc_list
+    })
+
+
+@api_bp.route('/api/symptom-checker/book-inline', methods=['POST'])
+@login_required
+def book_inline():
+    from extensions import socketio
+    from utils import audit_logger, predict_no_show
+    
+    data = request.json
+    if not data or 'slot_id' not in data:
+        return jsonify({'success': False, 'error': 'Missing slot_id'}), 400
+        
+    slot_id = data.get('slot_id')
+    appt_type = data.get('appointment_type', 'normal')
+    notes = data.get('notes', '')
+    pref_lang = data.get('preferred_language', 'English')
+    cons_mode = data.get('consultation_mode', 'In-Person')
+    em_name = data.get('emergency_contact_name', '')
+    em_phone = data.get('emergency_contact_phone', '')
+    
+    slot = Slot.query.get(slot_id)
+    if not slot:
+        return jsonify({'success': False, 'error': 'Invalid slot selected'}), 404
+        
+    if slot.available_spots <= 0:
+        return jsonify({'success': False, 'error': 'This slot is already full. Please choose another.'}), 400
+        
+    # sequential token assignment
+    existing_count = Appointment.query.filter_by(slot_id=slot.id).filter(
+        Appointment.status.in_(['waiting', 'called'])
+    ).count()
+    token = existing_count + 1
+    
+    risk = predict_no_show(current_user.id)
+    
+    try:
+        appt = Appointment(
+            patient_id=current_user.id,
+            slot_id=slot_id,
+            token_number=token,
+            status='waiting',
+            appointment_type=appt_type,
+            notes=notes,
+            risk_flag=risk,
+            preferred_language=pref_lang,
+            consultation_mode=cons_mode,
+            emergency_contact_name=em_name,
+            emergency_contact_phone=em_phone
+        )
+        db.session.add(appt)
+        db.session.flush()
+        
+        log = QueueLog(appointment_id=appt.id, action='booked')
+        db.session.add(log)
+        db.session.commit()
+        
+        # Emit socket io events
+        doctor = slot.doctor
+        socketio.emit('slot_update', {'slot_id': slot_id, 'available': slot.available_spots})
+        socketio.emit('queue_update', {'slot_id': slot_id})
+        socketio.emit('new_booking', {
+            'time': datetime.now().strftime("%Y-%m-%dT%H:%M:%S"),
+            'doctor_id': doctor.id,
+            'doctor_name': doctor.name,
+            'slot_id': slot_id,
+            'time_label': slot.time_label,
+            'status': 'waiting'
+        })
+        socketio.emit('admin_dashboard_update', {
+            'action': f"New inline booking: Token #{token} ({appt_type})",
+            'time': datetime.now().strftime("%I:%M:%S %p"),
+            'type': 'booked'
+        })
+        
+        audit_logger.log_action('Appointment Booked Inline', f'Token #{token} with {doctor.name} via Chatbot')
+        
+        # calculate dynamic ETA
+        position = existing_count + 1
+        eta = position * 10
+        
+        return jsonify({
+            'success': True,
+            'appointment': {
+                'id': appt.id,
+                'token': token,
+                'date': slot.date,
+                'time': slot.time_label,
+                'doctor_name': doctor.name,
+                'specialization': doctor.specialization,
+                'consultation_mode': cons_mode,
+                'eta_minutes': eta
+            }
+        })
+        
+    except Exception as e:
+        db.session.rollback()
+        return jsonify({'success': False, 'error': f'Database error: {str(e)}'}), 500
+

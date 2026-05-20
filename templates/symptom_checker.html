@@ -1,86 +1,596 @@
 {% extends 'base.html' %}
-{% block title %}AI Symptom Checker{% endblock %}
+{% block title %}AI Symptom Checker & Instant Scheduler{% endblock %}
 {% block content %}
-<div class="max-w-4xl mx-auto px-4 py-12">
-    <div class="text-center mb-12">
-        <span class="px-4 py-1.5 bg-indigo-500/10 text-indigo-300 border border-indigo-500/20 rounded-full text-xs font-bold tracking-widest uppercase">AI Clinical Triaging</span>
-        <h1 class="text-5xl font-black text-white mt-4 tracking-tighter uppercase">AI Symptom Checker</h1>
-        <p class="text-white/60 mt-3 text-lg">Describe your symptoms in simple language, and we will instantly recommend the right medical specialty.</p>
+<div class="max-w-6xl mx-auto px-4 py-8 relative">
+    <!-- Ambient Blur Background Blobs -->
+    <div class="absolute top-10 left-10 w-72 h-72 bg-indigo-600/10 rounded-full blur-3xl pointer-events-none"></div>
+    <div class="absolute bottom-10 right-10 w-96 h-96 bg-purple-600/10 rounded-full blur-3xl pointer-events-none"></div>
+
+    <div class="text-center mb-8">
+        <span class="px-4 py-1.5 bg-indigo-500/10 text-indigo-300 border border-indigo-500/20 rounded-full text-xs font-bold tracking-widest uppercase animate-pulse">
+            <i class="fas fa-robot mr-1"></i> Interactive AI Triaging
+        </span>
+        <h1 class="text-4xl sm:text-5xl font-black text-white mt-4 tracking-tighter uppercase">
+            MediBot Clinical Assistant
+        </h1>
+        <p class="text-white/60 mt-3 text-base sm:text-lg max-w-2xl mx-auto">
+            Describe how you are feeling, instantly discover matching specialists, and confirm your smart appointment booking directly within the chat.
+        </p>
     </div>
 
-    <!-- Symptom Form -->
-    <div class="glass p-10 mb-10 relative overflow-hidden">
-        <div class="absolute top-0 right-0 w-64 h-64 bg-indigo-600/10 rounded-full blur-3xl pointer-events-none"></div>
-        <div class="absolute bottom-0 left-0 w-64 h-64 bg-purple-600/10 rounded-full blur-3xl pointer-events-none"></div>
+    <!-- Main Chat Workspace -->
+    <div class="glass overflow-hidden flex flex-col md:flex-row shadow-2xl border border-white/10" style="height: 680px;">
         
-        <h3 class="text-lg font-bold text-white mb-6 flex items-center gap-2">
-            <i class="fas fa-stethoscope text-indigo-400"></i>
-            How are you feeling today?
-        </h3>
-        
-        <form method="POST" class="space-y-6">
+        <!-- Left Panel: Sidebar info & features -->
+        <div class="w-full md:w-80 bg-black/35 border-b md:border-b-0 md:border-r border-white/10 p-6 flex flex-col justify-between">
             <div>
-                <label class="block text-[10px] font-black text-white/40 uppercase tracking-widest mb-3 ml-1">Describe Symptoms (e.g., severe headache, chest pain, rash on arm)</label>
-                <textarea name="symptoms" rows="4" class="w-full glass-input px-5 py-4" placeholder="Briefly describe what you are experiencing..." required>{{ query }}</textarea>
-            </div>
-            
-            <div>
-                <button type="submit" class="w-full py-4 btn-gradient text-white font-black uppercase tracking-widest text-sm rounded-xl shadow-2xl transition-all flex items-center justify-center gap-2">
-                    <i class="fas fa-microchip"></i>
-                    Analyze Symptoms
-                </button>
-            </div>
-        </form>
-    </div>
-
-    <!-- Recommendations Result -->
-    {% if recommendation %}
-    <div class="glass p-10 border-l-4 {% if recommendation.is_fallback %}border-amber-500/50{% else %}border-emerald-500/50{% endif %} animate-fadeIn">
-        <div class="flex items-start justify-between border-b border-white/5 pb-6 mb-8">
-            <div>
-                <span class="px-3 py-1 rounded-full text-[10px] font-black uppercase {% if recommendation.is_fallback %}bg-amber-500/10 text-amber-300 border border-amber-500/20{% else %}bg-emerald-500/10 text-emerald-300 border border-emerald-500/20{% endif %}">
-                    {% if recommendation.is_fallback %}General Guidance{% else %}Specialty Recommendation Matched{% endif %}
-                </span>
-                <h2 class="text-3xl font-black text-white mt-2 tracking-tight">Recommended Department: {{ recommendation.department.name }}</h2>
-                <p class="text-white/60 mt-1 text-sm">{{ recommendation.department.description }}</p>
-            </div>
-            <div class="text-4xl text-white/20">
-                <i class="fas {% if recommendation.department.name == 'Cardiology' %}fa-heartbeat{% elif recommendation.department.name == 'Neurology' %}fa-brain{% elif recommendation.department.name == 'Dermatology' %}fa-allergies{% elif recommendation.department.name == 'Orthopedics' %}fa-bone{% else %}fa-user-md{% endif %}"></i>
-            </div>
-        </div>
-
-        {% if recommendation.is_fallback %}
-        <div class="bg-amber-500/10 border border-amber-500/25 rounded-xl p-5 mb-8 flex gap-3 text-amber-200/90 text-sm">
-            <i class="fas fa-exclamation-triangle mt-0.5"></i>
-            <div>
-                <strong>Notice:</strong> We couldn't match a specific specialty to your description. We suggest starting with a <strong>General Physician</strong>, who can evaluate you and provide direct referrals.
-            </div>
-        </div>
-        {% endif %}
-
-        <h3 class="text-xs font-black text-white/40 uppercase tracking-widest mb-6">Available Specialists in {{ recommendation.department.name }}</h3>
-        
-        <div class="grid md:grid-cols-2 gap-6">
-            {% for doctor in recommendation.doctors %}
-            <div class="glass p-6 flex items-center justify-between group hover:border-indigo-500/30 transition-all">
-                <div class="flex items-center gap-4">
-                    <img src="{{ doctor.profile_pic_url or 'https://api.dicebear.com/9.x/initials/svg?seed=' ~ doctor.name }}" class="w-14 h-14 rounded-full border border-white/10 shadow-lg object-cover">
+                <div class="flex items-center gap-3 mb-6">
+                    <div class="w-10 h-10 rounded-xl bg-indigo-500/10 border border-indigo-500/20 flex items-center justify-center text-indigo-300 text-lg">
+                        <i class="fas fa-stethoscope"></i>
+                    </div>
                     <div>
-                        <h4 class="font-bold text-white group-hover:text-indigo-300 transition-colors text-lg">{{ doctor.name }}</h4>
-                        <p class="text-xs text-white/40 font-semibold">{{ doctor.experience_years }} Years Experience</p>
+                        <h4 class="font-bold text-white leading-tight">MediSlot Smart Triage</h4>
+                        <span class="text-[10px] text-emerald-400 font-bold uppercase tracking-wider flex items-center gap-1">
+                            <span class="w-1.5 h-1.5 bg-emerald-500 rounded-full animate-ping"></span> Live & Active
+                        </span>
                     </div>
                 </div>
-                <a href="/book?department={{ recommendation.department.id }}" class="px-4 py-2.5 bg-indigo-500/20 hover:bg-indigo-500/40 text-indigo-200 hover:text-white rounded-lg text-xs font-black uppercase tracking-wider border border-indigo-500/20 transition-all">
-                    Book
-                </a>
+
+                <div class="space-y-4">
+                    <h5 class="text-[10px] font-black text-white/40 uppercase tracking-widest">How it works</h5>
+                    
+                    <div class="flex gap-3 items-start text-sm">
+                        <span class="w-6 h-6 rounded-full bg-indigo-500/15 border border-indigo-500/30 flex items-center justify-center text-xs font-bold text-indigo-300 mt-0.5">1</span>
+                        <div>
+                            <h6 class="font-semibold text-white/90">Explain symptoms</h6>
+                            <p class="text-xs text-white/50">Describe what you are experiencing in plain words.</p>
+                        </div>
+                    </div>
+                    
+                    <div class="flex gap-3 items-start text-sm">
+                        <span class="w-6 h-6 rounded-full bg-indigo-500/15 border border-indigo-500/30 flex items-center justify-center text-xs font-bold text-indigo-300 mt-0.5">2</span>
+                        <div>
+                            <h6 class="font-semibold text-white/90">Choose Specialist</h6>
+                            <p class="text-xs text-white/50">Get instant doctor recommendations based on clinic database.</p>
+                        </div>
+                    </div>
+                    
+                    <div class="flex gap-3 items-start text-sm">
+                        <span class="w-6 h-6 rounded-full bg-indigo-500/15 border border-indigo-500/30 flex items-center justify-center text-xs font-bold text-indigo-300 mt-0.5">3</span>
+                        <div>
+                            <h6 class="font-semibold text-white/90">Pick Time & Confirm</h6>
+                            <p class="text-xs text-white/50">Browse dynamic slots and configure booking details inside the conversation.</p>
+                        </div>
+                    </div>
+                </div>
             </div>
-            {% else %}
-            <div class="col-span-2 text-center py-6 text-white/40 text-sm">
-                No doctors currently active in this department. Please contact reception.
+
+            <!-- Notice Disclaimer -->
+            <div class="mt-6 p-4 bg-indigo-500/5 border border-indigo-500/10 rounded-xl">
+                <span class="text-[9px] font-bold text-indigo-300 uppercase tracking-widest block mb-1">🏥 Clinical Disclaimer</span>
+                <p class="text-[11px] text-white/40 leading-relaxed">
+                    MediBot is a clinical recommendation engine, not a replacement for emergency care. If you are experiencing critical symptoms, please seek emergency medical services immediately.
+                </p>
             </div>
-            {% endfor %}
         </div>
+
+        <!-- Right Panel: Conversation Stream -->
+        <div class="flex-1 flex flex-col bg-black/15">
+            <!-- Chat Body messages container -->
+            <div id="clinical-chat-messages" class="flex-1 overflow-y-auto p-6 space-y-6 flex flex-col ScrollStyle">
+                <!-- Welcome Message dynamically handled in JS -->
+            </div>
+
+            <!-- Typing Indicator -->
+            <div id="chat-typing-indicator" class="hidden px-6 py-2 self-start flex gap-1.5 items-center">
+                <div class="w-8 h-8 rounded-full bg-white/5 border border-white/10 flex items-center justify-center mr-1">
+                    <i class="fas fa-robot text-xs text-indigo-300"></i>
+                </div>
+                <div class="bg-white/10 border border-white/5 rounded-2xl rounded-tl-sm px-4 py-3 flex gap-1 items-center">
+                    <div class="w-1.5 h-1.5 bg-white/60 rounded-full animate-bounce"></div>
+                    <div class="w-1.5 h-1.5 bg-white/60 rounded-full animate-bounce" style="animation-delay: 0.15s"></div>
+                    <div class="w-1.5 h-1.5 bg-white/60 rounded-full animate-bounce" style="animation-delay: 0.3s"></div>
+                </div>
+            </div>
+
+            <!-- Interactive Text Box -->
+            <div id="chat-input-container" class="p-4 border-t border-white/10 bg-black/25">
+                <form id="clinical-chat-form" class="flex gap-3 relative items-center">
+                    <input type="text" id="clinical-chat-input" 
+                           class="w-full glass-input pl-5 pr-16 py-4 rounded-xl text-sm text-white focus:outline-none placeholder-white/30"
+                           placeholder="Type your symptoms here (e.g. severe migraine and dizziness)..." 
+                           required autocomplete="off">
+                    <button type="submit" 
+                            class="absolute right-2.5 top-2.5 w-11 h-11 rounded-lg btn-gradient flex items-center justify-center shadow-lg transition-transform hover:scale-105">
+                        <i class="fas fa-paper-plane text-sm"></i>
+                    </button>
+                </form>
+            </div>
+        </div>
+
     </div>
-    {% endif %}
 </div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+    document.addEventListener("DOMContentLoaded", () => {
+        const messageContainer = document.getElementById("clinical-chat-messages");
+        const chatForm = document.getElementById("clinical-chat-form");
+        const chatInput = document.getElementById("clinical-chat-input");
+        const chatInputContainer = document.getElementById("chat-input-container");
+        const typingIndicator = document.getElementById("chat-typing-indicator");
+
+        let currentDoctorId = null;
+        let currentDoctorName = "";
+        let currentSlotId = null;
+        let selectedDateStr = "";
+        let selectedTimeStr = "";
+        let bookingSubmitted = false;
+
+        // Custom function to append messages with beautiful slide-in animation
+        function appendBotMessage(htmlContent) {
+            const wrapper = document.createElement("div");
+            wrapper.className = "flex gap-3 self-start items-start max-w-[85%] animate-fadeIn";
+            
+            const avatar = document.createElement("div");
+            avatar.className = "w-8 h-8 rounded-full bg-indigo-500/10 border border-indigo-500/30 flex items-center justify-center flex-shrink-0 mt-1 shadow-md";
+            avatar.innerHTML = '<i class="fas fa-robot text-xs text-indigo-300 animate-pulse"></i>';
+            
+            const bubble = document.createElement("div");
+            bubble.className = "bg-white/10 border border-white/5 text-white/90 rounded-2xl rounded-tl-sm px-4.5 py-3 text-sm leading-relaxed shadow-lg";
+            bubble.innerHTML = htmlContent;
+
+            wrapper.appendChild(avatar);
+            wrapper.appendChild(bubble);
+            messageContainer.appendChild(wrapper);
+            scrollToBottom();
+        }
+
+        function appendUserMessage(text) {
+            const wrapper = document.createElement("div");
+            wrapper.className = "flex gap-3 self-end items-start max-w-[85%] justify-end animate-fadeIn";
+            
+            const bubble = document.createElement("div");
+            bubble.className = "btn-gradient rounded-2xl rounded-tr-sm px-5 py-3 text-sm text-white font-medium shadow-xl";
+            bubble.textContent = text;
+            
+            wrapper.appendChild(bubble);
+            messageContainer.appendChild(wrapper);
+            scrollToBottom();
+        }
+
+        function showTyping(show = true) {
+            if (show) {
+                typingIndicator.classList.remove("hidden");
+                scrollToBottom();
+            } else {
+                typingIndicator.classList.add("hidden");
+            }
+        }
+
+        function scrollToBottom() {
+            messageContainer.scrollTop = messageContainer.scrollHeight;
+        }
+
+        // Initialize Chat
+        function initChat() {
+            showTyping(true);
+            setTimeout(() => {
+                showTyping(false);
+                appendBotMessage(
+                    "Hello! I am **MediBot**, your intelligent clinical assistant. 🏥<br><br>" +
+                    "Please describe the symptoms you are experiencing today in detail. " +
+                    "I will evaluate your inputs, recommend the correct clinical department, and help you book a specialist appointment instantly."
+                );
+            }, 1000);
+        }
+        initChat();
+
+        // Handle Symptom Form Submission
+        chatForm.addEventListener("submit", async (e) => {
+            e.preventDefault();
+            const query = chatInput.value.trim();
+            if (!query || bookingSubmitted) return;
+
+            appendUserMessage(query);
+            chatInput.value = "";
+            showTyping(true);
+
+            try {
+                const response = await fetch("/api/symptom-checker/chat", {
+                    method: "POST",
+                    headers: { "Content-Type": "application/json" },
+                    body: JSON.stringify({ message: query })
+                });
+
+                const data = await response.json();
+                showTyping(false);
+
+                if (response.ok) {
+                    let docCardsHtml = "";
+                    if (data.doctors && data.doctors.length > 0) {
+                        docCardsHtml = `
+                            <div class="mt-4 grid gap-4 grid-cols-1 sm:grid-cols-2">
+                                ${data.doctors.map(doc => `
+                                    <div class="glass bg-white/5 border border-white/10 rounded-xl p-4 flex flex-col justify-between hover:border-indigo-500/40 transition-all group">
+                                        <div class="flex items-center gap-3">
+                                            <img src="${doc.profile_pic_url}" alt="${doc.name}" class="w-12 h-12 rounded-full border border-white/10 object-cover shadow-md">
+                                            <div>
+                                                <h5 class="font-bold text-white group-hover:text-indigo-300 transition-colors text-sm">${doc.name}</h5>
+                                                <p class="text-[11px] text-white/50 font-medium">${doc.specialization}</p>
+                                                <div class="flex items-center gap-1.5 mt-1 text-[11px] text-amber-400">
+                                                    <i class="fas fa-star text-[10px]"></i>
+                                                    <span class="font-bold">${doc.rating.toFixed(1)}</span>
+                                                    <span class="text-white/30">(${doc.num_reviews} reviews)</span>
+                                                </div>
+                                            </div>
+                                        </div>
+                                        <div class="mt-3 flex items-center justify-between border-t border-white/5 pt-2 text-[11px]">
+                                            <span class="text-white/40"><i class="fas fa-briefcase mr-1"></i> ${doc.experience_years} Yrs Exp</span>
+                                            <button onclick="window.fetchSlots(${doc.id}, '${doc.name.replace(/'/g, "\\'")}')" 
+                                                    class="px-3 py-1.5 bg-indigo-500/20 hover:bg-indigo-500/40 text-indigo-300 hover:text-white rounded-lg font-bold border border-indigo-500/20 transition-all select-doc-btn">
+                                                Select & View Slots
+                                            </button>
+                                        </div>
+                                    </div>
+                                `).join("")}
+                            </div>
+                        `;
+                    } else {
+                        docCardsHtml = `<p class="mt-3 text-xs text-white/40 italic"><i class="fas fa-info-circle mr-1"></i> No active doctors currently found in this department.</p>`;
+                    }
+
+                    appendBotMessage(`
+                        ${data.reply}
+                        ${docCardsHtml}
+                    `);
+
+                } else {
+                    appendBotMessage(`<span class="text-red-400 font-semibold"><i class="fas fa-exclamation-circle mr-1"></i> Error: ${data.error || "Failed to process symptoms."}</span>`);
+                }
+
+            } catch (err) {
+                showTyping(false);
+                appendBotMessage(`<span class="text-red-400 font-semibold"><i class="fas fa-wifi mr-1"></i> Failed to connect. Please check your internet connection.</span>`);
+            }
+        });
+
+        // Expose Fetch Slots function globally to connect with inline doctor cards
+        window.fetchSlots = async (doctorId, doctorName) => {
+            // Disable all other doctor select buttons in this container to prevent double booking attempts
+            document.querySelectorAll(".select-doc-btn").forEach(btn => btn.disabled = true);
+
+            currentDoctorId = doctorId;
+            currentDoctorName = doctorName;
+
+            showTyping(true);
+
+            try {
+                const response = await fetch(`/api/slots/${doctorId}`);
+                const slotsByDate = await response.json();
+                showTyping(false);
+
+                // Build Date tab selections
+                const dates = Object.keys(slotsByDate);
+                if (dates.length === 0) {
+                    appendBotMessage(`Sorry, there are no active appointment slots scheduled for **${doctorName}** in the next 7 days.`);
+                    return;
+                }
+
+                // Generate inline template for Slot Picker in Chat
+                const pickerId = `slot-picker-${Date.now()}`;
+                let dateTabsHtml = "";
+                let slotsContainerHtml = "";
+
+                dates.forEach((dateStr, idx) => {
+                    const parsedDate = new Date(dateStr);
+                    const formattedDate = parsedDate.toLocaleDateString("en-US", { weekday: 'short', month: 'short', day: 'numeric' });
+                    const isActive = idx === 0;
+
+                    dateTabsHtml += `
+                        <button onclick="window.switchDateTab('${pickerId}', '${dateStr}')" 
+                                class="date-tab-btn py-2 px-3.5 text-xs font-bold rounded-lg border transition-all ${isActive ? 'bg-indigo-500/20 text-indigo-300 border-indigo-500/40' : 'bg-white/5 text-white/60 border-white/5 hover:border-white/20'}"
+                                data-date="${dateStr}">
+                            ${formattedDate}
+                        </button>
+                    `;
+
+                    // Generate slots for each date
+                    const slots = slotsByDate[dateStr];
+                    slotsContainerHtml += `
+                        <div id="slots-${pickerId}-${dateStr}" class="slot-list-group ${isActive ? 'grid' : 'hidden'} grid-cols-2 sm:grid-cols-3 gap-2.5 mt-4">
+                            ${slots.length > 0 ? slots.map(s => `
+                                <button onclick="window.selectSlot('${s.id}', '${dateStr}', '${s.time_label}')" 
+                                        class="slot-pill-btn p-2.5 rounded-lg border text-center transition-all flex flex-col items-center justify-center hover:scale-[1.02] ${s.available_spots > 0 ? 'bg-white/5 hover:bg-indigo-500/10 border-white/10 hover:border-indigo-500/30 text-white cursor-pointer' : 'bg-red-500/5 border-red-500/10 text-white/30 cursor-not-allowed'}"
+                                        ${s.available_spots <= 0 ? 'disabled' : ''}>
+                                    <span class="text-xs font-bold">${s.time_label}</span>
+                                    <span class="text-[9px] font-semibold tracking-wider uppercase mt-1 ${s.available_spots > 0 ? 'text-emerald-400' : 'text-red-400'}">
+                                        ${s.available_spots > 0 ? `${s.available_spots} left` : 'Full'}
+                                    </span>
+                                </button>
+                            `).join("") : `<div class="col-span-3 py-4 text-center text-xs text-white/40 italic"><i class="fas fa-calendar-times mr-1"></i> No slots available on this date.</div>`}
+                        </div>
+                    `;
+                });
+
+                appendBotMessage(`
+                    I found the following slots available for **${doctorName}**. Please select your preferred date and time:
+                    <div id="${pickerId}" class="mt-4 p-4 glass bg-white/5 border border-white/10 rounded-2xl">
+                        <div class="flex gap-2 pb-2 overflow-x-auto select-none border-b border-white/5 scrollbar-none">
+                            ${dateTabsHtml}
+                        </div>
+                        ${slotsContainerHtml}
+                    </div>
+                `);
+
+            } catch (err) {
+                showTyping(false);
+                appendBotMessage(`<span class="text-red-400 font-semibold"><i class="fas fa-wifi mr-1"></i> Failed to retrieve doctor schedules.</span>`);
+            }
+        };
+
+        // Expose Date Switch globally
+        window.switchDateTab = (pickerId, dateStr) => {
+            const picker = document.getElementById(pickerId);
+            if (!picker) return;
+
+            // Highlight Tab Button
+            picker.querySelectorAll(".date-tab-btn").forEach(btn => {
+                if (btn.getAttribute("data-date") === dateStr) {
+                    btn.className = "date-tab-btn py-2 px-3.5 text-xs font-bold rounded-lg border transition-all bg-indigo-500/20 text-indigo-300 border-indigo-500/40";
+                } else {
+                    btn.className = "date-tab-btn py-2 px-3.5 text-xs font-bold rounded-lg border transition-all bg-white/5 text-white/60 border-white/5 hover:border-white/20";
+                }
+            });
+
+            // Toggle Lists
+            picker.querySelectorAll(".slot-list-group").forEach(el => {
+                if (el.id === `slots-${pickerId}-${dateStr}`) {
+                    el.classList.remove("hidden");
+                    el.classList.add("grid");
+                } else {
+                    el.classList.add("hidden");
+                    el.classList.remove("grid");
+                }
+            });
+        };
+
+        // Expose Slot Selector globally
+        window.selectSlot = (slotId, dateStr, timeStr) => {
+            currentSlotId = slotId;
+            selectedDateStr = dateStr;
+            selectedTimeStr = timeStr;
+
+            // Disable all other slot pills in this card
+            document.querySelectorAll(".slot-pill-btn").forEach(btn => btn.disabled = true);
+
+            showTyping(true);
+
+            setTimeout(() => {
+                showTyping(false);
+                
+                // Show booking configuration card
+                const formCardId = `booking-form-${Date.now()}`;
+                
+                appendBotMessage(`
+                    Great selection! You have selected **${timeStr}** on **${new Date(dateStr).toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric" })}** with **${currentDoctorName}**.
+                    <br><br>
+                    Please configure your clinical preferences below to complete the booking directly:
+                    
+                    <form id="${formCardId}" onsubmit="window.submitInlineBooking(event, '${formCardId}')" class="mt-4 p-5 glass bg-white/5 border border-white/10 rounded-2xl space-y-4 text-left">
+                        <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                            <div>
+                                <label class="block text-[9px] font-black text-white/40 uppercase tracking-widest mb-1.5">Consultation Mode</label>
+                                <select id="cons-mode" class="w-full bg-white/5 border border-white/10 rounded-lg p-2.5 text-xs text-white placeholder-white/40 focus:outline-none" required>
+                                    <option value="In-Person">In-Person Clinic Visit</option>
+                                    <option value="Video">Video Consultation (Telehealth)</option>
+                                </select>
+                            </div>
+                            <div>
+                                <label class="block text-[9px] font-black text-white/40 uppercase tracking-widest mb-1.5">Appointment Type</label>
+                                <select id="appt-type" class="w-full bg-white/5 border border-white/10 rounded-lg p-2.5 text-xs text-white placeholder-white/40 focus:outline-none" required>
+                                    <option value="normal">Normal (Routine Checkup)</option>
+                                    <option value="urgent">Urgent Clinic Consultation</option>
+                                    <option value="follow-up">Follow-Up Consultation</option>
+                                </select>
+                            </div>
+                        </div>
+
+                        <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                            <div>
+                                <label class="block text-[9px] font-black text-white/40 uppercase tracking-widest mb-1.5">Preferred Language</label>
+                                <select id="pref-lang" class="w-full bg-white/5 border border-white/10 rounded-lg p-2.5 text-xs text-white placeholder-white/40 focus:outline-none" required>
+                                    <option value="English">English</option>
+                                    <option value="Hindi">Hindi</option>
+                                    <option value="Spanish">Spanish</option>
+                                    <option value="Arabic">Arabic</option>
+                                    <option value="French">French</option>
+                                </select>
+                            </div>
+                            <div>
+                                <label class="block text-[9px] font-black text-white/40 uppercase tracking-widest mb-1.5">Emergency Contact Mobile</label>
+                                <input type="tel" id="em-phone" class="w-full bg-white/5 border border-white/10 rounded-lg p-2.5 text-xs text-white placeholder-white/40 focus:outline-none" placeholder="E.g. +91 99999 99999">
+                            </div>
+                        </div>
+
+                        <div>
+                            <label class="block text-[9px] font-black text-white/40 uppercase tracking-widest mb-1.5">Emergency Contact Name</label>
+                            <input type="text" id="em-name" class="w-full bg-white/5 border border-white/10 rounded-lg p-2.5 text-xs text-white placeholder-white/40 focus:outline-none" placeholder="E.g. Emergency Contact Name">
+                        </div>
+
+                        <div>
+                            <label class="block text-[9px] font-black text-white/40 uppercase tracking-widest mb-1.5">Clinical Symptoms / Extra Notes</label>
+                            <textarea id="appt-notes" rows="2" class="w-full bg-white/5 border border-white/10 rounded-lg p-2.5 text-xs text-white placeholder-white/40 focus:outline-none" placeholder="Add any details you'd like your doctor to know..."></textarea>
+                        </div>
+
+                        <button type="submit" class="w-full py-3 btn-gradient text-xs font-black uppercase tracking-widest text-white rounded-xl shadow-lg transition-transform hover:scale-[1.01] flex items-center justify-center gap-1.5">
+                            <i class="fas fa-check-circle"></i>
+                            Confirm Appointment Booking
+                        </button>
+                    </form>
+                `);
+
+            }, 800);
+        };
+
+        // Expose Booking Submit globally
+        window.submitInlineBooking = async (event, formCardId) => {
+            event.preventDefault();
+            const form = document.getElementById(formCardId);
+            if (!form) return;
+
+            // Gather values
+            const mode = form.querySelector("#cons-mode").value;
+            const type = form.querySelector("#appt-type").value;
+            const lang = form.querySelector("#pref-lang").value;
+            const emPhone = form.querySelector("#em-phone").value.trim();
+            const emName = form.querySelector("#em-name").value.trim();
+            const notes = form.querySelector("#appt-notes").value.trim();
+
+            // Disable submit buttons in the form
+            form.querySelectorAll("button, select, textarea, input").forEach(el => el.disabled = true);
+
+            showTyping(true);
+
+            try {
+                const response = await fetch("/api/symptom-checker/book-inline", {
+                    method: "POST",
+                    headers: { "Content-Type": "application/json" },
+                    body: JSON.stringify({
+                        slot_id: parseInt(currentSlotId),
+                        appointment_type: type,
+                        notes: notes,
+                        preferred_language: lang,
+                        consultation_mode: mode,
+                        emergency_contact_name: emName,
+                        emergency_contact_phone: emPhone
+                    })
+                });
+
+                const data = await response.json();
+                showTyping(false);
+
+                if (response.ok && data.success) {
+                    bookingSubmitted = true;
+                    // Hide main message textbox input container to prevent multiple chats after success
+                    chatInputContainer.classList.add("hidden");
+
+                    const formattedSuccessDate = new Date(data.appointment.date).toLocaleDateString("en-US", { weekday: "long", month: "long", day: "numeric", year: "numeric" });
+                    
+                    // Render premium Success Card
+                    appendBotMessage(`
+                        <div class="text-center p-4">
+                            <div class="w-16 h-16 bg-emerald-500/20 border border-emerald-500/30 rounded-full flex items-center justify-center mx-auto mb-4 text-emerald-400 text-3xl animate-bounce">
+                                <i class="fas fa-check-circle"></i>
+                            </div>
+                            <span class="px-3 py-1 bg-emerald-500/10 text-emerald-400 border border-emerald-500/20 rounded-full text-[10px] font-black tracking-widest uppercase">Booking Confirmed</span>
+                            
+                            <h4 class="text-2xl font-black text-white mt-3 tracking-tight">Your Slot is Secured!</h4>
+                            <p class="text-xs text-white/50 mt-1 max-w-sm mx-auto">We have registered your appointment details and successfully queued you into the live wait list.</p>
+                            
+                            <!-- Premium Pass Details -->
+                            <div class="mt-5 glass bg-white/5 border border-white/10 rounded-2xl overflow-hidden text-left shadow-2xl">
+                                <div class="p-4 bg-indigo-600/25 border-b border-white/5 flex items-center justify-between">
+                                    <div>
+                                        <span class="text-[9px] font-black text-indigo-300 uppercase tracking-widest block">Specialist</span>
+                                        <h5 class="font-bold text-white text-sm leading-tight">${data.appointment.doctor_name}</h5>
+                                    </div>
+                                    <div class="text-right">
+                                        <span class="text-[9px] font-black text-indigo-300 uppercase tracking-widest block">Token ID</span>
+                                        <span class="font-black text-white text-base">#${data.appointment.token}</span>
+                                    </div>
+                                </div>
+                                <div class="p-4 grid grid-cols-2 gap-y-3.5 gap-x-2 text-xs border-b border-white/5">
+                                    <div>
+                                        <span class="text-[9px] text-white/40 uppercase font-black tracking-wider block">Specialty</span>
+                                        <span class="font-bold text-white/90">${data.appointment.specialization}</span>
+                                    </div>
+                                    <div>
+                                        <span class="text-[9px] text-white/40 uppercase font-black tracking-wider block">Mode</span>
+                                        <span class="font-bold text-white/90 flex items-center gap-1">
+                                            <i class="fas ${mode === 'Video' ? 'fa-video text-cyan-400' : 'fa-hospital text-indigo-400'} text-[10px]"></i>
+                                            ${data.appointment.consultation_mode}
+                                        </span>
+                                    </div>
+                                    <div class="col-span-2">
+                                        <span class="text-[9px] text-white/40 uppercase font-black tracking-wider block">Schedule Time</span>
+                                        <span class="font-bold text-white/90"><i class="far fa-calendar-alt mr-1"></i> ${formattedSuccessDate} at ${data.appointment.time}</span>
+                                    </div>
+                                </div>
+                                <div class="p-4 bg-black/30 flex items-center justify-between text-xs">
+                                    <div class="flex items-center gap-2">
+                                        <div class="w-2.5 h-2.5 rounded-full bg-emerald-500 animate-ping"></div>
+                                        <span class="font-bold text-white/70">Estimated Wait</span>
+                                    </div>
+                                    <span class="font-black text-emerald-400 text-sm">~${data.appointment.eta_minutes} Minutes</span>
+                                </div>
+                            </div>
+
+                            <div class="mt-6 flex flex-col sm:flex-row gap-3 justify-center">
+                                <a href="/dashboard" class="px-5 py-3 btn-gradient text-[10px] font-black uppercase tracking-widest text-white rounded-xl shadow-lg flex items-center justify-center gap-1.5">
+                                    <i class="fas fa-columns"></i>
+                                    Go to Dashboard
+                                </a>
+                                <a href="/calendar" class="px-5 py-3 bg-white/10 hover:bg-white/15 text-[10px] font-black uppercase tracking-widest text-white rounded-xl border border-white/10 transition-colors flex items-center justify-center gap-1.5">
+                                    <i class="far fa-calendar-alt"></i>
+                                    View in Calendar
+                                </a>
+                            </div>
+                        </div>
+                    `);
+                } else {
+                    form.querySelectorAll("button, select, textarea, input").forEach(el => el.disabled = false);
+                    appendBotMessage(`<span class="text-red-400 font-semibold"><i class="fas fa-exclamation-circle mr-1"></i> Booking failed: ${data.error || "Please verify slot capacity."}</span>`);
+                }
+
+            } catch (err) {
+                form.querySelectorAll("button, select, textarea, input").forEach(el => el.disabled = false);
+                showTyping(false);
+                appendBotMessage(`<span class="text-red-400 font-semibold"><i class="fas fa-wifi mr-1"></i> Failed to submit booking request. Please check your network.</span>`);
+            }
+        };
+
+    });
+</script>
+<style>
+    /* Styling extra parameters for full design control */
+    .ScrollStyle::-webkit-scrollbar {
+        width: 6px;
+    }
+    .ScrollStyle::-webkit-scrollbar-track {
+        background: transparent;
+    }
+    .ScrollStyle::-webkit-scrollbar-thumb {
+        background: rgba(255, 255, 255, 0.08);
+        border-radius: 10px;
+    }
+    .ScrollStyle::-webkit-scrollbar-thumb:hover {
+        background: rgba(255, 255, 255, 0.15);
+    }
+    
+    /* Dynamic fade-in animation for message bubbles */
+    @keyframes fadeIn {
+        from {
+            opacity: 0;
+            transform: translateY(10px);
+        }
+        to {
+            opacity: 1;
+            transform: translateY(0);
+        }
+    }
+    .animate-fadeIn {
+        animation: fadeIn 0.4s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+    }
+
+    /* Hide horizontal scroll bar */
+    .scrollbar-none::-webkit-scrollbar {
+        display: none;
+    }
+    .scrollbar-none {
+        -ms-overflow-style: none;  /* IE and Edge */
+        scrollbar-width: none;  /* Firefox */
+    }
+</style>
 {% endblock %}
