@@ -11,15 +11,27 @@
             <i class="fas fa-robot mr-1"></i> Interactive AI Triaging
         </span>
         <h1 class="text-4xl sm:text-5xl font-black text-white mt-4 tracking-tighter uppercase">
-            MediBot Clinical Assistant
+            MediSlot Triage Assistant
         </h1>
         <p class="text-white/60 mt-3 text-base sm:text-lg max-w-2xl mx-auto">
-            Describe how you are feeling, instantly discover matching specialists, and confirm your smart appointment booking directly within the chat.
+            Describe your symptoms or use our step-by-step diagnostic wizard to instantly schedule the perfect specialist slot.
         </p>
     </div>
 
-    <!-- Main Chat Workspace -->
-    <div class="glass overflow-hidden flex flex-col md:flex-row shadow-2xl border border-white/10" style="height: 680px;">
+    <!-- Toggle Switches between Chat and Wizard Mode -->
+    <div class="flex justify-center gap-4 mb-8">
+        <button id="toggle-chat-btn" 
+                class="px-6 py-3 rounded-xl text-xs font-black uppercase tracking-widest transition-all duration-300 flex items-center gap-2 border border-indigo-500/40 bg-indigo-500/25 text-white shadow-[0_0_20px_rgba(99,102,241,0.25)] select-none">
+            <i class="fas fa-comments text-sm animate-pulse"></i> MediBot AI Chat
+        </button>
+        <button id="toggle-wizard-btn" 
+                class="px-6 py-3 rounded-xl text-xs font-black uppercase tracking-widest transition-all duration-300 flex items-center gap-2 border border-white/10 bg-white/5 text-white/50 hover:bg-white/10 hover:text-white select-none">
+            <i class="fas fa-wand-magic-sparkles text-sm"></i> Smart Diagnosis Wizard
+        </button>
+    </div>
+
+    <!-- Container for Chat Mode -->
+    <div id="chat-mode-container" class="glass overflow-hidden flex flex-col md:flex-row shadow-2xl border border-white/10 transition-all duration-300" style="height: 680px;">
         
         <!-- Left Panel: Sidebar info & features -->
         <div class="w-full md:w-80 bg-black/35 border-b md:border-b-0 md:border-r border-white/10 p-6 flex flex-col justify-between">
@@ -109,12 +121,342 @@
         </div>
 
     </div>
+
+    <!-- Container for Wizard Mode -->
+    <div id="wizard-mode-container" class="hidden glass overflow-hidden flex flex-col md:flex-row shadow-2xl border border-white/10 transition-all duration-300" style="min-height: 680px;">
+        
+        <!-- Left Panel: Wizard Steps Tracker -->
+        <div class="w-full md:w-80 bg-black/35 border-b md:border-b-0 md:border-r border-white/10 p-6 flex flex-col justify-between">
+            <div>
+                <div class="flex items-center gap-3 mb-8">
+                    <div class="w-10 h-10 rounded-xl bg-indigo-500/10 border border-indigo-500/20 flex items-center justify-center text-indigo-300 text-lg">
+                        <i class="fas fa-wand-magic-sparkles"></i>
+                    </div>
+                    <div>
+                        <h4 class="font-bold text-white leading-tight">Smart Diagnosis</h4>
+                        <span class="text-[10px] text-indigo-300 font-bold uppercase tracking-wider flex items-center gap-1">
+                            <span class="w-1.5 h-1.5 bg-indigo-500 rounded-full animate-ping"></span> Clinical Wizard
+                        </span>
+                    </div>
+                </div>
+
+                <div class="space-y-6">
+                    <h5 class="text-[10px] font-black text-white/40 uppercase tracking-widest">Diagnostic Progress</h5>
+                    
+                    <!-- Progress Step 1 -->
+                    <div id="step-nav-1" class="flex gap-3.5 items-center text-sm font-semibold text-white transition-colors duration-300">
+                        <span id="step-circle-1" class="w-7 h-7 rounded-full bg-indigo-500 border border-indigo-400 flex items-center justify-center text-xs font-bold text-white shadow-[0_0_10px_rgba(99,102,241,0.4)]">1</span>
+                        <span id="step-label-1" class="text-white">Primary Symptoms</span>
+                    </div>
+                    
+                    <!-- Progress Step 2 -->
+                    <div id="step-nav-2" class="flex gap-3.5 items-center text-sm font-semibold text-white/40 transition-colors duration-300">
+                        <span id="step-circle-2" class="w-7 h-7 rounded-full bg-white/5 border border-white/10 flex items-center justify-center text-xs font-bold text-white/50">2</span>
+                        <span id="step-label-2" class="text-white/40">Severity & Timeline</span>
+                    </div>
+                    
+                    <!-- Progress Step 3 -->
+                    <div id="step-nav-3" class="flex gap-3.5 items-center text-sm font-semibold text-white/40 transition-colors duration-300">
+                        <span id="step-circle-3" class="w-7 h-7 rounded-full bg-white/5 border border-white/10 flex items-center justify-center text-xs font-bold text-white/50">3</span>
+                        <span id="step-label-3" class="text-white/40">Secondary Symptoms</span>
+                    </div>
+
+                    <!-- Progress Step 4 -->
+                    <div id="step-nav-4" class="flex gap-3.5 items-center text-sm font-semibold text-white/40 transition-colors duration-300">
+                        <span id="step-circle-4" class="w-7 h-7 rounded-full bg-white/5 border border-white/10 flex items-center justify-center text-xs font-bold text-white/50">4</span>
+                        <span id="step-label-4" class="text-white/40">Diagnostics & Schedule</span>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Notice Disclaimer -->
+            <div class="mt-8 p-4 bg-indigo-500/5 border border-indigo-500/10 rounded-xl">
+                <span class="text-[9px] font-bold text-indigo-300 uppercase tracking-widest block mb-1">🏥 Wizard Note</span>
+                <p class="text-[11px] text-white/40 leading-relaxed">
+                    This wizard triages symptoms to recommend the most suitable clinical department. Do not use for immediate medical emergencies.
+                </p>
+            </div>
+        </div>
+
+        <!-- Right Panel: Step Container -->
+        <div class="flex-1 flex flex-col bg-black/15 p-6 sm:p-8 justify-between">
+            <!-- Steps wrapper -->
+            <div class="flex-1 overflow-y-auto pr-1 ScrollStyle" style="max-height: 520px;">
+                
+                <!-- STEP 1: Primary Symptoms -->
+                <div id="wizard-step-1" class="space-y-6 animate-fadeIn">
+                    <div>
+                        <span class="px-2.5 py-1 bg-indigo-500/10 text-indigo-300 border border-indigo-500/20 rounded-full text-[10px] font-black tracking-widest uppercase">Step 1 of 4</span>
+                        <h3 class="text-2xl font-black text-white mt-2 tracking-tight uppercase">Where is the primary discomfort?</h3>
+                        <p class="text-xs text-white/60 mt-1">Select the primary system or area of your symptoms to help focus our clinical analysis.</p>
+                    </div>
+
+                    <div class="grid grid-cols-2 lg:grid-cols-4 gap-4 pt-2">
+                        <!-- Card 1: Neurology -->
+                        <button onclick="window.selectPrimaryArea('Neurology')" 
+                                class="primary-area-btn glass bg-white/5 border border-white/10 hover:border-indigo-500/40 rounded-2xl p-5 flex flex-col items-center justify-center text-center transition-all duration-300 hover:scale-[1.03] group outline-none select-none"
+                                data-area="Neurology">
+                            <div class="w-12 h-12 rounded-xl bg-indigo-500/10 border border-indigo-500/20 flex items-center justify-center text-indigo-300 text-xl group-hover:bg-indigo-500/20 group-hover:scale-110 transition-all mb-4">
+                                <i class="fas fa-brain animate-pulse"></i>
+                            </div>
+                            <h5 class="font-bold text-sm text-white group-hover:text-indigo-300 transition-colors">Head / Brain</h5>
+                            <span class="text-[10px] text-white/40 mt-1">Neurology</span>
+                        </button>
+
+                        <!-- Card 2: Cardiology -->
+                        <button onclick="window.selectPrimaryArea('Cardiology')" 
+                                class="primary-area-btn glass bg-white/5 border border-white/10 hover:border-indigo-500/40 rounded-2xl p-5 flex flex-col items-center justify-center text-center transition-all duration-300 hover:scale-[1.03] group outline-none select-none"
+                                data-area="Cardiology">
+                            <div class="w-12 h-12 rounded-xl bg-red-500/10 border border-red-500/20 flex items-center justify-center text-red-400 text-xl group-hover:bg-red-500/20 group-hover:scale-110 transition-all mb-4">
+                                <i class="fas fa-heart animate-pulse"></i>
+                            </div>
+                            <h5 class="font-bold text-sm text-white group-hover:text-red-400 transition-colors">Chest / Heart</h5>
+                            <span class="text-[10px] text-white/40 mt-1">Cardiology</span>
+                        </button>
+
+                        <!-- Card 3: General Medicine -->
+                        <button onclick="window.selectPrimaryArea('General Medicine')" 
+                                class="primary-area-btn glass bg-white/5 border border-white/10 hover:border-indigo-500/40 rounded-2xl p-5 flex flex-col items-center justify-center text-center transition-all duration-300 hover:scale-[1.03] group outline-none select-none"
+                                data-area="General Medicine">
+                            <div class="w-12 h-12 rounded-xl bg-emerald-500/10 border border-emerald-500/20 flex items-center justify-center text-emerald-400 text-xl group-hover:bg-emerald-500/20 group-hover:scale-110 transition-all mb-4">
+                                <i class="fas fa-virus-covid animate-pulse"></i>
+                            </div>
+                            <h5 class="font-bold text-sm text-white group-hover:text-emerald-400 transition-colors">General / Fever</h5>
+                            <span class="text-[10px] text-white/40 mt-1">General Medicine</span>
+                        </button>
+
+                        <!-- Card 4: Orthopedics -->
+                        <button onclick="window.selectPrimaryArea('Orthopedics')" 
+                                class="primary-area-btn glass bg-white/5 border border-white/10 hover:border-indigo-500/40 rounded-2xl p-5 flex flex-col items-center justify-center text-center transition-all duration-300 hover:scale-[1.03] group outline-none select-none"
+                                data-area="Orthopedics">
+                            <div class="w-12 h-12 rounded-xl bg-amber-500/10 border border-amber-500/20 flex items-center justify-center text-amber-400 text-xl group-hover:bg-amber-500/20 group-hover:scale-110 transition-all mb-4">
+                                <i class="fas fa-bone animate-pulse"></i>
+                            </div>
+                            <h5 class="font-bold text-sm text-white group-hover:text-amber-400 transition-colors">Bones / Joints</h5>
+                            <span class="text-[10px] text-white/40 mt-1">Orthopedics</span>
+                        </button>
+
+                        <!-- Card 5: Dermatology -->
+                        <button onclick="window.selectPrimaryArea('Dermatology')" 
+                                class="primary-area-btn glass bg-white/5 border border-white/10 hover:border-indigo-500/40 rounded-2xl p-5 flex flex-col items-center justify-center text-center transition-all duration-300 hover:scale-[1.03] group outline-none select-none"
+                                data-area="Dermatology">
+                            <div class="w-12 h-12 rounded-xl bg-pink-500/10 border border-pink-500/20 flex items-center justify-center text-pink-400 text-xl group-hover:bg-pink-500/20 group-hover:scale-110 transition-all mb-4">
+                                <i class="fas fa-hand-holding-medical animate-pulse"></i>
+                            </div>
+                            <h5 class="font-bold text-sm text-white group-hover:text-pink-400 transition-colors">Skin / Rashes</h5>
+                            <span class="text-[10px] text-white/40 mt-1">Dermatology</span>
+                        </button>
+
+                        <!-- Card 6: ENT -->
+                        <button onclick="window.selectPrimaryArea('ENT')" 
+                                class="primary-area-btn glass bg-white/5 border border-white/10 hover:border-indigo-500/40 rounded-2xl p-5 flex flex-col items-center justify-center text-center transition-all duration-300 hover:scale-[1.03] group outline-none select-none"
+                                data-area="ENT">
+                            <div class="w-12 h-12 rounded-xl bg-teal-500/10 border border-teal-500/20 flex items-center justify-center text-teal-400 text-xl group-hover:bg-teal-500/20 group-hover:scale-110 transition-all mb-4">
+                                <i class="fas fa-ear-deaf animate-pulse"></i>
+                            </div>
+                            <h5 class="font-bold text-sm text-white group-hover:text-teal-400 transition-colors">Ear, Nose, Throat</h5>
+                            <span class="text-[10px] text-white/40 mt-1">ENT</span>
+                        </button>
+
+                        <!-- Card 7: Gynecology -->
+                        <button onclick="window.selectPrimaryArea('Gynecology')" 
+                                class="primary-area-btn glass bg-white/5 border border-white/10 hover:border-indigo-500/40 rounded-2xl p-5 flex flex-col items-center justify-center text-center transition-all duration-300 hover:scale-[1.03] group outline-none select-none"
+                                data-area="Gynecology">
+                            <div class="w-12 h-12 rounded-xl bg-purple-500/10 border border-purple-500/20 flex items-center justify-center text-purple-400 text-xl group-hover:bg-purple-500/20 group-hover:scale-110 transition-all mb-4">
+                                <i class="fas fa-person-pregnant animate-pulse"></i>
+                            </div>
+                            <h5 class="font-bold text-sm text-white group-hover:text-purple-400 transition-colors">Women Health</h5>
+                            <span class="text-[10px] text-white/40 mt-1">Gynecology</span>
+                        </button>
+
+                        <!-- Card 8: Pediatrics -->
+                        <button onclick="window.selectPrimaryArea('Pediatrics')" 
+                                class="primary-area-btn glass bg-white/5 border border-white/10 hover:border-indigo-500/40 rounded-2xl p-5 flex flex-col items-center justify-center text-center transition-all duration-300 hover:scale-[1.03] group outline-none select-none"
+                                data-area="Pediatrics">
+                            <div class="w-12 h-12 rounded-xl bg-cyan-500/10 border border-cyan-500/20 flex items-center justify-center text-cyan-400 text-xl group-hover:bg-cyan-500/20 group-hover:scale-110 transition-all mb-4">
+                                <i class="fas fa-baby animate-pulse"></i>
+                            </div>
+                            <h5 class="font-bold text-sm text-white group-hover:text-cyan-400 transition-colors">Child Care</h5>
+                            <span class="text-[10px] text-white/40 mt-1">Pediatrics</span>
+                        </button>
+                    </div>
+                </div>
+
+                <!-- STEP 2: Severity & Timeline -->
+                <div id="wizard-step-2" class="hidden space-y-8 animate-fadeIn">
+                    <div>
+                        <span class="px-2.5 py-1 bg-indigo-500/10 text-indigo-300 border border-indigo-500/20 rounded-full text-[10px] font-black tracking-widest uppercase">Step 2 of 4</span>
+                        <h3 class="text-2xl font-black text-white mt-2 tracking-tight uppercase">Severity and Duration</h3>
+                        <p class="text-xs text-white/60 mt-1">Provide estimates on symptom intensity and active duration to assess triage urgency.</p>
+                    </div>
+
+                    <!-- Severity Slider -->
+                    <div class="glass bg-white/5 border border-white/10 rounded-2xl p-6 space-y-4">
+                        <div class="flex justify-between items-center">
+                            <label class="text-[10px] font-black text-white/40 uppercase tracking-widest">Pain / Discomfort Severity</label>
+                            <span id="severity-display" class="px-3.5 py-1 bg-emerald-500/20 border border-emerald-500/30 text-emerald-400 rounded-full text-xs font-black tracking-wider transition-all duration-300">
+                                3/10 (Mild 😊)
+                            </span>
+                        </div>
+                        <input type="range" id="wizard-severity-slider" min="1" max="10" value="3" 
+                               oninput="window.updateSeverityDisplay(this.value)"
+                               class="w-full h-2.5 bg-white/10 rounded-lg appearance-none cursor-pointer accent-indigo-500">
+                        <div class="flex justify-between text-[10px] text-white/30 font-bold uppercase tracking-wider px-1">
+                            <span>1 (Negligible)</span>
+                            <span>5 (Moderate)</span>
+                            <span>10 (Unbearable)</span>
+                        </div>
+                    </div>
+
+                    <!-- Duration Picker -->
+                    <div class="space-y-4">
+                        <label class="block text-[10px] font-black text-white/40 uppercase tracking-widest">How long have you felt these symptoms?</label>
+                        <div class="grid grid-cols-2 sm:grid-cols-4 gap-3">
+                            <button onclick="window.selectDuration('Less than 24h')" 
+                                    class="duration-pill-btn p-4 rounded-xl border text-center transition-all bg-white/5 border-white/10 text-white font-semibold hover:border-indigo-500/30 hover:bg-white/10 outline-none select-none"
+                                    data-duration="Less than 24h">
+                                <span class="text-xs block">Less than 24h</span>
+                            </button>
+                            <button onclick="window.selectDuration('1-3 Days')" 
+                                    class="duration-pill-btn p-4 rounded-xl border text-center transition-all bg-white/5 border-white/10 text-white font-semibold hover:border-indigo-500/30 hover:bg-white/10 outline-none select-none"
+                                    data-duration="1-3 Days">
+                                <span class="text-xs block">1 - 3 Days</span>
+                            </button>
+                            <button onclick="window.selectDuration('4-7 Days')" 
+                                    class="duration-pill-btn p-4 rounded-xl border text-center transition-all bg-white/5 border-white/10 text-white font-semibold hover:border-indigo-500/30 hover:bg-white/10 outline-none select-none"
+                                    data-duration="4-7 Days">
+                                <span class="text-xs block">4 - 7 Days</span>
+                            </button>
+                            <button onclick="window.selectDuration('Chronic / Multi-week')" 
+                                    class="duration-pill-btn p-4 rounded-xl border text-center transition-all bg-white/5 border-white/10 text-white font-semibold hover:border-indigo-500/30 hover:bg-white/10 outline-none select-none"
+                                    data-duration="Chronic / Multi-week">
+                                <span class="text-xs block">Chronic (1wk+)</span>
+                            </button>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- STEP 3: Accompanying Symptoms -->
+                <div id="wizard-step-3" class="hidden space-y-6 animate-fadeIn">
+                    <div>
+                        <span class="px-2.5 py-1 bg-indigo-500/10 text-indigo-300 border border-indigo-500/20 rounded-full text-[10px] font-black tracking-widest uppercase">Step 3 of 4</span>
+                        <h3 class="text-2xl font-black text-white mt-2 tracking-tight uppercase">Accompanying Symptoms</h3>
+                        <p class="text-xs text-white/60 mt-1">Select any additional secondary symptoms to optimize diagnostic department matching.</p>
+                    </div>
+
+                    <!-- Badge cloud container -->
+                    <div class="glass bg-white/5 border border-white/10 rounded-2xl p-6">
+                        <label class="block text-[10px] font-black text-white/40 uppercase tracking-widest mb-4">Click to select all that apply</label>
+                        <div id="secondary-badges-container" class="flex flex-wrap gap-2.5">
+                            <!-- Populated dynamically via JS -->
+                        </div>
+                    </div>
+                </div>
+
+                <!-- STEP 4: Diagnostics, Urgency, Doctors and Booking -->
+                <div id="wizard-step-4" class="hidden space-y-6 animate-fadeIn">
+                    <div>
+                        <span class="px-2.5 py-1 bg-indigo-500/10 text-indigo-300 border border-indigo-500/20 rounded-full text-[10px] font-black tracking-widest uppercase">Step 4 of 4</span>
+                        <h3 class="text-2xl font-black text-white mt-2 tracking-tight uppercase">AI Clinical Diagnostic Report</h3>
+                        <p class="text-xs text-white/60 mt-1">Our assessment points to the department details below. You can schedule a session with a specialist directly.</p>
+                    </div>
+
+                    <!-- AI Diagnostic details panel -->
+                    <div class="grid grid-cols-1 lg:grid-cols-3 gap-6 pt-2">
+                        <!-- Summary and Department Details -->
+                        <div class="lg:col-span-1 space-y-4">
+                            <!-- Triage Urgency Banner -->
+                            <div id="wizard-urgency-banner" class="p-5 rounded-2xl text-center border">
+                                <span class="text-[9px] font-black uppercase tracking-widest block mb-1">Triaged Urgency</span>
+                                <h4 id="wizard-urgency-level" class="text-3xl font-black tracking-tighter uppercase">---</h4>
+                            </div>
+
+                            <div class="glass bg-white/5 border border-white/10 rounded-2xl p-5 space-y-3.5">
+                                <div>
+                                    <span class="text-[9px] font-black text-white/40 uppercase tracking-widest block">Recommended Specialty</span>
+                                    <h4 id="wizard-recommended-dept" class="font-bold text-white text-base leading-tight">---</h4>
+                                </div>
+                                <div class="border-t border-white/5 pt-3">
+                                    <span class="text-[9px] font-black text-white/40 uppercase tracking-widest block">Triage Analysis Summary</span>
+                                    <p id="wizard-analysis-summary" class="text-xs text-white/60 leading-relaxed mt-1">---</p>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Doctors and Slots Scheduler -->
+                        <div class="lg:col-span-2 space-y-6">
+                            <!-- Section: Select Doctor -->
+                            <div class="space-y-3">
+                                <label class="block text-[10px] font-black text-white/40 uppercase tracking-widest">Available Specialists</label>
+                                <div id="wizard-doctors-grid" class="grid grid-cols-1 sm:grid-cols-2 gap-3.5">
+                                    <!-- Populated dynamically via JS -->
+                                </div>
+                            </div>
+
+                            <!-- Section: Slot Picker & Booking Form -->
+                            <div id="wizard-scheduler-section" class="hidden space-y-6 border-t border-white/5 pt-6">
+                                <h4 class="text-sm font-bold text-white uppercase tracking-wider flex items-center gap-1.5">
+                                    <i class="far fa-calendar-alt text-indigo-400"></i> Configure & Choose Appointment Slot
+                                </h4>
+                                
+                                <div id="wizard-slot-picker-container">
+                                    <!-- Dynamic Slot grid injected here -->
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+            </div>
+
+            <!-- Footer Buttons -->
+            <div id="wizard-footer-buttons" class="mt-8 border-t border-white/10 pt-5 flex justify-between items-center">
+                <button id="wizard-prev-btn" onclick="window.wizardPrevStep()" 
+                        class="px-5 py-3 rounded-xl bg-white/5 hover:bg-white/10 text-xs font-black uppercase tracking-widest border border-white/5 text-white/70 hover:text-white transition-all disabled:opacity-30 disabled:cursor-not-allowed select-none" disabled>
+                    <i class="fas fa-chevron-left mr-1.5"></i> Back
+                </button>
+                <button id="wizard-next-btn" onclick="window.wizardNextStep()" 
+                        class="px-6 py-3 rounded-xl btn-gradient text-xs font-black uppercase tracking-widest text-white shadow-lg transition-transform hover:scale-[1.01] select-none">
+                    Next <i class="fas fa-chevron-right ml-1.5"></i>
+                </button>
+            </div>
+        </div>
+
+    </div>
 </div>
 {% endblock %}
 
 {% block scripts %}
 <script>
     document.addEventListener("DOMContentLoaded", () => {
+        // Mode Toggles
+        const toggleChatBtn = document.getElementById("toggle-chat-btn");
+        const toggleWizardBtn = document.getElementById("toggle-wizard-btn");
+        const chatModeContainer = document.getElementById("chat-mode-container");
+        const wizardModeContainer = document.getElementById("wizard-mode-container");
+
+        function switchMode(toMode) {
+            if (toMode === "chat") {
+                toggleChatBtn.className = "px-6 py-3 rounded-xl text-xs font-black uppercase tracking-widest transition-all duration-300 flex items-center gap-2 border border-indigo-500/40 bg-indigo-500/25 text-white shadow-[0_0_20px_rgba(99,102,241,0.25)] select-none";
+                toggleWizardBtn.className = "px-6 py-3 rounded-xl text-xs font-black uppercase tracking-widest transition-all duration-300 flex items-center gap-2 border border-white/10 bg-white/5 text-white/50 hover:bg-white/10 hover:text-white select-none";
+                chatModeContainer.classList.remove("hidden");
+                wizardModeContainer.classList.add("hidden");
+            } else {
+                toggleWizardBtn.className = "px-6 py-3 rounded-xl text-xs font-black uppercase tracking-widest transition-all duration-300 flex items-center gap-2 border border-indigo-500/40 bg-indigo-500/25 text-white shadow-[0_0_20px_rgba(99,102,241,0.25)] select-none";
+                toggleChatBtn.className = "px-6 py-3 rounded-xl text-xs font-black uppercase tracking-widest transition-all duration-300 flex items-center gap-2 border border-white/10 bg-white/5 text-white/50 hover:bg-white/10 hover:text-white select-none";
+                wizardModeContainer.classList.remove("hidden");
+                chatModeContainer.classList.add("hidden");
+                // Reset/Init Wizard
+                initWizard();
+            }
+        }
+
+        toggleChatBtn.addEventListener("click", () => switchMode("chat"));
+        toggleWizardBtn.addEventListener("click", () => switchMode("wizard"));
+
+        // ==========================================
+        // 💬 CHAT MODE CORE JAVASCRIPT LOGIC
+        // ==========================================
         const messageContainer = document.getElementById("clinical-chat-messages");
         const chatForm = document.getElementById("clinical-chat-form");
         const chatInput = document.getElementById("clinical-chat-input");
@@ -128,7 +470,6 @@
         let selectedTimeStr = "";
         let bookingSubmitted = false;
 
-        // Custom function to append messages with beautiful slide-in animation
         function appendBotMessage(htmlContent) {
             const wrapper = document.createElement("div");
             wrapper.className = "flex gap-3 self-start items-start max-w-[85%] animate-fadeIn";
@@ -173,7 +514,6 @@
             messageContainer.scrollTop = messageContainer.scrollHeight;
         }
 
-        // Initialize Chat
         function initChat() {
             showTyping(true);
             setTimeout(() => {
@@ -187,7 +527,6 @@
         }
         initChat();
 
-        // Handle Symptom Form Submission
         chatForm.addEventListener("submit", async (e) => {
             e.preventDefault();
             const query = chatInput.value.trim();
@@ -229,7 +568,7 @@
                                         <div class="mt-3 flex items-center justify-between border-t border-white/5 pt-2 text-[11px]">
                                             <span class="text-white/40"><i class="fas fa-briefcase mr-1"></i> ${doc.experience_years} Yrs Exp</span>
                                             <button onclick="window.fetchSlots(${doc.id}, '${doc.name.replace(/'/g, "\\'")}')" 
-                                                    class="px-3 py-1.5 bg-indigo-500/20 hover:bg-indigo-500/40 text-indigo-300 hover:text-white rounded-lg font-bold border border-indigo-500/20 transition-all select-doc-btn">
+                                                    class="px-3 py-1.5 bg-indigo-500/20 hover:bg-indigo-500/40 text-indigo-300 hover:text-white rounded-lg font-bold border border-indigo-500/20 transition-all select-doc-btn select-none outline-none">
                                                 Select & View Slots
                                             </button>
                                         </div>
@@ -256,14 +595,11 @@
             }
         });
 
-        // Expose Fetch Slots function globally to connect with inline doctor cards
         window.fetchSlots = async (doctorId, doctorName) => {
-            // Disable all other doctor select buttons in this container to prevent double booking attempts
             document.querySelectorAll(".select-doc-btn").forEach(btn => btn.disabled = true);
 
             currentDoctorId = doctorId;
             currentDoctorName = doctorName;
-
             showTyping(true);
 
             try {
@@ -271,14 +607,12 @@
                 const slotsByDate = await response.json();
                 showTyping(false);
 
-                // Build Date tab selections
                 const dates = Object.keys(slotsByDate);
                 if (dates.length === 0) {
                     appendBotMessage(`Sorry, there are no active appointment slots scheduled for **${doctorName}** in the next 7 days.`);
                     return;
                 }
 
-                // Generate inline template for Slot Picker in Chat
                 const pickerId = `slot-picker-${Date.now()}`;
                 let dateTabsHtml = "";
                 let slotsContainerHtml = "";
@@ -290,19 +624,18 @@
 
                     dateTabsHtml += `
                         <button onclick="window.switchDateTab('${pickerId}', '${dateStr}')" 
-                                class="date-tab-btn py-2 px-3.5 text-xs font-bold rounded-lg border transition-all ${isActive ? 'bg-indigo-500/20 text-indigo-300 border-indigo-500/40' : 'bg-white/5 text-white/60 border-white/5 hover:border-white/20'}"
+                                class="date-tab-btn py-2 px-3.5 text-xs font-bold rounded-lg border transition-all select-none outline-none ${isActive ? 'bg-indigo-500/20 text-indigo-300 border-indigo-500/40' : 'bg-white/5 text-white/60 border-white/5 hover:border-white/20'}"
                                 data-date="${dateStr}">
                             ${formattedDate}
                         </button>
                     `;
 
-                    // Generate slots for each date
                     const slots = slotsByDate[dateStr];
                     slotsContainerHtml += `
                         <div id="slots-${pickerId}-${dateStr}" class="slot-list-group ${isActive ? 'grid' : 'hidden'} grid-cols-2 sm:grid-cols-3 gap-2.5 mt-4">
                             ${slots.length > 0 ? slots.map(s => `
                                 <button onclick="window.selectSlot('${s.id}', '${dateStr}', '${s.time_label}')" 
-                                        class="slot-pill-btn p-2.5 rounded-lg border text-center transition-all flex flex-col items-center justify-center hover:scale-[1.02] ${s.available_spots > 0 ? 'bg-white/5 hover:bg-indigo-500/10 border-white/10 hover:border-indigo-500/30 text-white cursor-pointer' : 'bg-red-500/5 border-red-500/10 text-white/30 cursor-not-allowed'}"
+                                        class="slot-pill-btn p-2.5 rounded-lg border text-center transition-all flex flex-col items-center justify-center hover:scale-[1.02] outline-none select-none ${s.available_spots > 0 ? 'bg-white/5 hover:bg-indigo-500/10 border-white/10 hover:border-indigo-500/30 text-white cursor-pointer' : 'bg-red-500/5 border-red-500/10 text-white/30 cursor-not-allowed'}"
                                         ${s.available_spots <= 0 ? 'disabled' : ''}>
                                     <span class="text-xs font-bold">${s.time_label}</span>
                                     <span class="text-[9px] font-semibold tracking-wider uppercase mt-1 ${s.available_spots > 0 ? 'text-emerald-400' : 'text-red-400'}">
@@ -330,21 +663,18 @@
             }
         };
 
-        // Expose Date Switch globally
         window.switchDateTab = (pickerId, dateStr) => {
             const picker = document.getElementById(pickerId);
             if (!picker) return;
 
-            // Highlight Tab Button
             picker.querySelectorAll(".date-tab-btn").forEach(btn => {
                 if (btn.getAttribute("data-date") === dateStr) {
-                    btn.className = "date-tab-btn py-2 px-3.5 text-xs font-bold rounded-lg border transition-all bg-indigo-500/20 text-indigo-300 border-indigo-500/40";
+                    btn.className = "date-tab-btn py-2 px-3.5 text-xs font-bold rounded-lg border transition-all select-none outline-none bg-indigo-500/20 text-indigo-300 border-indigo-500/40";
                 } else {
-                    btn.className = "date-tab-btn py-2 px-3.5 text-xs font-bold rounded-lg border transition-all bg-white/5 text-white/60 border-white/5 hover:border-white/20";
+                    btn.className = "date-tab-btn py-2 px-3.5 text-xs font-bold rounded-lg border transition-all select-none outline-none bg-white/5 text-white/60 border-white/5 hover:border-white/20";
                 }
             });
 
-            // Toggle Lists
             picker.querySelectorAll(".slot-list-group").forEach(el => {
                 if (el.id === `slots-${pickerId}-${dateStr}`) {
                     el.classList.remove("hidden");
@@ -356,27 +686,22 @@
             });
         };
 
-        // Expose Slot Selector globally
         window.selectSlot = (slotId, dateStr, timeStr) => {
             currentSlotId = slotId;
             selectedDateStr = dateStr;
             selectedTimeStr = timeStr;
 
-            // Disable all other slot pills in this card
             document.querySelectorAll(".slot-pill-btn").forEach(btn => btn.disabled = true);
-
             showTyping(true);
 
             setTimeout(() => {
                 showTyping(false);
-                
-                // Show booking configuration card
                 const formCardId = `booking-form-${Date.now()}`;
                 
                 appendBotMessage(`
                     Great selection! You have selected **${timeStr}** on **${new Date(dateStr).toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric" })}** with **${currentDoctorName}**.
                     <br><br>
-                    Please configure your clinical preferences below to complete the booking directly:
+                    Configure your clinical preferences below to secure your booking:
                     
                     <form id="${formCardId}" onsubmit="window.submitInlineBooking(event, '${formCardId}')" class="mt-4 p-5 glass bg-white/5 border border-white/10 rounded-2xl space-y-4 text-left">
                         <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
@@ -421,26 +746,23 @@
 
                         <div>
                             <label class="block text-[9px] font-black text-white/40 uppercase tracking-widest mb-1.5">Clinical Symptoms / Extra Notes</label>
-                            <textarea id="appt-notes" rows="2" class="w-full bg-white/5 border border-white/10 rounded-lg p-2.5 text-xs text-white placeholder-white/40 focus:outline-none" placeholder="Add any details you'd like your doctor to know..."></textarea>
+                            <textarea id="appt-notes" rows="2" class="w-full bg-white/5 border border-white/10 rounded-lg p-2.5 text-xs text-white placeholder-white/40 focus:outline-none" placeholder="Add details for your doctor..."></textarea>
                         </div>
 
-                        <button type="submit" class="w-full py-3 btn-gradient text-xs font-black uppercase tracking-widest text-white rounded-xl shadow-lg transition-transform hover:scale-[1.01] flex items-center justify-center gap-1.5">
+                        <button type="submit" class="w-full py-3 btn-gradient text-xs font-black uppercase tracking-widest text-white rounded-xl shadow-lg transition-transform hover:scale-[1.01] flex items-center justify-center gap-1.5 select-none outline-none">
                             <i class="fas fa-check-circle"></i>
                             Confirm Appointment Booking
                         </button>
                     </form>
                 `);
-
             }, 800);
         };
 
-        // Expose Booking Submit globally
         window.submitInlineBooking = async (event, formCardId) => {
             event.preventDefault();
             const form = document.getElementById(formCardId);
             if (!form) return;
 
-            // Gather values
             const mode = form.querySelector("#cons-mode").value;
             const type = form.querySelector("#appt-type").value;
             const lang = form.querySelector("#pref-lang").value;
@@ -448,9 +770,7 @@
             const emName = form.querySelector("#em-name").value.trim();
             const notes = form.querySelector("#appt-notes").value.trim();
 
-            // Disable submit buttons in the form
             form.querySelectorAll("button, select, textarea, input").forEach(el => el.disabled = true);
-
             showTyping(true);
 
             try {
@@ -473,12 +793,10 @@
 
                 if (response.ok && data.success) {
                     bookingSubmitted = true;
-                    // Hide main message textbox input container to prevent multiple chats after success
                     chatInputContainer.classList.add("hidden");
 
                     const formattedSuccessDate = new Date(data.appointment.date).toLocaleDateString("en-US", { weekday: "long", month: "long", day: "numeric", year: "numeric" });
                     
-                    // Render premium Success Card
                     appendBotMessage(`
                         <div class="text-center p-4">
                             <div class="w-16 h-16 bg-emerald-500/20 border border-emerald-500/30 rounded-full flex items-center justify-center mx-auto mb-4 text-emerald-400 text-3xl animate-bounce">
@@ -487,7 +805,7 @@
                             <span class="px-3 py-1 bg-emerald-500/10 text-emerald-400 border border-emerald-500/20 rounded-full text-[10px] font-black tracking-widest uppercase">Booking Confirmed</span>
                             
                             <h4 class="text-2xl font-black text-white mt-3 tracking-tight">Your Slot is Secured!</h4>
-                            <p class="text-xs text-white/50 mt-1 max-w-sm mx-auto">We have registered your appointment details and successfully queued you into the live wait list.</p>
+                            <p class="text-xs text-white/50 mt-1 max-w-sm mx-auto">We have registered your details and queued you in the wait list.</p>
                             
                             <!-- Premium Pass Details -->
                             <div class="mt-5 glass bg-white/5 border border-white/10 rounded-2xl overflow-hidden text-left shadow-2xl">
@@ -528,11 +846,11 @@
                             </div>
 
                             <div class="mt-6 flex flex-col sm:flex-row gap-3 justify-center">
-                                <a href="/dashboard" class="px-5 py-3 btn-gradient text-[10px] font-black uppercase tracking-widest text-white rounded-xl shadow-lg flex items-center justify-center gap-1.5">
+                                <a href="/dashboard" class="px-5 py-3 btn-gradient text-[10px] font-black uppercase tracking-widest text-white rounded-xl shadow-lg flex items-center justify-center gap-1.5 select-none outline-none">
                                     <i class="fas fa-columns"></i>
                                     Go to Dashboard
                                 </a>
-                                <a href="/calendar" class="px-5 py-3 bg-white/10 hover:bg-white/15 text-[10px] font-black uppercase tracking-widest text-white rounded-xl border border-white/10 transition-colors flex items-center justify-center gap-1.5">
+                                <a href="/calendar" class="px-5 py-3 bg-white/10 hover:bg-white/15 text-[10px] font-black uppercase tracking-widest text-white rounded-xl border border-white/10 transition-colors flex items-center justify-center gap-1.5 select-none outline-none">
                                     <i class="far fa-calendar-alt"></i>
                                     View in Calendar
                                 </a>
@@ -547,10 +865,592 @@
             } catch (err) {
                 form.querySelectorAll("button, select, textarea, input").forEach(el => el.disabled = false);
                 showTyping(false);
-                appendBotMessage(`<span class="text-red-400 font-semibold"><i class="fas fa-wifi mr-1"></i> Failed to submit booking request. Please check your network.</span>`);
+                appendBotMessage(`<span class="text-red-400 font-semibold"><i class="fas fa-wifi mr-1"></i> Failed to submit booking.</span>`);
             }
         };
 
+        // ==========================================
+        // 🪄 SMART WIZARD MODE JAVASCRIPT LOGIC
+        // ==========================================
+        let wizardStep = 1;
+        let wizardData = {
+            primary_area: "",
+            severity: 3,
+            duration: "",
+            accompanying_symptoms: []
+        };
+        let wizardSelectedDoctorId = null;
+        let wizardSelectedDoctorName = "";
+        let wizardSelectedSlotId = null;
+        let wizardSelectedDateStr = "";
+        let wizardSelectedTimeStr = "";
+
+        // Pool of accompanying symptoms keyed by primary area
+        const accompanyingPools = {
+            Cardiology: ['Shortness of breath', 'Chest tightness', 'Palpitations', 'Sweating', 'Nausea', 'Dizziness', 'Fatigue'],
+            Neurology: ['Severe headache', 'Dizziness', 'Numbness / Tingling', 'Seizure activity', 'Fainting / Syncope', 'Blurred vision'],
+            'General Medicine': ['Fever / Chills', 'Persistent cough', 'Runny / Stuffy nose', 'Stomach ache', 'Nausea / Vomiting', 'Fatigue / Body aches'],
+            Orthopedics: ['Joint pain / Swelling', 'Muscle stiffness', 'Inability to bear weight', 'Sprain or recent strain', 'Back or neck pain'],
+            Dermatology: ['Skin redness / Inflammation', 'Itching / Pruritus', 'Pustules or severe acne', 'Allergic hives', 'Dry peeling patches'],
+            ENT: ['Hearing loss', 'Ear ache / Ringing', 'Nasal blockage', 'Sore throat', 'Voice hoarseness', 'Sinus pressure'],
+            Gynecology: ['Severe pelvic cramps', 'Irregular cycle', 'Abnormal discharge', 'Pregnancy confirmation', 'Hormonal swings'],
+            Pediatrics: ['Child fever', 'Persistent crying', 'Dietary rejection', 'Mild cough / Cold', 'Skin rashes']
+        };
+
+        function initWizard() {
+            wizardStep = 1;
+            wizardData = {
+                primary_area: "",
+                severity: 3,
+                duration: "",
+                accompanying_symptoms: []
+            };
+            wizardSelectedDoctorId = null;
+            wizardSelectedSlotId = null;
+            document.getElementById("wizard-severity-slider").value = 3;
+            updateSeverityDisplay(3);
+            updateWizardNav();
+            renderStepUI();
+        }
+
+        window.selectPrimaryArea = (area) => {
+            wizardData.primary_area = area;
+            document.querySelectorAll(".primary-area-btn").forEach(btn => {
+                if (btn.getAttribute("data-area") === area) {
+                    btn.classList.add("active-glow");
+                    btn.classList.remove("border-white/10");
+                } else {
+                    btn.classList.remove("active-glow");
+                    btn.classList.add("border-white/10");
+                }
+            });
+            enableNextButton(true);
+        };
+
+        window.updateSeverityDisplay = (val) => {
+            wizardData.severity = parseInt(val);
+            const el = document.getElementById("severity-display");
+            if (val <= 3) {
+                el.textContent = `${val}/10 (Mild 😊)`;
+                el.className = "px-3.5 py-1 bg-emerald-500/20 border border-emerald-500/30 text-emerald-400 rounded-full text-xs font-black tracking-wider transition-all duration-300";
+            } else if (val <= 7) {
+                el.textContent = `${val}/10 (Moderate 🙁)`;
+                el.className = "px-3.5 py-1 bg-amber-500/20 border border-amber-500/30 text-amber-400 rounded-full text-xs font-black tracking-wider transition-all duration-300";
+            } else {
+                el.textContent = `${val}/10 (Severe 😩)`;
+                el.className = "px-3.5 py-1 bg-red-500/20 border border-red-500/30 text-red-400 rounded-full text-xs font-black tracking-wider transition-all duration-300 animate-pulse";
+            }
+        };
+
+        window.selectDuration = (dur) => {
+            wizardData.duration = dur;
+            document.querySelectorAll(".duration-pill-btn").forEach(btn => {
+                if (btn.getAttribute("data-duration") === dur) {
+                    btn.classList.add("active-glow");
+                    btn.classList.remove("border-white/10");
+                } else {
+                    btn.classList.remove("active-glow");
+                    btn.classList.add("border-white/10");
+                }
+            });
+            enableNextButton(true);
+        };
+
+        function populateAccompanyingBadges() {
+            const container = document.getElementById("secondary-badges-container");
+            container.innerHTML = "";
+            const pool = accompanyingPools[wizardData.primary_area] || accompanyingPools['General Medicine'];
+            
+            pool.forEach(sym => {
+                const isSelected = wizardData.accompanying_symptoms.includes(sym);
+                const btn = document.createElement("button");
+                btn.className = `px-4 py-2 text-xs font-semibold rounded-full border transition-all duration-300 outline-none select-none ${isSelected ? 'bg-indigo-500 border-indigo-400 text-white shadow-[0_0_10px_rgba(99,102,241,0.3)]' : 'bg-white/5 border-white/10 text-white/70 hover:border-white/20'}`;
+                btn.textContent = sym;
+                btn.onclick = () => {
+                    if (wizardData.accompanying_symptoms.includes(sym)) {
+                        wizardData.accompanying_symptoms = wizardData.accompanying_symptoms.filter(x => x !== sym);
+                        btn.className = "px-4 py-2 text-xs font-semibold rounded-full border border-white/10 bg-white/5 text-white/70 hover:border-white/20 outline-none select-none";
+                    } else {
+                        wizardData.accompanying_symptoms.push(sym);
+                        btn.className = "px-4 py-2 text-xs font-semibold rounded-full border border-indigo-400 bg-indigo-500 text-white shadow-[0_0_10px_rgba(99,102,241,0.3)] outline-none select-none";
+                    }
+                };
+                container.appendChild(btn);
+            });
+        }
+
+        async function submitWizardAnalysis() {
+            const nextBtn = document.getElementById("wizard-next-btn");
+            nextBtn.disabled = true;
+            nextBtn.innerHTML = '<i class="fas fa-spinner animate-spin"></i> Analyzing...';
+
+            try {
+                const response = await fetch("/api/symptom-checker/wizard-analyze", {
+                    method: "POST",
+                    headers: { "Content-Type": "application/json" },
+                    body: JSON.stringify(wizardData)
+                });
+                const data = await response.json();
+                
+                if (response.ok && data.success) {
+                    // Update Step 4 Details
+                    const banner = document.getElementById("wizard-urgency-banner");
+                    const urgencyLvl = document.getElementById("wizard-urgency-level");
+                    urgencyLvl.textContent = data.urgency_level;
+
+                    if (data.urgency_level === "High") {
+                        banner.className = "p-5 rounded-2xl text-center border bg-red-500/10 text-red-400 border-red-500/20 animate-pulse";
+                    } else if (data.urgency_level === "Medium") {
+                        banner.className = "p-5 rounded-2xl text-center border bg-amber-500/10 text-amber-400 border-amber-500/20";
+                    } else {
+                        banner.className = "p-5 rounded-2xl text-center border bg-emerald-500/10 text-emerald-400 border-emerald-500/20";
+                    }
+
+                    document.getElementById("wizard-recommended-dept").textContent = data.department.name;
+                    document.getElementById("wizard-analysis-summary").innerHTML = data.analysis_summary;
+
+                    // Populate Doctors grid
+                    const docsGrid = document.getElementById("wizard-doctors-grid");
+                    docsGrid.innerHTML = "";
+
+                    if (data.doctors && data.doctors.length > 0) {
+                        data.doctors.forEach(doc => {
+                            const card = document.createElement("div");
+                            card.className = "wizard-doc-card glass bg-white/5 border border-white/10 rounded-xl p-4 flex flex-col justify-between hover:border-indigo-500/40 transition-all group cursor-pointer";
+                            card.id = `wizard-doc-card-${doc.id}`;
+                            card.onclick = () => window.fetchWizardSlots(doc.id, doc.name);
+                            card.innerHTML = `
+                                <div class="flex items-center gap-3 select-none">
+                                    <img src="${doc.profile_pic_url}" alt="${doc.name}" class="w-12 h-12 rounded-full border border-white/10 object-cover shadow-md">
+                                    <div>
+                                        <h5 class="font-bold text-white group-hover:text-indigo-300 transition-colors text-sm">${doc.name}</h5>
+                                        <p class="text-[11px] text-white/50 font-medium">${doc.specialization}</p>
+                                        <div class="flex items-center gap-1.5 mt-1 text-[11px] text-amber-400">
+                                            <i class="fas fa-star text-[10px]"></i>
+                                            <span class="font-bold">${doc.rating.toFixed(1)}</span>
+                                            <span class="text-white/30">(${doc.num_reviews} reviews)</span>
+                                        </div>
+                                    </div>
+                                </div>
+                                <div class="mt-3 flex items-center justify-between border-t border-white/5 pt-2 text-[11px]">
+                                    <span class="text-white/40"><i class="fas fa-briefcase mr-1"></i> ${doc.experience_years} Yrs Exp</span>
+                                    <span class="text-indigo-400 font-bold tracking-wide uppercase text-[10px] group-hover:text-white transition-colors">Select & Schedule <i class="fas fa-chevron-right ml-0.5"></i></span>
+                                </div>
+                            `;
+                            docsGrid.appendChild(card);
+                        });
+                    } else {
+                        docsGrid.innerHTML = `<div class="col-span-2 py-4 text-center text-xs text-white/40 italic"><i class="fas fa-info-circle mr-1"></i> No active specialists currently found in this department.</div>`;
+                    }
+
+                    // Proceed to step 4 UI transition
+                    wizardStep = 4;
+                    updateWizardNav();
+                    renderStepUI();
+                } else {
+                    alert(data.error || "Failed to analyze symptoms.");
+                }
+            } catch (err) {
+                alert("Failed to connect to the triage diagnostic services.");
+            } finally {
+                nextBtn.disabled = false;
+                nextBtn.innerHTML = 'Next <i class="fas fa-chevron-right ml-1.5"></i>';
+            }
+        }
+
+        window.fetchWizardSlots = async (doctorId, doctorName) => {
+            // Highlight Selected Card
+            document.querySelectorAll(".wizard-doc-card").forEach(c => {
+                if (c.id === `wizard-doc-card-${doctorId}`) {
+                    c.classList.add("active-glow");
+                    c.classList.remove("border-white/10");
+                } else {
+                    c.classList.remove("active-glow");
+                    c.classList.add("border-white/10");
+                }
+            });
+
+            wizardSelectedDoctorId = doctorId;
+            wizardSelectedDoctorName = doctorName;
+
+            const schedulerSection = document.getElementById("wizard-scheduler-section");
+            schedulerSection.classList.remove("hidden");
+            schedulerSection.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+
+            const slotsContainer = document.getElementById("wizard-slot-picker-container");
+            slotsContainer.innerHTML = '<div class="text-center py-6 text-white/50 text-xs"><i class="fas fa-spinner animate-spin text-base text-indigo-400 mb-2 block"></i> Loading active schedules...</div>';
+
+            try {
+                const response = await fetch(`/api/slots/${doctorId}`);
+                const slotsByDate = await response.json();
+
+                const dates = Object.keys(slotsByDate);
+                if (dates.length === 0) {
+                    slotsContainer.innerHTML = `<div class="text-center py-6 text-white/40 text-xs italic"><i class="fas fa-calendar-times mr-1 block text-base mb-1"></i> No appointment slots scheduled for **${doctorName}** in the next 7 days.</div>`;
+                    return;
+                }
+
+                const pickerId = `wizard-picker-${Date.now()}`;
+                let dateTabsHtml = "";
+                let slotsContainerHtml = "";
+
+                dates.forEach((dateStr, idx) => {
+                    const parsedDate = new Date(dateStr);
+                    const formattedDate = parsedDate.toLocaleDateString("en-US", { weekday: 'short', month: 'short', day: 'numeric' });
+                    const isActive = idx === 0;
+
+                    dateTabsHtml += `
+                        <button onclick="window.switchWizardDateTab('${pickerId}', '${dateStr}')" 
+                                class="wizard-date-tab-btn py-2 px-3.5 text-xs font-bold rounded-lg border transition-all select-none outline-none ${isActive ? 'bg-indigo-500/20 text-indigo-300 border-indigo-500/40' : 'bg-white/5 text-white/60 border-white/5 hover:border-white/20'}"
+                                data-date="${dateStr}">
+                            ${formattedDate}
+                        </button>
+                    `;
+
+                    const slots = slotsByDate[dateStr];
+                    slotsContainerHtml += `
+                        <div id="slots-${pickerId}-${dateStr}" class="wizard-slot-list-group ${isActive ? 'grid' : 'hidden'} grid-cols-2 sm:grid-cols-3 gap-2.5 mt-4">
+                            ${slots.length > 0 ? slots.map(s => `
+                                <button onclick="window.selectWizardSlot('${s.id}', '${dateStr}', '${s.time_label}')" 
+                                        class="wizard-slot-pill-btn p-2.5 rounded-lg border text-center transition-all flex flex-col items-center justify-center hover:scale-[1.02] outline-none select-none ${s.available_spots > 0 ? 'bg-white/5 hover:bg-indigo-500/10 border-white/10 hover:border-indigo-500/30 text-white cursor-pointer' : 'bg-red-500/5 border-red-500/10 text-white/30 cursor-not-allowed'}"
+                                        ${s.available_spots <= 0 ? 'disabled' : ''} id="wizard-slot-${s.id}">
+                                    <span class="text-xs font-bold">${s.time_label}</span>
+                                    <span class="text-[9px] font-semibold tracking-wider uppercase mt-1 ${s.available_spots > 0 ? 'text-emerald-400' : 'text-red-400'}">
+                                        ${s.available_spots > 0 ? `${s.available_spots} left` : 'Full'}
+                                    </span>
+                                </button>
+                            `).join("") : `<div class="col-span-3 py-4 text-center text-xs text-white/40 italic"><i class="fas fa-calendar-times mr-1"></i> No slots available on this date.</div>`}
+                        </div>
+                    `;
+                });
+
+                slotsContainer.innerHTML = `
+                    <div id="${pickerId}" class="p-4 glass bg-white/5 border border-white/10 rounded-2xl">
+                        <div class="flex gap-2 pb-2 overflow-x-auto select-none border-b border-white/5 scrollbar-none">
+                            ${dateTabsHtml}
+                        </div>
+                        ${slotsContainerHtml}
+                        
+                        <!-- Inline Config Form embedded inside scheduler block -->
+                        <div id="wizard-inline-form-container" class="hidden mt-6 pt-6 border-t border-white/5 space-y-4">
+                            <span class="px-2.5 py-0.5 bg-indigo-500/10 text-indigo-300 border border-indigo-500/20 rounded-full text-[9px] font-black tracking-widest uppercase">Preferences</span>
+                            <form id="wizard-appt-form" onsubmit="window.submitWizardBooking(event)" class="space-y-4 text-left">
+                                <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                                    <div>
+                                        <label class="block text-[9px] font-black text-white/40 uppercase tracking-widest mb-1.5">Consultation Mode</label>
+                                        <select id="w-cons-mode" class="w-full bg-white/5 border border-white/10 rounded-lg p-2.5 text-xs text-white placeholder-white/40 focus:outline-none" required>
+                                            <option value="In-Person">In-Person Clinic Visit</option>
+                                            <option value="Video">Video Consultation (Telehealth)</option>
+                                        </select>
+                                    </div>
+                                    <div>
+                                        <label class="block text-[9px] font-black text-white/40 uppercase tracking-widest mb-1.5">Appointment Type</label>
+                                        <select id="w-appt-type" class="w-full bg-white/5 border border-white/10 rounded-lg p-2.5 text-xs text-white placeholder-white/40 focus:outline-none" required>
+                                            <option value="normal">Normal (Routine Checkup)</option>
+                                            <option value="urgent">Urgent Clinic Consultation</option>
+                                            <option value="follow-up">Follow-Up Consultation</option>
+                                        </select>
+                                    </div>
+                                </div>
+
+                                <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                                    <div>
+                                        <label class="block text-[9px] font-black text-white/40 uppercase tracking-widest mb-1.5">Preferred Language</label>
+                                        <select id="w-pref-lang" class="w-full bg-white/5 border border-white/10 rounded-lg p-2.5 text-xs text-white placeholder-white/40 focus:outline-none" required>
+                                            <option value="English">English</option>
+                                            <option value="Hindi">Hindi</option>
+                                            <option value="Spanish">Spanish</option>
+                                            <option value="Arabic">Arabic</option>
+                                            <option value="French">French</option>
+                                        </select>
+                                    </div>
+                                    <div>
+                                        <label class="block text-[9px] font-black text-white/40 uppercase tracking-widest mb-1.5">Emergency Contact Mobile</label>
+                                        <input type="tel" id="w-em-phone" class="w-full bg-white/5 border border-white/10 rounded-lg p-2.5 text-xs text-white placeholder-white/40 focus:outline-none" placeholder="E.g. +91 99999 99999">
+                                    </div>
+                                </div>
+
+                                <div class="grid grid-cols-1 gap-4">
+                                    <div>
+                                        <label class="block text-[9px] font-black text-white/40 uppercase tracking-widest mb-1.5">Emergency Contact Name</label>
+                                        <input type="text" id="w-em-name" class="w-full bg-white/5 border border-white/10 rounded-lg p-2.5 text-xs text-white placeholder-white/40 focus:outline-none" placeholder="E.g. Emergency Contact Name">
+                                    </div>
+                                </div>
+
+                                <div>
+                                    <label class="block text-[9px] font-black text-white/40 uppercase tracking-widest mb-1.5">Clinical Notes / Accompanying Indicators</label>
+                                    <textarea id="w-appt-notes" rows="2" class="w-full bg-white/5 border border-white/10 rounded-lg p-2.5 text-xs text-white placeholder-white/40 focus:outline-none" placeholder="Enter notes..."></textarea>
+                                </div>
+
+                                <button type="submit" id="wizard-submit-btn" class="w-full py-3.5 btn-gradient text-xs font-black uppercase tracking-widest text-white rounded-xl shadow-lg transition-transform hover:scale-[1.01] flex items-center justify-center gap-1.5 outline-none select-none">
+                                    <i class="fas fa-check-circle"></i>
+                                    Secure Slot & Book Token
+                                </button>
+                            </form>
+                        </div>
+                    </div>
+                `;
+
+                // Prefill notes with wizard secondary symptoms
+                if (wizardData.accompanying_symptoms.length > 0) {
+                    const notesArea = document.getElementById("w-appt-notes");
+                    if (notesArea) {
+                        notesArea.value = `Patient experienced: ${wizardData.accompanying_symptoms.join(", ")} (Severity: ${wizardData.severity}/10).`;
+                    }
+                }
+
+            } catch (err) {
+                slotsContainer.innerHTML = '<div class="text-center py-6 text-red-400 text-xs"><i class="fas fa-wifi mr-1"></i> Failed to retrieve doctor schedules.</div>';
+            }
+        };
+
+        window.switchWizardDateTab = (pickerId, dateStr) => {
+            const picker = document.getElementById(pickerId);
+            if (!picker) return;
+
+            picker.querySelectorAll(".wizard-date-tab-btn").forEach(btn => {
+                if (btn.getAttribute("data-date") === dateStr) {
+                    btn.className = "wizard-date-tab-btn py-2 px-3.5 text-xs font-bold rounded-lg border transition-all select-none outline-none bg-indigo-500/20 text-indigo-300 border-indigo-500/40";
+                } else {
+                    btn.className = "wizard-date-tab-btn py-2 px-3.5 text-xs font-bold rounded-lg border transition-all select-none outline-none bg-white/5 text-white/60 border-white/5 hover:border-white/20";
+                }
+            });
+
+            picker.querySelectorAll(".wizard-slot-list-group").forEach(el => {
+                if (el.id === `slots-${pickerId}-${dateStr}`) {
+                    el.classList.remove("hidden");
+                    el.classList.add("grid");
+                } else {
+                    el.classList.add("hidden");
+                    el.classList.remove("grid");
+                }
+            });
+        };
+
+        window.selectWizardSlot = (slotId, dateStr, timeStr) => {
+            wizardSelectedSlotId = slotId;
+            wizardSelectedDateStr = dateStr;
+            wizardSelectedTimeStr = timeStr;
+
+            document.querySelectorAll(".wizard-slot-pill-btn").forEach(btn => {
+                if (btn.id === `wizard-slot-${slotId}`) {
+                    btn.className = "wizard-slot-pill-btn p-2.5 rounded-lg border text-center transition-all flex flex-col items-center justify-center hover:scale-[1.02] outline-none select-none bg-indigo-500/25 border-indigo-500 text-white";
+                } else {
+                    btn.className = "wizard-slot-pill-btn p-2.5 rounded-lg border text-center transition-all flex flex-col items-center justify-center hover:scale-[1.02] outline-none select-none bg-white/5 border-white/10 text-white cursor-pointer";
+                }
+            });
+
+            const formContainer = document.getElementById("wizard-inline-form-container");
+            formContainer.classList.remove("hidden");
+            formContainer.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+        };
+
+        window.submitWizardBooking = async (event) => {
+            event.preventDefault();
+            const form = document.getElementById("wizard-appt-form");
+            const submitBtn = document.getElementById("wizard-submit-btn");
+            if (!form || !wizardSelectedSlotId) return;
+
+            const mode = form.querySelector("#w-cons-mode").value;
+            const type = form.querySelector("#w-appt-type").value;
+            const lang = form.querySelector("#w-pref-lang").value;
+            const emPhone = form.querySelector("#w-em-phone").value.trim();
+            const emName = form.querySelector("#w-em-name").value.trim();
+            const notes = form.querySelector("#w-appt-notes").value.trim();
+
+            form.querySelectorAll("button, select, textarea, input").forEach(el => el.disabled = true);
+            submitBtn.innerHTML = '<i class="fas fa-spinner animate-spin"></i> Finalizing Booking...';
+
+            try {
+                const response = await fetch("/api/symptom-checker/book-inline", {
+                    method: "POST",
+                    headers: { "Content-Type": "application/json" },
+                    body: JSON.stringify({
+                        slot_id: parseInt(wizardSelectedSlotId),
+                        appointment_type: type,
+                        notes: notes,
+                        preferred_language: lang,
+                        consultation_mode: mode,
+                        emergency_contact_name: emName,
+                        emergency_contact_phone: emPhone
+                    })
+                });
+
+                const data = await response.json();
+
+                if (response.ok && data.success) {
+                    const formattedSuccessDate = new Date(data.appointment.date).toLocaleDateString("en-US", { weekday: "long", month: "long", day: "numeric", year: "numeric" });
+                    
+                    // Hide wizard buttons footer
+                    document.getElementById("wizard-footer-buttons").classList.add("hidden");
+
+                    // Replace main Wizard Stream with Success Ticket Pass
+                    const wizardRightPanel = document.querySelector("#wizard-mode-container .flex-grow-0, #wizard-mode-container .flex-1");
+                    
+                    // Clear and render success pass in wizard body
+                    const wrapperDiv = document.querySelector("#wizard-mode-container .flex-1");
+                    wrapperDiv.innerHTML = `
+                        <div class="text-center p-4 animate-fadeIn max-w-lg mx-auto">
+                            <div class="w-16 h-16 bg-emerald-500/20 border border-emerald-500/30 rounded-full flex items-center justify-center mx-auto mb-4 text-emerald-400 text-3xl animate-bounce">
+                                <i class="fas fa-check-circle"></i>
+                            </div>
+                            <span class="px-3 py-1 bg-emerald-500/10 text-emerald-400 border border-emerald-500/20 rounded-full text-[10px] font-black tracking-widest uppercase">Booking Confirmed</span>
+                            
+                            <h4 class="text-2xl font-black text-white mt-3 tracking-tight">Your Slot is Secured!</h4>
+                            <p class="text-xs text-white/50 mt-1 max-w-sm mx-auto">Wizard booking completed successfully. Your token details are listed below.</p>
+                            
+                            <!-- Pass Details -->
+                            <div class="mt-5 glass bg-white/5 border border-white/10 rounded-2xl overflow-hidden text-left shadow-2xl">
+                                <div class="p-4 bg-indigo-600/25 border-b border-white/5 flex items-center justify-between">
+                                    <div>
+                                        <span class="text-[9px] font-black text-indigo-300 uppercase tracking-widest block">Specialist</span>
+                                        <h5 class="font-bold text-white text-sm leading-tight">${data.appointment.doctor_name}</h5>
+                                    </div>
+                                    <div class="text-right">
+                                        <span class="text-[9px] font-black text-indigo-300 uppercase tracking-widest block">Token ID</span>
+                                        <span class="font-black text-white text-base">#${data.appointment.token}</span>
+                                    </div>
+                                </div>
+                                <div class="p-4 grid grid-cols-2 gap-y-3.5 gap-x-2 text-xs border-b border-white/5">
+                                    <div>
+                                        <span class="text-[9px] text-white/40 uppercase font-black tracking-wider block">Specialty</span>
+                                        <span class="font-bold text-white/90">${data.appointment.specialization}</span>
+                                    </div>
+                                    <div>
+                                        <span class="text-[9px] text-white/40 uppercase font-black tracking-wider block">Mode</span>
+                                        <span class="font-bold text-white/90 flex items-center gap-1">
+                                            <i class="fas ${mode === 'Video' ? 'fa-video text-cyan-400' : 'fa-hospital text-indigo-400'} text-[10px]"></i>
+                                            ${data.appointment.consultation_mode}
+                                        </span>
+                                    </div>
+                                    <div class="col-span-2">
+                                        <span class="text-[9px] text-white/40 uppercase font-black tracking-wider block">Schedule Time</span>
+                                        <span class="font-bold text-white/90"><i class="far fa-calendar-alt mr-1"></i> ${formattedSuccessDate} at ${data.appointment.time}</span>
+                                    </div>
+                                </div>
+                                <div class="p-4 bg-black/30 flex items-center justify-between text-xs">
+                                    <div class="flex items-center gap-2">
+                                        <div class="w-2.5 h-2.5 rounded-full bg-emerald-500 animate-ping"></div>
+                                        <span class="font-bold text-white/70">Estimated Wait</span>
+                                    </div>
+                                    <span class="font-black text-emerald-400 text-sm">~${data.appointment.eta_minutes} Minutes</span>
+                                </div>
+                            </div>
+
+                            <div class="mt-6 flex flex-col sm:flex-row gap-3 justify-center">
+                                <a href="/dashboard" class="px-5 py-3 btn-gradient text-[10px] font-black uppercase tracking-widest text-white rounded-xl shadow-lg flex items-center justify-center gap-1.5 select-none outline-none">
+                                    <i class="fas fa-columns"></i>
+                                    Go to Dashboard
+                                </a>
+                                <a href="/calendar" class="px-5 py-3 bg-white/10 hover:bg-white/15 text-[10px] font-black uppercase tracking-widest text-white rounded-xl border border-white/10 transition-colors flex items-center justify-center gap-1.5 select-none outline-none">
+                                    <i class="far fa-calendar-alt"></i>
+                                    View in Calendar
+                                </a>
+                            </div>
+                        </div>
+                    `;
+                } else {
+                    form.querySelectorAll("button, select, textarea, input").forEach(el => el.disabled = false);
+                    submitBtn.innerHTML = '<i class="fas fa-check-circle"></i> Secure Slot & Book Token';
+                    alert(data.error || "Failed to secure slot.");
+                }
+            } catch (err) {
+                form.querySelectorAll("button, select, textarea, input").forEach(el => el.disabled = false);
+                submitBtn.innerHTML = '<i class="fas fa-check-circle"></i> Secure Slot & Book Token';
+                alert("Failed to submit booking.");
+            }
+        };
+
+        window.wizardNextStep = () => {
+            if (wizardStep === 1) {
+                wizardStep = 2;
+                updateWizardNav();
+                renderStepUI();
+            } else if (wizardStep === 2) {
+                // Populate Accompanying Symptoms for selected Area in step 3
+                populateAccompanyingBadges();
+                wizardStep = 3;
+                updateWizardNav();
+                renderStepUI();
+            } else if (wizardStep === 3) {
+                // Submit inputs for Triage Diagnostics & go to Step 4
+                submitWizardAnalysis();
+            }
+        };
+
+        window.wizardPrevStep = () => {
+            if (wizardStep > 1) {
+                wizardStep--;
+                updateWizardNav();
+                renderStepUI();
+            }
+        };
+
+        function enableNextButton(enable) {
+            const nextBtn = document.getElementById("wizard-next-btn");
+            nextBtn.disabled = !enable;
+            if (enable) {
+                nextBtn.classList.remove("opacity-50", "cursor-not-allowed");
+            } else {
+                nextBtn.classList.add("opacity-50", "cursor-not-allowed");
+            }
+        }
+
+        function updateWizardNav() {
+            // Update left navigation highlight states
+            for (let i = 1; i <= 4; i++) {
+                const nav = document.getElementById(`step-nav-${i}`);
+                const circle = document.getElementById(`step-circle-${i}`);
+                const label = document.getElementById(`step-label-${i}`);
+
+                if (i === wizardStep) {
+                    nav.className = "flex gap-3.5 items-center text-sm font-semibold text-white transition-colors duration-300";
+                    circle.className = "w-7 h-7 rounded-full bg-indigo-500 border border-indigo-400 flex items-center justify-center text-xs font-bold text-white shadow-[0_0_10px_rgba(99,102,241,0.4)]";
+                    label.className = "text-white";
+                } else if (i < wizardStep) {
+                    nav.className = "flex gap-3.5 items-center text-sm font-semibold text-indigo-400 transition-colors duration-300";
+                    circle.className = "w-7 h-7 rounded-full bg-indigo-500/10 border border-indigo-500/30 flex items-center justify-center text-xs font-bold text-indigo-300";
+                    label.className = "text-indigo-300/80";
+                } else {
+                    nav.className = "flex gap-3.5 items-center text-sm font-semibold text-white/40 transition-colors duration-300";
+                    circle.className = "w-7 h-7 rounded-full bg-white/5 border border-white/10 flex items-center justify-center text-xs font-bold text-white/50";
+                    label.className = "text-white/40";
+                }
+            }
+
+            // Enable/Disable footer control buttons
+            const prevBtn = document.getElementById("wizard-prev-btn");
+            prevBtn.disabled = (wizardStep === 1 || wizardStep === 4);
+
+            const nextBtn = document.getElementById("wizard-next-btn");
+            // Hide next button on step 4 since booking flow takes over
+            if (wizardStep === 4) {
+                nextBtn.classList.add("hidden");
+            } else {
+                nextBtn.classList.remove("hidden");
+            }
+        }
+
+        function renderStepUI() {
+            // Hide all steps
+            document.getElementById("wizard-step-1").classList.add("hidden");
+            document.getElementById("wizard-step-2").classList.add("hidden");
+            document.getElementById("wizard-step-3").classList.add("hidden");
+            document.getElementById("wizard-step-4").classList.add("hidden");
+
+            // Show active step
+            document.getElementById(`wizard-step-${wizardStep}`).classList.remove("hidden");
+
+            // Evaluate next button enablement conditions
+            if (wizardStep === 1) {
+                enableNextButton(wizardData.primary_area !== "");
+            } else if (wizardStep === 2) {
+                enableNextButton(wizardData.duration !== "");
+            } else if (wizardStep === 3) {
+                // Secondary symptoms are optional, allow proceeding always
+                enableNextButton(true);
+            }
+        }
     });
 </script>
 <style>
@@ -582,6 +1482,13 @@
     }
     .animate-fadeIn {
         animation: fadeIn 0.4s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+    }
+
+    /* Active Glowing highlight */
+    .active-glow {
+        border-color: rgb(99 102 241) !important;
+        box-shadow: 0 0 20px rgba(99, 102, 241, 0.3) !important;
+        background: rgba(99, 102, 241, 0.15) !important;
     }
 
     /* Hide horizontal scroll bar */

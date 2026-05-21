@@ -486,3 +486,86 @@ def book_inline():
         db.session.rollback()
         return jsonify({'success': False, 'error': f'Database error: {str(e)}'}), 500
 
+
+@api_bp.route('/api/symptom-checker/wizard-analyze', methods=['POST'])
+@login_required
+def wizard_analyze():
+    from models import Review
+    
+    data = request.json or {}
+    primary_area = data.get('primary_area', 'General Medicine')
+    severity = int(data.get('severity', 1))
+    duration = data.get('duration', 'Less than 24h')
+    accompanying = data.get('accompanying_symptoms', [])
+    
+    # Map primary_area categories to Department Names in DB
+    area_mapping = {
+        'Neurology': 'Neurology',
+        'Cardiology': 'Cardiology',
+        'General Medicine': 'General Medicine',
+        'Orthopedics': 'Orthopedics',
+        'Dermatology': 'Dermatology',
+        'ENT': 'ENT',
+        'Gynecology': 'Gynecology',
+        'Pediatrics': 'Pediatrics'
+    }
+    
+    mapped_dept_name = area_mapping.get(primary_area, 'General Medicine')
+    dept = Department.query.filter(Department.name.ilike(f"%{mapped_dept_name}%")).first()
+    if not dept:
+        dept = Department.query.first()
+        
+    if not dept:
+        return jsonify({'success': False, 'error': 'No departments configured in system.'}), 500
+        
+    # Calculate Urgency Score & Triage Category
+    # Rules: High if severity >= 8, or Medium if severity >= 5, or based on accompanying symptoms/duration
+    if severity >= 8:
+        urgency = "High"
+        urgency_desc = "Urgent consultation highly recommended. Please arrange to see a specialist promptly."
+    elif severity >= 5 or duration in ['4-7 Days', 'Chronic / Multi-week'] or len(accompanying) >= 3:
+        urgency = "Medium"
+        urgency_desc = "Moderate symptoms detected. Scheduled clinical checkup is recommended."
+    else:
+        urgency = "Low"
+        urgency_desc = "Mild symptom indicators. Routine or general health consultation advised."
+        
+    # Generate diagnostic summary text
+    symptoms_joined = ", ".join(accompanying) if accompanying else "none specified"
+    summary_text = (
+        f"You have indicated primary symptoms in **{dept.name}** with a severity of **{severity}/10** "
+        f"lasting for **{duration}**. Accompanying symptoms: *{symptoms_joined}*. "
+        f"**Triage Assessment:** {urgency_desc}"
+    )
+    
+    # Fetch active doctors
+    doctors = Doctor.query.filter_by(department_id=dept.id, is_available=True).all()
+    doc_list = []
+    for doc in doctors:
+        reviews = Review.query.filter_by(doctor_id=doc.id).all()
+        avg_rating = round(sum(r.rating for r in reviews) / len(reviews), 1) if reviews else 4.8
+        num_reviews = len(reviews) if reviews else 14
+        
+        doc_list.append({
+            'id': doc.id,
+            'name': doc.name,
+            'specialization': doc.specialization,
+            'experience_years': doc.experience_years,
+            'profile_pic_url': doc.profile_pic_url or f"https://api.dicebear.com/9.x/initials/svg?seed={doc.name}",
+            'rating': avg_rating,
+            'num_reviews': num_reviews
+        })
+        
+    return jsonify({
+        'success': True,
+        'department': {
+            'id': dept.id,
+            'name': dept.name,
+            'description': dept.description
+        },
+        'urgency_level': urgency,
+        'analysis_summary': summary_text,
+        'doctors': doc_list
+    })
+
+
