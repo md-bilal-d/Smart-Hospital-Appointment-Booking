@@ -218,13 +218,28 @@ def cancel(appt_id):
 @patient_bp.route('/profile', methods=['GET','POST'])
 @login_required
 def profile():
+    from models import ReminderPreference
+    pref = ReminderPreference.query.filter_by(patient_id=current_user.id).first()
+    if not pref:
+        pref = ReminderPreference(patient_id=current_user.id, email_enabled=True, in_app_enabled=True, reminder_minutes_before=30)
+        db.session.add(pref)
+        db.session.commit()
+
     if request.method == 'POST':
         current_user.name = request.form['name']
         current_user.phone = request.form['phone']
         current_user.email = request.form['email']
+        
+        # Update reminder preferences
+        pref.email_enabled = 'email_enabled' in request.form
+        pref.in_app_enabled = 'in_app_enabled' in request.form
+        reminder_mins = request.form.get('reminder_minutes_before', type=int)
+        if reminder_mins in [15, 30, 60, 120]:
+            pref.reminder_minutes_before = reminder_mins
+            
         db.session.commit()
         session['user_name'] = current_user.name
-        flash('Profile updated!', 'success')
+        flash('Profile and preferences updated!', 'success')
         audit_logger.log_action('Profile Updated', f'Patient {current_user.name} updated profile')
     
     # Health summary
@@ -247,7 +262,7 @@ def profile():
     
     return render_template('profile.html', patient=current_user, appointments=all_appts,
                            total_visits=total_visits, fav_doc=fav_doc, fav_dept=fav_dept, 
-                           prescriptions=prescriptions, records=records)
+                           prescriptions=prescriptions, records=records, pref=pref)
 
 @patient_bp.route('/reschedule/<int:appt_id>', methods=['POST'])
 @login_required

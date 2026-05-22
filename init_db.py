@@ -8,7 +8,7 @@ import os
 sys.path.insert(0, os.path.dirname(__file__))
 
 from app import create_app
-from models import db, Doctor, Department, Slot, Patient, Staff, Review
+from models import db, Doctor, Department, Slot, Patient, Staff, Review, ReminderLog, ReminderPreference
 from datetime import date, timedelta
 from utils import generate_time_labels
 import bcrypt

@@ -179,4 +179,30 @@ class MedicalRecord(db.Model):
     patient = db.relationship('Patient', backref='medical_records')
 
 
+class ReminderLog(db.Model):
+    """Tracks every reminder sent to patients for audit and history."""
+    __tablename__ = 'reminder_logs'
+    id = db.Column(db.Integer, primary_key=True)
+    appointment_id = db.Column(db.Integer, db.ForeignKey('appointments.id'), nullable=False)
+    patient_id = db.Column(db.Integer, db.ForeignKey('patients.id'), nullable=False)
+    reminder_type = db.Column(db.String(20), nullable=False)  # email / in_app / browser
+    sent_at = db.Column(db.DateTime, default=datetime.utcnow)
+    delivery_status = db.Column(db.String(20), default='sent')  # sent / failed / pending
+    message_preview = db.Column(db.Text, default='')
+
+    appointment = db.relationship('Appointment', backref='reminder_logs')
+    patient = db.relationship('Patient', backref='reminder_logs')
+
+
+class ReminderPreference(db.Model):
+    """Patient-level reminder notification settings."""
+    __tablename__ = 'reminder_preferences'
+    id = db.Column(db.Integer, primary_key=True)
+    patient_id = db.Column(db.Integer, db.ForeignKey('patients.id'), nullable=False, unique=True)
+    email_enabled = db.Column(db.Boolean, default=True)
+    in_app_enabled = db.Column(db.Boolean, default=True)
+    reminder_minutes_before = db.Column(db.Integer, default=30)  # 15 / 30 / 60 / 120
+
+    patient = db.relationship('Patient', backref=db.backref('reminder_preference', uselist=False))
+
 

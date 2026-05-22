@@ -190,6 +190,91 @@
         const socket = io();
         socket.on('connect', () => console.log('Matrix Connected'));
 
+        const currentPatientId = {{ session.get('patient_id', 'null') }};
+
+        // --- Custom Audio Synthesizer (Smartwatch Double-Chime) ---
+        function playNotificationSound() {
+            try {
+                const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+                
+                // First tone (D5)
+                const osc1 = audioCtx.createOscillator();
+                const gain1 = audioCtx.createGain();
+                osc1.type = 'sine';
+                osc1.frequency.setValueAtTime(587.33, audioCtx.currentTime); 
+                gain1.gain.setValueAtTime(0, audioCtx.currentTime);
+                gain1.gain.linearRampToValueAtTime(0.12, audioCtx.currentTime + 0.04);
+                gain1.gain.exponentialRampToValueAtTime(0.001, audioCtx.currentTime + 0.35);
+                osc1.connect(gain1);
+                gain1.connect(audioCtx.destination);
+                osc1.start();
+                osc1.stop(audioCtx.currentTime + 0.35);
+
+                // Second tone (A5) - delayed
+                setTimeout(() => {
+                    const osc2 = audioCtx.createOscillator();
+                    const gain2 = audioCtx.createGain();
+                    osc2.type = 'sine';
+                    osc2.frequency.setValueAtTime(880.00, audioCtx.currentTime); 
+                    gain2.gain.setValueAtTime(0, audioCtx.currentTime);
+                    gain2.gain.linearRampToValueAtTime(0.12, audioCtx.currentTime + 0.04);
+                    gain2.gain.exponentialRampToValueAtTime(0.001, audioCtx.currentTime + 0.5);
+                    osc2.connect(gain2);
+                    gain2.connect(audioCtx.destination);
+                    osc2.start();
+                    osc2.stop(audioCtx.currentTime + 0.5);
+                }, 100);
+            } catch (e) {
+                console.log("Audio play blocked by browser:", e);
+            }
+        }
+
+        // --- Live Notification UI Trigger ---
+        function showLiveReminder(data) {
+            playNotificationSound();
+            
+            const card = document.createElement('div');
+            card.className = 'fixed top-24 right-6 z-[9999] glass p-6 max-w-sm border-l-4 shadow-[0_25px_60px_rgba(0,0,0,0.6)] translate-x-[420px] transition-transform duration-500 ease-out flex flex-col gap-4 overflow-hidden';
+            card.style.background = 'linear-gradient(135deg, rgba(26, 26, 46, 0.98), rgba(15, 52, 96, 0.98))';
+            card.style.border = '1px solid rgba(255,255,255,0.15)';
+            card.style.borderLeft = '4px solid #818cf8';
+            
+            card.innerHTML = `
+                <div class="flex items-start gap-4">
+                    <div class="w-10 h-10 rounded-full btn-gradient flex items-center justify-center text-lg shadow-lg shrink-0 animate-pulse">⏰</div>
+                    <div class="flex-1">
+                        <h4 class="text-sm font-black text-white uppercase tracking-wider mb-1">Appointment Alert</h4>
+                        <p class="text-[10px] font-black text-indigo-300 uppercase tracking-widest mb-2">In ${data.minutes_before} Min · Token #${data.token}</p>
+                        <p class="text-xs text-white/80 font-semibold mb-3">Your appointment with <strong class="text-white">${data.doctor_name}</strong> (${data.specialization}) at <strong class="text-emerald-400">${data.time_label}</strong> is starting soon.</p>
+                        <div class="flex gap-2">
+                            <a href="/dashboard" class="px-3 py-1.5 bg-indigo-500 hover:bg-indigo-600 rounded-lg text-[9px] font-black uppercase tracking-widest text-white transition-colors">Go to Dashboard</a>
+                            <button onclick="this.closest('.fixed').remove()" class="px-3 py-1.5 bg-white/5 hover:bg-white/10 rounded-lg text-[9px] font-black uppercase tracking-widest text-white/60 hover:text-white transition-colors">Dismiss</button>
+                        </div>
+                    </div>
+                </div>
+            `;
+            
+            document.body.appendChild(card);
+            
+            // Slide in
+            setTimeout(() => card.classList.remove('translate-x-[420px]'), 50);
+            
+            // Auto-remove
+            setTimeout(() => {
+                if(card.parentNode) {
+                    card.classList.add('translate-x-[420px]');
+                    setTimeout(() => card.remove(), 500);
+                }
+            }, 12000);
+        }
+
+        socket.on('appointment_reminder', (data) => {
+            console.log('🔔 Reminder event received:', data);
+            if (currentPatientId && data.patient_id === currentPatientId) {
+                showLiveReminder(data);
+            }
+        });
+
         function updateClock() {
             const now = new Date();
             const timeStr = now.toLocaleTimeString('en-US', { hour12: false });

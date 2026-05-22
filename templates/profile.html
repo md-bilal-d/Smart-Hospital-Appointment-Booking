@@ -60,8 +60,52 @@
                         <label class="block text-[10px] font-black text-white/40 uppercase tracking-widest mb-2 ml-1">Email Identity</label>
                         <input type="email" name="email" value="{{ patient.email }}" class="w-full glass-input px-5 py-4">
                     </div>
+                    
+                    <!-- Notification & Reminder Preferences Section -->
+                    <div class="sm:col-span-2 border-t border-white/5 pt-8 mt-4">
+                        <h4 class="text-[10px] font-black text-indigo-400 uppercase tracking-widest mb-6">Reminder & Notification Settings</h4>
+                        <div class="grid grid-cols-1 sm:grid-cols-2 gap-8">
+                            <!-- Toggle switches -->
+                            <div>
+                                <label class="block text-[10px] font-black text-white/40 uppercase tracking-widest mb-4 ml-1">Notification Channels</label>
+                                <div class="space-y-4">
+                                    <label class="flex items-center gap-4 cursor-pointer group">
+                                        <div class="relative">
+                                            <input type="checkbox" name="email_enabled" value="y" class="sr-only peer" {% if pref.email_enabled %}checked{% endif %}>
+                                            <div class="w-11 h-6 bg-white/10 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-emerald-500 shadow-inner"></div>
+                                        </div>
+                                        <span class="text-xs font-bold text-white/70 group-hover:text-white transition-colors">Email Alerts</span>
+                                    </label>
+                                    <label class="flex items-center gap-4 cursor-pointer group">
+                                        <div class="relative">
+                                            <input type="checkbox" name="in_app_enabled" value="y" class="sr-only peer" {% if pref.in_app_enabled %}checked{% endif %}>
+                                            <div class="w-11 h-6 bg-white/10 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-indigo-500 shadow-inner"></div>
+                                        </div>
+                                        <span class="text-xs font-bold text-white/70 group-hover:text-white transition-colors">In-App Live Chat Popups</span>
+                                    </label>
+                                </div>
+                            </div>
+                            
+                            <!-- Dropdown for minutes before -->
+                            <div>
+                                <label class="block text-[10px] font-black text-white/40 uppercase tracking-widest mb-4 ml-1">Send Reminder Alert</label>
+                                <div class="relative">
+                                    <select name="reminder_minutes_before" class="w-full glass-input px-5 py-4 focus:ring-0 outline-none appearance-none cursor-pointer font-bold text-white" style="background-color: rgba(26, 26, 46, 0.95);">
+                                        <option value="15" {% if pref.reminder_minutes_before == 15 %}selected{% endif %}>15 Minutes Before</option>
+                                        <option value="30" {% if pref.reminder_minutes_before == 30 %}selected{% endif %}>30 Minutes Before</option>
+                                        <option value="60" {% if pref.reminder_minutes_before == 60 %}selected{% endif %}>1 Hour Before</option>
+                                        <option value="120" {% if pref.reminder_minutes_before == 120 %}selected{% endif %}>2 Hours Before</option>
+                                    </select>
+                                    <div class="absolute right-5 top-1/2 -translate-y-1/2 pointer-events-none text-white/40">
+                                        <i class="fas fa-chevron-down"></i>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
                     <div class="sm:col-span-2 pt-4">
-                        <button type="submit" class="px-10 py-4 btn-gradient text-white font-black uppercase tracking-widest text-xs rounded-xl shadow-2xl transition-all">Update Profile</button>
+                        <button type="submit" class="px-10 py-4 btn-gradient text-white font-black uppercase tracking-widest text-xs rounded-xl shadow-2xl transition-all">Update Profile & Settings</button>
                     </div>
                 </form>
             </div>
