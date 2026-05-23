@@ -1,7 +1,7 @@
 import os
 from flask import Blueprint, render_template, request, redirect, url_for, flash, session, current_app
 from flask_login import login_required, current_user
-from models import db, Doctor, Department, Slot, Appointment, QueueLog, Patient, Prescription, Review, MedicalRecord
+from models import db, Doctor, Department, Slot, Appointment, QueueLog, Patient, Prescription, Review, MedicalRecord, VitalsReading
 from smart_scheduling import recommend_slot, recommend_alternative_doctor, assign_token
 from datetime import datetime, date, timedelta
 from extensions import socketio
@@ -462,4 +462,136 @@ def upload_record():
     audit_logger.log_action('Medical Record Uploaded', f'Patient {current_user.name} uploaded record: {description}')
     flash('Medical record uploaded successfully!', 'success')
     return redirect(url_for('patient.profile'))
+
+
+@patient_bp.route('/health-tracker')
+@login_required
+def health_tracker():
+    readings = VitalsReading.query.filter_by(patient_id=current_user.id).order_by(VitalsReading.logged_at.asc()).all()
+    
+    # Calculate health insights based on the latest reading
+    latest = VitalsReading.query.filter_by(patient_id=current_user.id).order_by(VitalsReading.logged_at.desc()).first()
+    
+    insights = []
+    recommended_dept = None
+    
+    if latest:
+        # Blood Pressure Alert Check
+        bp_alert = False
+        if latest.blood_pressure_sys and latest.blood_pressure_sys > 140:
+            bp_alert = True
+        if latest.blood_pressure_dia and latest.blood_pressure_dia > 90:
+            bp_alert = True
+            
+        if bp_alert:
+            # Suggest Cardiology (Dept 1)
+            dept = Department.query.filter_by(name='Cardiology').first()
+            dept_id = dept.id if dept else 1
+            recommended_dept = {
+                'id': dept_id,
+                'name': 'Cardiology',
+                'reason': f"Your latest Blood Pressure reading of {latest.blood_pressure_sys}/{latest.blood_pressure_dia} mmHg is elevated. We recommend booking a slot with a Cardiologist."
+            }
+            insights.append({
+                'type': 'warning',
+                'message': f"Elevated Blood Pressure: {latest.blood_pressure_sys}/{latest.blood_pressure_dia} mmHg. Avoid strenuous activity and consult a doctor."
+            })
+            
+        # Blood Sugar Alert Check
+        sugar_alert = False
+        if latest.blood_sugar and latest.blood_sugar > 140:
+            sugar_alert = True
+            
+        if sugar_alert:
+            # Suggest General Medicine (Dept 5)
+            dept = Department.query.filter_by(name='General Medicine').first()
+            dept_id = dept.id if dept else 5
+            if not recommended_dept: # Priority to BP or if none, set this
+                recommended_dept = {
+                    'id': dept_id,
+                    'name': 'General Medicine',
+                    'reason': f"Your latest Blood Sugar reading of {latest.blood_sugar} mg/dL is high. We recommend booking a slot with a General Physician."
+                }
+            insights.append({
+                'type': 'warning',
+                'message': f"Elevated Blood Sugar: {latest.blood_sugar} mg/dL. Monitor diet and consult a General Physician."
+            })
+
+        # Heart Rate Alert Check
+        hr_alert = False
+        if latest.heart_rate and (latest.heart_rate > 100 or latest.heart_rate < 60):
+            hr_alert = True
+            
+        if hr_alert:
+            insights.append({
+                'type': 'info',
+                'message': f"Irregular Heart Rate: {latest.heart_rate} bpm (Resting). If persistent, consult our cardiology or general medicine department."
+            })
+            
+        # If all normal
+        if not bp_alert and not sugar_alert and not hr_alert:
+            insights.append({
+                'type': 'success',
+                'message': "All tracked vitals are in the healthy clinical range! Keep up the great work."
+            })
+    else:
+        insights.append({
+            'type': 'info',
+            'message': "Welcome to your health dashboard! Log your first reading below to start tracking your vitals over time."
+        })
+
+    # Prepare data for Chart.js
+    chart_data = {
+        'dates': [r.logged_at.strftime('%d %b %H:%M') for r in readings],
+        'bp_sys': [r.blood_pressure_sys for r in readings],
+        'bp_dia': [r.blood_pressure_dia for r in readings],
+        'sugar': [r.blood_sugar for r in readings],
+        'hr': [r.heart_rate for r in readings]
+    }
+    
+    return render_template('health_tracker.html', readings=readings, latest=latest, insights=insights, recommended_dept=recommended_dept, chart_data=chart_data)
+
+
+@patient_bp.route('/health-tracker/log', methods=['POST'])
+@login_required
+def log_vitals():
+    try:
+        bp_sys = request.form.get('blood_pressure_sys', type=int)
+        bp_dia = request.form.get('blood_pressure_dia', type=int)
+        sugar = request.form.get('blood_sugar', type=int)
+        hr = request.form.get('heart_rate', type=int)
+        weight = request.form.get('weight', type=float)
+        height = request.form.get('height', type=float)
+        notes = request.form.get('notes', '')
+        
+        bmi = None
+        if weight and height:
+            # BMI = weight (kg) / (height (m) ^ 2)
+            height_m = height / 100.0
+            bmi = round(weight / (height_m ** 2), 1)
+
+        reading = VitalsReading(
+            patient_id=current_user.id,
+            blood_pressure_sys=bp_sys,
+            blood_pressure_dia=bp_dia,
+            blood_sugar=sugar,
+            heart_rate=hr,
+            weight=weight,
+            height=height,
+            bmi=bmi,
+            notes=notes
+        )
+        
+        db.session.add(reading)
+        db.session.commit()
+        
+        audit_logger.log_action('Vitals Logged', f'Patient {current_user.name} logged new vitals reading (BMI: {bmi})')
+        flash('Vitals logged successfully!', 'success')
+    except Exception as e:
+        db.session.rollback()
+        flash(f'Error logging vitals: {str(e)}', 'error')
+        print(f"Error logging vitals: {e}")
+        
+    return redirect(url_for('patient.health_tracker'))
+
 

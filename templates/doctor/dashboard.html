@@ -332,6 +332,14 @@
         <p class="text-white/40 text-xs mb-6 font-bold uppercase tracking-widest">Reviewing uploaded records for <span id="recordsPatientName" class="text-white">Patient</span></p>
         
         <div class="flex-1 overflow-y-auto space-y-6 pr-2 hide-scrollbar">
+            <!-- Vitals Vault Card -->
+            <div class="glass p-6 border border-indigo-500/20 bg-indigo-950/5">
+                <h4 class="text-xs font-black text-indigo-300 uppercase tracking-widest mb-4"><i class="fas fa-heartbeat text-red-500 mr-1.5 animate-pulse"></i> Patient Vitals Logs (Clinical Tracker)</h4>
+                <div id="patientVitalsLogs" class="space-y-3">
+                    <p class="text-xs text-white/30 italic">No clinical vitals logged yet.</p>
+                </div>
+            </div>
+
             <div class="grid md:grid-cols-2 gap-6">
                 <!-- Patient Custom Documents -->
                 <div class="glass p-6">
@@ -595,10 +603,12 @@
         const nameEl = document.getElementById('recordsPatientName');
         const recContainer = document.getElementById('patientUploadedRecords');
         const prescContainer = document.getElementById('patientPrescriptions');
+        const vitalsContainer = document.getElementById('patientVitalsLogs');
         
         nameEl.textContent = "Loading...";
         recContainer.innerHTML = '<p class="text-xs text-white/40 animate-pulse">Decrypting archives...</p>';
         prescContainer.innerHTML = '<p class="text-xs text-white/40 animate-pulse">Decrypting archives...</p>';
+        vitalsContainer.innerHTML = '<p class="text-xs text-white/40 animate-pulse">Scanning clinical records...</p>';
         
         modal.classList.remove('hidden');
         modal.classList.add('flex');
@@ -642,10 +652,63 @@
             } else {
                 prescContainer.innerHTML = '<p class="text-xs text-white/30 italic">No historic prescriptions found.</p>';
             }
+
+            // Render Vitals
+            if (data.vitals && data.vitals.length > 0) {
+                let vitalsHtml = `
+                    <div class="overflow-x-auto">
+                        <table class="w-full text-[11px] text-left border-collapse">
+                            <thead>
+                                <tr class="text-white/40 uppercase tracking-wider border-b border-white/10 font-black">
+                                    <th class="pb-2">Date Logged</th>
+                                    <th class="pb-2">Blood Pressure</th>
+                                    <th class="pb-2">Blood Sugar</th>
+                                    <th class="pb-2">Heart Rate</th>
+                                    <th class="pb-2">BMI</th>
+                                    <th class="pb-2">Clinical Note</th>
+                                </tr>
+                            </thead>
+                            <tbody class="divide-y divide-white/5 text-white/80">
+                `;
+                
+                data.vitals.forEach(v => {
+                    let bpStr = v.bp_sys ? `${v.bp_sys}/${v.bp_dia} mmHg` : '--';
+                    let sugarStr = v.sugar ? `${v.sugar} mg/dL` : '--';
+                    let hrStr = v.hr ? `${v.hr} bpm` : '--';
+                    let bmiStr = v.bmi ? v.bmi : '--';
+                    let notesStr = v.notes ? `"${v.notes}"` : '--';
+                    
+                    // Highlight abnormal BP/Sugar
+                    let bpClass = (v.bp_sys > 140 || v.bp_dia > 90) ? 'text-red-400 font-bold' : '';
+                    let sugarClass = (v.sugar > 140) ? 'text-red-400 font-bold' : '';
+                    let hrClass = (v.hr > 100 || v.hr < 60) ? 'text-yellow-400 font-bold' : '';
+                    
+                    vitalsHtml += `
+                        <tr class="hover:bg-white/5">
+                            <td class="py-2 font-medium">${v.logged_at}</td>
+                            <td class="py-2 ${bpClass}">${bpStr}</td>
+                            <td class="py-2 ${sugarClass}">${sugarStr}</td>
+                            <td class="py-2 ${hrClass}">${hrStr}</td>
+                            <td class="py-2"><span class="px-2 py-0.5 rounded bg-white/5 text-indigo-300 font-semibold">${bmiStr}</span></td>
+                            <td class="py-2 text-white/50 italic">${notesStr}</td>
+                        </tr>
+                    `;
+                });
+                
+                vitalsHtml += `
+                            </tbody>
+                        </table>
+                    </div>
+                `;
+                vitalsContainer.innerHTML = vitalsHtml;
+            } else {
+                vitalsContainer.innerHTML = '<p class="text-xs text-white/30 italic">No clinical vitals logged by patient yet.</p>';
+            }
         } catch (e) {
             nameEl.textContent = "Error";
             recContainer.innerHTML = '<p class="text-xs text-red-400">Failed to load records.</p>';
             prescContainer.innerHTML = '<p class="text-xs text-red-400">Failed to load prescriptions.</p>';
+            vitalsContainer.innerHTML = '<p class="text-xs text-red-400">Failed to load vitals logs.</p>';
         }
     }
 

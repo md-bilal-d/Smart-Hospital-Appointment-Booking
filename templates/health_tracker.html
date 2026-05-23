@@ -1,0 +1,450 @@
+{% extends 'base.html' %}
+{% block title %}Health Tracker{% endblock %}
+{% block content %}
+<div class="max-w-6xl mx-auto px-4 py-12">
+    <!-- Top Header & Back link -->
+    <div class="flex flex-col md:flex-row md:items-center justify-between gap-6 mb-12">
+        <div>
+            <div class="mb-3">
+                <a href="/dashboard" class="text-xs font-black uppercase tracking-widest text-indigo-400 hover:text-white transition-colors flex items-center gap-1.5">
+                    <i class="fas fa-arrow-left"></i> Return to Dashboard
+                </a>
+            </div>
+            <h1 class="text-4xl font-black tracking-tight text-white mb-2">Smart Vitals & Health Trends</h1>
+            <p class="text-white/60 font-medium">Log daily readings, track clinical trendlines, and receive AI-driven diagnostic tips.</p>
+        </div>
+        <div>
+            <div class="glass px-6 py-3 flex items-center gap-3">
+                <span class="relative flex h-3 w-3">
+                    <span class="animate-ping absolute inline-flex h-full w-full rounded-full bg-indigo-400 opacity-75"></span>
+                    <span class="relative inline-flex rounded-full h-3 w-3 bg-indigo-500"></span>
+                </span>
+                <span class="text-sm font-bold tracking-widest text-indigo-300 uppercase">Interactive Diagnostics Active</span>
+            </div>
+        </div>
+    </div>
+
+    <!-- AI Alerts & Recommendations -->
+    {% if insights %}
+    <div class="mb-12 space-y-4">
+        {% for insight in insights %}
+        <div class="glass p-6 border-l-4 relative overflow-hidden group transition-all {% if insight.type == 'warning' %}border-red-500/50 bg-red-500/5{% elif insight.type == 'success' %}border-emerald-500/50 bg-emerald-500/5{% else %}border-indigo-500/50 bg-indigo-500/5{% endif %}">
+            <div class="flex items-start gap-4">
+                <div class="w-10 h-10 rounded-full flex items-center justify-center text-lg shrink-0 {% if insight.type == 'warning' %}bg-red-500/20 text-red-400{% elif insight.type == 'success' %}bg-emerald-500/20 text-emerald-400{% else %}bg-indigo-500/20 text-indigo-300{% endif %}">
+                    {% if insight.type == 'warning' %}🚨{% elif insight.type == 'success' %}✨{% else %}ℹ️{% endif %}
+                </div>
+                <div class="flex-1">
+                    <h4 class="text-sm font-black text-white uppercase tracking-wider mb-1">Health Assistant Feedback</h4>
+                    <p class="text-sm text-white/80 font-semibold">{{ insight.message }}</p>
+                </div>
+            </div>
+        </div>
+        {% endfor %}
+    </div>
+    {% endif %}
+
+    {% if recommended_dept %}
+    <div class="mb-12 glass p-8 border-l-4 border-indigo-500/50 bg-indigo-950/20 relative overflow-hidden group">
+        <!-- Background decorative element -->
+        <div class="absolute -right-16 -bottom-16 w-48 h-48 bg-indigo-500/10 rounded-full blur-3xl"></div>
+        <div class="flex flex-col lg:flex-row justify-between items-start lg:items-center gap-6">
+            <div class="flex-1">
+                <div class="inline-block px-3 py-1 rounded-full text-[10px] font-black uppercase tracking-widest bg-indigo-500/20 text-indigo-300 border border-indigo-500/30 mb-3">AI Consultation Trigger</div>
+                <h3 class="text-xl font-black text-white mb-2">Recommended Specialist: {{ recommended_dept.name }}</h3>
+                <p class="text-sm text-white/60 font-semibold max-w-2xl leading-relaxed">{{ recommended_dept.reason }}</p>
+            </div>
+            <div class="shrink-0 w-full lg:w-auto">
+                <a href="/book?department={{ recommended_dept.id }}" class="w-full lg:w-auto text-center block px-8 py-4 btn-gradient rounded-2xl font-black uppercase tracking-widest text-xs shadow-2xl transition-all hover:scale-105">
+                    <i class="fas fa-calendar-plus mr-2"></i> Book with specialist
+                </a>
+            </div>
+        </div>
+    </div>
+    {% endif %}
+
+    <!-- Key Metrics Grid -->
+    <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6 mb-12">
+        <!-- BP Metric Card -->
+        <div class="glass p-6 group hover:border-white/30 transition-all duration-300 relative overflow-hidden">
+            <p class="text-[10px] font-black text-white/40 uppercase tracking-widest mb-1">Latest Blood Pressure</p>
+            <div class="flex items-baseline gap-2 mb-3">
+                <span class="text-3xl font-black text-white" id="stat-bp">
+                    {% if latest and latest.blood_pressure_sys %}{{ latest.blood_pressure_sys }}/{{ latest.blood_pressure_dia }}{% else %}--/--{% endif %}
+                </span>
+                <span class="text-xs font-bold text-white/40 uppercase">mmHg</span>
+            </div>
+            {% if latest and latest.blood_pressure_sys %}
+                {% if latest.blood_pressure_sys > 140 or latest.blood_pressure_dia > 90 %}
+                    <span class="px-2.5 py-1 rounded-full text-[9px] font-black uppercase tracking-widest bg-red-500/20 text-red-400 border border-red-500/30 shadow-[0_0_15px_rgba(239,68,68,0.2)]">Elevated</span>
+                {% else %}
+                    <span class="px-2.5 py-1 rounded-full text-[9px] font-black uppercase tracking-widest bg-emerald-500/20 text-emerald-400 border border-emerald-500/30 shadow-[0_0_15px_rgba(16,185,129,0.2)]">Healthy Range</span>
+                {% endif %}
+            {% else %}
+                <span class="text-xs text-white/30">No readings logged</span>
+            {% endif %}
+        </div>
+
+        <!-- Blood Sugar Metric Card -->
+        <div class="glass p-6 group hover:border-white/30 transition-all duration-300 relative overflow-hidden">
+            <p class="text-[10px] font-black text-white/40 uppercase tracking-widest mb-1">Latest Blood Sugar</p>
+            <div class="flex items-baseline gap-2 mb-3">
+                <span class="text-3xl font-black text-white" id="stat-sugar">
+                    {% if latest and latest.blood_sugar %}{{ latest.blood_sugar }}{% else %}--{% endif %}
+                </span>
+                <span class="text-xs font-bold text-white/40 uppercase">mg/dL</span>
+            </div>
+            {% if latest and latest.blood_sugar %}
+                {% if latest.blood_sugar > 140 %}
+                    <span class="px-2.5 py-1 rounded-full text-[9px] font-black uppercase tracking-widest bg-red-500/20 text-red-400 border border-red-500/30 shadow-[0_0_15px_rgba(239,68,68,0.2)]">Elevated</span>
+                {% else %}
+                    <span class="px-2.5 py-1 rounded-full text-[9px] font-black uppercase tracking-widest bg-emerald-500/20 text-emerald-400 border border-emerald-500/30 shadow-[0_0_15px_rgba(16,185,129,0.2)]">Healthy Range</span>
+                {% endif %}
+            {% else %}
+                <span class="text-xs text-white/30">No readings logged</span>
+            {% endif %}
+        </div>
+
+        <!-- Heart Rate Metric Card -->
+        <div class="glass p-6 group hover:border-white/30 transition-all duration-300 relative overflow-hidden">
+            <p class="text-[10px] font-black text-white/40 uppercase tracking-widest mb-1">Latest Heart Rate</p>
+            <div class="flex items-baseline gap-2 mb-3">
+                <span class="text-3xl font-black text-white" id="stat-hr">
+                    {% if latest and latest.heart_rate %}{{ latest.heart_rate }}{% else %}--{% endif %}
+                </span>
+                <span class="text-xs font-bold text-white/40 uppercase">bpm</span>
+            </div>
+            {% if latest and latest.heart_rate %}
+                {% if latest.heart_rate > 100 or latest.heart_rate < 60 %}
+                    <span class="px-2.5 py-1 rounded-full text-[9px] font-black uppercase tracking-widest bg-yellow-500/20 text-yellow-400 border border-yellow-500/30 shadow-[0_0_15px_rgba(234,179,8,0.2)]">Watch Out</span>
+                {% else %}
+                    <span class="px-2.5 py-1 rounded-full text-[9px] font-black uppercase tracking-widest bg-emerald-500/20 text-emerald-400 border border-emerald-500/30 shadow-[0_0_15px_rgba(16,185,129,0.2)]">Healthy Range</span>
+                {% endif %}
+            {% else %}
+                <span class="text-xs text-white/30">No readings logged</span>
+            {% endif %}
+        </div>
+
+        <!-- BMI Metric Card -->
+        <div class="glass p-6 group hover:border-white/30 transition-all duration-300 relative overflow-hidden">
+            <p class="text-[10px] font-black text-white/40 uppercase tracking-widest mb-1">Body Mass Index (BMI)</p>
+            <div class="flex items-baseline gap-2 mb-3">
+                <span class="text-3xl font-black text-white" id="stat-bmi">
+                    {% if latest and latest.bmi %}{{ latest.bmi }}{% else %}--{% endif %}
+                </span>
+                <span class="text-xs font-bold text-white/40 uppercase">Score</span>
+            </div>
+            {% if latest and latest.bmi %}
+                {% if latest.bmi >= 25.0 %}
+                    <span class="px-2.5 py-1 rounded-full text-[9px] font-black uppercase tracking-widest bg-yellow-500/20 text-yellow-400 border border-yellow-500/30">Overweight</span>
+                {% elif latest.bmi < 18.5 %}
+                    <span class="px-2.5 py-1 rounded-full text-[9px] font-black uppercase tracking-widest bg-indigo-500/20 text-indigo-400 border border-indigo-500/30">Underweight</span>
+                {% else %}
+                    <span class="px-2.5 py-1 rounded-full text-[9px] font-black uppercase tracking-widest bg-emerald-500/20 text-emerald-400 border border-emerald-500/30 shadow-[0_0_15px_rgba(16,185,129,0.2)]">Normal (Optimal)</span>
+                {% endif %}
+            {% else %}
+                <span class="text-xs text-white/30">No readings logged</span>
+            {% endif %}
+        </div>
+    </div>
+
+    <!-- Main Workspace: Visual trends + Logging Form -->
+    <div class="grid grid-cols-1 lg:grid-cols-3 gap-8 items-start">
+        <!-- Visual Trends Graph Card -->
+        <div class="lg:col-span-2 glass p-8">
+            <div class="flex justify-between items-center mb-8">
+                <div>
+                    <h3 class="text-lg font-black text-white uppercase tracking-tighter">Visual Health Trendlines</h3>
+                    <p class="text-[10px] text-white/40 uppercase font-bold tracking-widest">Chronological clinical log analysis</p>
+                </div>
+                <div class="w-10 h-10 bg-indigo-500/20 rounded-xl flex items-center justify-center text-indigo-400 shadow-md">
+                    <i class="fas fa-heartbeat animate-pulse"></i>
+                </div>
+            </div>
+            
+            {% if readings %}
+            <div class="h-[350px]">
+                <canvas id="vitalsTrendChart"></canvas>
+            </div>
+            {% else %}
+            <div class="h-[350px] flex flex-col items-center justify-center text-center opacity-40">
+                <span class="text-5xl mb-4">📈</span>
+                <p class="text-sm font-black uppercase tracking-widest text-white">No historical data available</p>
+                <p class="text-xs font-semibold">Your metrics trendline graph will show up here once you log vitals.</p>
+            </div>
+            {% endif %}
+        </div>
+
+        <!-- Logging Form Card -->
+        <div class="glass p-8">
+            <h3 class="text-lg font-black text-white uppercase tracking-tighter mb-1">Record Vitals</h3>
+            <p class="text-[10px] text-white/40 uppercase font-bold tracking-widest mb-8">Log your metrics for immediate parsing</p>
+            
+            <form action="/health-tracker/log" method="POST" class="space-y-6">
+                <div class="grid grid-cols-2 gap-4">
+                    <div>
+                        <label class="block text-[10px] font-black text-white/40 uppercase tracking-widest mb-2">BP Systolic</label>
+                        <input type="number" name="blood_pressure_sys" min="60" max="250" class="w-full glass border-white/10 rounded-xl p-3.5 text-white focus:border-indigo-500 transition-all outline-none text-sm placeholder-white/20" placeholder="e.g. 120">
+                    </div>
+                    <div>
+                        <label class="block text-[10px] font-black text-white/40 uppercase tracking-widest mb-2">BP Diastolic</label>
+                        <input type="number" name="blood_pressure_dia" min="40" max="150" class="w-full glass border-white/10 rounded-xl p-3.5 text-white focus:border-indigo-500 transition-all outline-none text-sm placeholder-white/20" placeholder="e.g. 80">
+                    </div>
+                </div>
+
+                <div class="grid grid-cols-2 gap-4">
+                    <div>
+                        <label class="block text-[10px] font-black text-white/40 uppercase tracking-widest mb-2">Blood Sugar</label>
+                        <input type="number" name="blood_sugar" min="20" max="600" class="w-full glass border-white/10 rounded-xl p-3.5 text-white focus:border-indigo-500 transition-all outline-none text-sm placeholder-white/20" placeholder="mg/dL">
+                    </div>
+                    <div>
+                        <label class="block text-[10px] font-black text-white/40 uppercase tracking-widest mb-2">Heart Rate</label>
+                        <input type="number" name="heart_rate" min="30" max="220" class="w-full glass border-white/10 rounded-xl p-3.5 text-white focus:border-indigo-500 transition-all outline-none text-sm placeholder-white/20" placeholder="bpm">
+                    </div>
+                </div>
+
+                <div class="grid grid-cols-2 gap-4">
+                    <div>
+                        <label class="block text-[10px] font-black text-white/40 uppercase tracking-widest mb-2">Weight (kg)</label>
+                        <input type="number" step="0.1" name="weight" id="weight-input" min="10" max="300" class="w-full glass border-white/10 rounded-xl p-3.5 text-white focus:border-indigo-500 transition-all outline-none text-sm placeholder-white/20" placeholder="Weight in kg">
+                    </div>
+                    <div>
+                        <label class="block text-[10px] font-black text-white/40 uppercase tracking-widest mb-2">Height (cm)</label>
+                        <input type="number" step="0.1" name="height" id="height-input" min="50" max="250" class="w-full glass border-white/10 rounded-xl p-3.5 text-white focus:border-indigo-500 transition-all outline-none text-sm placeholder-white/20" placeholder="Height in cm">
+                    </div>
+                </div>
+
+                <!-- Live Client-Side BMI computation badge -->
+                <div class="p-3 bg-white/5 border border-white/10 rounded-xl flex items-center justify-between transition-all" id="bmi-preview-box">
+                    <span class="text-[9px] font-black text-white/40 uppercase tracking-widest">Live Auto-BMI Preview</span>
+                    <span class="font-black text-sm text-indigo-300" id="bmi-preview-val">--</span>
+                </div>
+
+                <div>
+                    <label class="block text-[10px] font-black text-white/40 uppercase tracking-widest mb-2">Reading Notes</label>
+                    <input type="text" name="notes" class="w-full glass border-white/10 rounded-xl p-3.5 text-white focus:border-indigo-500 transition-all outline-none text-sm placeholder-white/20" placeholder="e.g. Fasting, post-workout, feeling dizzy">
+                </div>
+
+                <button type="submit" class="w-full py-4 btn-gradient rounded-2xl text-white font-black uppercase tracking-widest text-xs shadow-xl transition-all hover:scale-[1.02]">
+                    Log Reading Vault
+                </button>
+            </form>
+        </div>
+    </div>
+
+    <!-- Chronological Table Logs -->
+    <div class="mt-16">
+        <h2 class="text-xl font-black text-white mb-6">📋 Chronological Vitals History</h2>
+        {% if readings %}
+        <div class="glass overflow-hidden">
+            <div class="overflow-x-auto">
+                <table class="w-full text-sm">
+                    <thead>
+                        <tr class="bg-white/5 text-white/40 text-[10px] font-black uppercase tracking-widest">
+                            <th class="px-8 py-5 text-left">Date Logged</th>
+                            <th class="px-8 py-5 text-left">Blood Pressure</th>
+                            <th class="px-8 py-5 text-left">Blood Sugar</th>
+                            <th class="px-8 py-5 text-left">Heart Rate</th>
+                            <th class="px-8 py-5 text-left">Weight/Height</th>
+                            <th class="px-8 py-5 text-left">BMI</th>
+                            <th class="px-8 py-5 text-left">Notes</th>
+                        </tr>
+                    </thead>
+                    <tbody class="divide-y divide-white/5">
+                        {% for r in readings|reverse %}
+                        <tr class="hover:bg-white/5 transition-colors">
+                            <td class="px-8 py-5 font-bold text-white">{{ r.logged_at.strftime('%d %b %Y %H:%M') }}</td>
+                            <td class="px-8 py-5">
+                                <span class="font-black text-white">{% if r.blood_pressure_sys %}{{ r.blood_pressure_sys }}/{{ r.blood_pressure_dia }}{% else %}--{% endif %}</span>
+                                <span class="text-[9px] text-white/40 font-bold ml-1">mmHg</span>
+                            </td>
+                            <td class="px-8 py-5">
+                                <span class="font-black text-white">{% if r.blood_sugar %}{{ r.blood_sugar }}{% else %}--{% endif %}</span>
+                                <span class="text-[9px] text-white/40 font-bold ml-1">mg/dL</span>
+                            </td>
+                            <td class="px-8 py-5">
+                                <span class="font-black text-white">{% if r.heart_rate %}{{ r.heart_rate }}{% else %}--{% endif %}</span>
+                                <span class="text-[9px] text-white/40 font-bold ml-1">bpm</span>
+                            </td>
+                            <td class="px-8 py-5">
+                                <span class="text-white/80">{% if r.weight %}{{ r.weight }}kg / {{ r.height }}cm{% else %}--{% endif %}</span>
+                            </td>
+                            <td class="px-8 py-5">
+                                <span class="px-3 py-1 rounded-full text-[10px] font-black uppercase tracking-widest bg-white/10 text-indigo-300">
+                                    {% if r.bmi %}{{ r.bmi }}{% else %}--{% endif %}
+                                </span>
+                            </td>
+                            <td class="px-8 py-5">
+                                <p class="text-xs text-white/60 max-w-[200px] truncate italic">"{{ r.notes or 'No remarks.' }}"</p>
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+        {% else %}
+        <div class="glass p-10 text-center opacity-50 border-dashed">
+            <p class="text-white/40 font-bold uppercase tracking-widest text-xs">No entries recorded in your health vault</p>
+        </div>
+        {% endif %}
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+{% if readings %}
+<script>
+document.addEventListener('DOMContentLoaded', () => {
+    const ctx = document.getElementById('vitalsTrendChart').getContext('2d');
+    
+    // Parse the Jinja chart data
+    const chartData = {
+        labels: {{ chart_data.dates | tojson }},
+        bpSys: {{ chart_data.bp_sys | tojson }},
+        bpDia: {{ chart_data.bp_dia | tojson }},
+        sugar: {{ chart_data.sugar | tojson }},
+        hr: {{ chart_data.hr | tojson }}
+    };
+
+    const gradientSys = ctx.createLinearGradient(0, 0, 0, 300);
+    gradientSys.addColorStop(0, 'rgba(239, 68, 68, 0.25)');
+    gradientSys.addColorStop(1, 'rgba(239, 68, 68, 0.0)');
+
+    const gradientDia = ctx.createLinearGradient(0, 0, 0, 300);
+    gradientDia.addColorStop(0, 'rgba(99, 102, 241, 0.25)');
+    gradientDia.addColorStop(1, 'rgba(99, 102, 241, 0.0)');
+
+    const gradientSugar = ctx.createLinearGradient(0, 0, 0, 300);
+    gradientSugar.addColorStop(0, 'rgba(16, 185, 129, 0.25)');
+    gradientSugar.addColorStop(1, 'rgba(16, 185, 129, 0.0)');
+
+    new Chart(ctx, {
+        type: 'line',
+        data: {
+            labels: chartData.labels,
+            datasets: [
+                {
+                    label: 'BP Systolic (mmHg)',
+                    data: chartData.bpSys,
+                    borderColor: '#ef4444',
+                    backgroundColor: gradientSys,
+                    fill: true,
+                    tension: 0.4,
+                    pointBackgroundColor: '#ef4444',
+                    pointBorderColor: '#fff',
+                    pointHoverRadius: 6,
+                    yAxisID: 'y'
+                },
+                {
+                    label: 'BP Diastolic (mmHg)',
+                    data: chartData.bpDia,
+                    borderColor: '#6366f1',
+                    backgroundColor: gradientDia,
+                    fill: true,
+                    tension: 0.4,
+                    pointBackgroundColor: '#6366f1',
+                    pointBorderColor: '#fff',
+                    pointHoverRadius: 6,
+                    yAxisID: 'y'
+                },
+                {
+                    label: 'Blood Sugar (mg/dL)',
+                    data: chartData.sugar,
+                    borderColor: '#10b981',
+                    backgroundColor: gradientSugar,
+                    fill: true,
+                    tension: 0.4,
+                    pointBackgroundColor: '#10b981',
+                    pointBorderColor: '#fff',
+                    pointHoverRadius: 6,
+                    yAxisID: 'ySugar'
+                },
+                {
+                    label: 'Heart Rate (bpm)',
+                    data: chartData.hr,
+                    borderColor: '#f59e0b',
+                    borderDash: [5, 5],
+                    fill: false,
+                    tension: 0.4,
+                    pointBackgroundColor: '#f59e0b',
+                    pointHoverRadius: 6,
+                    yAxisID: 'y'
+                }
+            ]
+        },
+        options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            plugins: {
+                legend: {
+                    position: 'top',
+                    labels: {
+                        color: 'rgba(255, 255, 255, 0.7)',
+                        font: { family: 'Outfit', size: 11, weight: 'bold' }
+                    }
+                },
+                tooltip: {
+                    backgroundColor: 'rgba(26, 26, 46, 0.95)',
+                    titleFont: { family: 'Outfit', weight: 'bold' },
+                    bodyFont: { family: 'Outfit' },
+                    borderColor: 'rgba(255, 255, 255, 0.1)',
+                    borderWidth: 1
+                }
+            },
+            scales: {
+                x: {
+                    grid: { display: false },
+                    ticks: { color: 'rgba(255, 255, 255, 0.4)', font: { family: 'Outfit', size: 10 } }
+                },
+                y: {
+                    position: 'left',
+                    grid: { color: 'rgba(255, 255, 255, 0.05)' },
+                    ticks: { color: 'rgba(255, 255, 255, 0.4)', font: { family: 'Outfit', size: 10 } },
+                    title: { display: true, text: 'BP & Heart Rate', color: 'rgba(255, 255, 255, 0.5)' }
+                },
+                ySugar: {
+                    position: 'right',
+                    grid: { display: false },
+                    ticks: { color: 'rgba(255, 255, 255, 0.4)', font: { family: 'Outfit', size: 10 } },
+                    title: { display: true, text: 'Sugar (mg/dL)', color: 'rgba(255, 255, 255, 0.5)' }
+                }
+            }
+        }
+    });
+});
+</script>
+{% endif %}
+
+<script>
+// Live BMI computation script
+const weightInput = document.getElementById('weight-input');
+const heightInput = document.getElementById('height-input');
+const bmiPreviewVal = document.getElementById('bmi-preview-val');
+
+function calculateLiveBMI() {
+    const weight = parseFloat(weightInput.value);
+    const height = parseFloat(heightInput.value);
+    
+    if (weight > 0 && height > 0) {
+        const heightM = height / 100.0;
+        const bmi = (weight / (heightM * heightM)).toFixed(1);
+        bmiPreviewVal.textContent = bmi;
+        
+        // Dynamic coloring of live BMI preview
+        if (bmi >= 25.0) {
+            bmiPreviewVal.className = "font-black text-sm text-yellow-400";
+        } else if (bmi < 18.5) {
+            bmiPreviewVal.className = "font-black text-sm text-indigo-400";
+        } else {
+            bmiPreviewVal.className = "font-black text-sm text-emerald-400";
+        }
+    } else {
+        bmiPreviewVal.textContent = "--";
+        bmiPreviewVal.className = "font-black text-sm text-indigo-300";
+    }
+}
+
+weightInput.addEventListener('input', calculateLiveBMI);
+heightInput.addEventListener('input', calculateLiveBMI);
+</script>
+{% endblock %}

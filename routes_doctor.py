@@ -1,7 +1,7 @@
 """Doctor routes: dashboard, queue management, prescription uploads"""
 import os
 from flask import Blueprint, render_template, request, redirect, url_for, flash, session, current_app, jsonify
-from models import db, Doctor, Slot, Appointment, QueueLog, Patient, Prescription, Review
+from models import db, Doctor, Slot, Appointment, QueueLog, Patient, Prescription, Review, VitalsReading
 from datetime import date, timedelta, datetime
 from extensions import socketio
 from auth_utils import role_required
@@ -218,8 +218,23 @@ def get_patient_records(patient_id):
         'uploaded_at': p.uploaded_at.strftime('%Y-%m-%d %H:%M')
     } for p in prescriptions]
 
+    vitals = VitalsReading.query.filter_by(patient_id=patient_id).order_by(VitalsReading.logged_at.desc()).all()
+    vitals_list = [{
+        'id': v.id,
+        'bp_sys': v.blood_pressure_sys,
+        'bp_dia': v.blood_pressure_dia,
+        'sugar': v.blood_sugar,
+        'hr': v.heart_rate,
+        'weight': v.weight,
+        'height': v.height,
+        'bmi': v.bmi,
+        'notes': v.notes,
+        'logged_at': v.logged_at.strftime('%Y-%m-%d %H:%M')
+    } for v in vitals]
+
     return jsonify({
         'patient_name': patient.name,
         'records': records_list,
-        'prescriptions': prescriptions_list
+        'prescriptions': prescriptions_list,
+        'vitals': vitals_list
     })

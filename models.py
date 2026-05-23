@@ -206,3 +206,22 @@ class ReminderPreference(db.Model):
     patient = db.relationship('Patient', backref=db.backref('reminder_preference', uselist=False))
 
 
+class VitalsReading(db.Model):
+    """Patient logged vitals and metrics for tracking and analysis."""
+    __tablename__ = 'vitals_readings'
+    id = db.Column(db.Integer, primary_key=True)
+    patient_id = db.Column(db.Integer, db.ForeignKey('patients.id'), nullable=False)
+    blood_pressure_sys = db.Column(db.Integer, nullable=True)  # Systolic mmHg
+    blood_pressure_dia = db.Column(db.Integer, nullable=True)  # Diastolic mmHg
+    blood_sugar = db.Column(db.Integer, nullable=True)         # Sugar mg/dL
+    heart_rate = db.Column(db.Integer, nullable=True)          # Heart Rate bpm
+    weight = db.Column(db.Float, nullable=True)                # Weight kg
+    height = db.Column(db.Float, nullable=True)                # Height cm
+    bmi = db.Column(db.Float, nullable=True)                   # BMI auto-calculated
+    notes = db.Column(db.String(200), default='')
+    logged_at = db.Column(db.DateTime, default=datetime.utcnow)
+
+    patient = db.relationship('Patient', backref=db.backref('vitals_readings', lazy=True, order_by='VitalsReading.logged_at.desc()'))
+
+
+
