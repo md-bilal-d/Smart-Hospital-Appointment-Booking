@@ -1,31 +1,31 @@
 {% extends 'base.html' %}
-{% block title %}Login{% endblock %}
+{% block title %}{{ _('Login') }}{% endblock %}
 {% block content %}
 <div class="min-h-[80vh] flex items-center justify-center px-4 py-12">
     <div class="w-full max-w-md">
         <div class="glass p-10 animate-card-entrance">
             <div class="text-center mb-10">
                 <div class="w-20 h-20 mx-auto mb-6 rounded-2xl btn-gradient flex items-center justify-center text-3xl shadow-2xl">🔐</div>
-                <h1 class="text-3xl font-black text-white">Welcome Back</h1>
-                <p class="text-white/40 font-bold uppercase tracking-widest text-[10px] mt-2">Sign in to your medical dashboard</p>
+                <h1 class="text-3xl font-black text-white">{{ _('Welcome Back') }}</h1>
+                <p class="text-white/40 font-bold uppercase tracking-widest text-[10px] mt-2">{{ _('Sign in to your medical dashboard') }}</p>
             </div>
             <form method="POST" class="space-y-6">
                 <div>
-                    <label class="block text-[10px] font-black text-white/40 uppercase tracking-widest mb-2 ml-1">Identity (Email/Username)</label>
+                    <label class="block text-[10px] font-black text-white/40 uppercase tracking-widest mb-2 ml-1">{{ _('Identity (Email/Username)') }}</label>
                     <input type="text" name="email" required placeholder="patient@example.com"
                         class="w-full glass-input px-5 py-4">
                 </div>
                 <div>
-                    <label class="block text-[10px] font-black text-white/40 uppercase tracking-widest mb-2 ml-1">Secure Password</label>
+                    <label class="block text-[10px] font-black text-white/40 uppercase tracking-widest mb-2 ml-1">{{ _('Secure Password') }}</label>
                     <input type="password" name="password" required placeholder="••••••••"
                         class="w-full glass-input px-5 py-4">
                 </div>
-                <button type="submit" class="w-full py-4 btn-gradient text-white font-black uppercase tracking-widest text-sm rounded-xl shadow-2xl transition-all">SIGN IN NOW</button>
+                <button type="submit" class="w-full py-4 btn-gradient text-white font-black uppercase tracking-widest text-sm rounded-xl shadow-2xl transition-all">{{ _('SIGN IN NOW') }}</button>
             </form>
             <div class="mt-10 text-center space-y-4">
-                <p class="text-[10px] font-bold text-white/40 uppercase tracking-widest">New to MediSlot? <a href="/register" class="text-indigo-400 hover:text-white transition-colors">Create Account</a></p>
+                <p class="text-[10px] font-bold text-white/40 uppercase tracking-widest">{{ _('New to MediSlot?') }} <a href="/register" class="text-indigo-400 hover:text-white transition-colors">{{ _('Create Account') }}</a></p>
                 <div class="h-px bg-white/5 w-full"></div>
-                <a href="/doctor-login" class="inline-block text-[10px] font-black text-indigo-400 hover:text-white uppercase tracking-widest transition-all">Specialist Access Portal →</a>
+                <a href="/doctor-login" class="inline-block text-[10px] font-black text-indigo-400 hover:text-white uppercase tracking-widest transition-all">{{ _('Specialist Access Portal →') }}</a>
             </div>
         </div>
     </div>

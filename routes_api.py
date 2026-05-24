@@ -6,6 +6,7 @@ from smart_scheduling import calculate_live_eta
 from datetime import date, timedelta, datetime
 from sqlalchemy import func
 import re
+from translations import gettext as _
 
 api_bp = Blueprint('api', __name__)
 
@@ -288,13 +289,13 @@ def chat():
         dept = Department.query.filter(Department.name.ilike(f"%{suggested_dept}%")).first()
         if dept:
             return jsonify({
-                'reply': f"Based on your symptoms, I recommend booking an appointment with the **{dept.name}** department.",
+                'reply': _("Based on your symptoms, I recommend booking an appointment with the **{dept_name}** department.", dept_name=dept.name),
                 'department_id': dept.id,
                 'department_name': dept.name
             })
             
     return jsonify({
-        'reply': "I'm an AI assistant, and I couldn't clearly match your symptoms. Could you provide more details, or would you like to see a General Physician?",
+        'reply': _("I'm an AI assistant, and I couldn't clearly match your symptoms. Could you provide more details, or would you like to see a General Physician?"),
         'department_id': None
     })
 
@@ -346,19 +347,16 @@ def symptom_checker_chat():
         is_fallback = True
         
     if not dept:
-        return jsonify({'reply': "I'm sorry, I couldn't access the hospital departments. Please contact reception."}), 500
+        return jsonify({'reply': _("I'm sorry, I couldn't access the hospital departments. Please contact reception.")}), 500
 
     # Get doctors in this department
     doctors = Doctor.query.filter_by(department_id=dept.id, is_available=True).all()
     
     # Build reply text
     if is_fallback:
-        reply = (f"I couldn't quite pinpoint a specific specialty for those symptoms, so I recommend "
-                 f"consulting with our **General Medicine** department for an initial evaluation. "
-                 f"Our general physicians can refer you to specialists if needed. Here are our available doctors:")
+        reply = _("I couldn't quite pinpoint a specific specialty for those symptoms, so I recommend consulting with our **General Medicine** department for an initial evaluation. Our general physicians can refer you to specialists if needed. Here are our available doctors:")
     else:
-        reply = (f"Based on your mention of **'{matched_keyword}'**, I highly recommend consulting a specialist in "
-                 f"our **{dept.name}** department ({dept.description}). Here are our available specialists:")
+        reply = _("Based on your mention of **'{matched_keyword}'**, I highly recommend consulting a specialist in our **{dept_name}** department ({dept_description}). Here are our available specialists:", matched_keyword=matched_keyword, dept_name=dept.name, dept_description=dept.description)
 
     # Build doctor objects
     doc_list = []
@@ -413,7 +411,7 @@ def book_inline():
         return jsonify({'success': False, 'error': 'Invalid slot selected'}), 404
         
     if slot.available_spots <= 0:
-        return jsonify({'success': False, 'error': 'This slot is already full. Please choose another.'}), 400
+        return jsonify({'success': False, 'error': _('This slot is full. Please choose another.')}), 400
         
     # sequential token assignment
     existing_count = Appointment.query.filter_by(slot_id=slot.id).filter(
@@ -521,22 +519,23 @@ def wizard_analyze():
     # Calculate Urgency Score & Triage Category
     # Rules: High if severity >= 8, or Medium if severity >= 5, or based on accompanying symptoms/duration
     if severity >= 8:
-        urgency = "High"
-        urgency_desc = "Urgent consultation highly recommended. Please arrange to see a specialist promptly."
+        urgency = _("High")
+        urgency_desc = _("Urgent consultation highly recommended. Please arrange to see a specialist promptly.")
     elif severity >= 5 or duration in ['4-7 Days', 'Chronic / Multi-week'] or len(accompanying) >= 3:
-        urgency = "Medium"
-        urgency_desc = "Moderate symptoms detected. Scheduled clinical checkup is recommended."
+        urgency = _("Medium")
+        urgency_desc = _("Moderate symptoms detected. Scheduled clinical checkup is recommended.")
     else:
-        urgency = "Low"
-        urgency_desc = "Mild symptom indicators. Routine or general health consultation advised."
+        urgency = _("Low")
+        urgency_desc = _("Mild symptom indicators. Routine or general health consultation advised.")
         
     # Generate diagnostic summary text
     symptoms_joined = ", ".join(accompanying) if accompanying else "none specified"
-    summary_text = (
-        f"You have indicated primary symptoms in **{dept.name}** with a severity of **{severity}/10** "
-        f"lasting for **{duration}**. Accompanying symptoms: *{symptoms_joined}*. "
-        f"**Triage Assessment:** {urgency_desc}"
-    )
+    summary_text = _("You have indicated primary symptoms in **{dept_name}** with a severity of **{severity}/10** lasting for **{duration}**. Accompanying symptoms: *{symptoms_joined}*. **Triage Assessment:** {urgency_desc}",
+                     dept_name=dept.name,
+                     severity=severity,
+                     duration=duration,
+                     symptoms_joined=symptoms_joined,
+                     urgency_desc=urgency_desc)
     
     # Fetch active doctors
     doctors = Doctor.query.filter_by(department_id=dept.id, is_available=True).all()

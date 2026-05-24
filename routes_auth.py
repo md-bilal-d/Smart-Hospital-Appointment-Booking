@@ -5,8 +5,19 @@ from models import db, Patient, Staff
 import bcrypt, random
 from datetime import datetime
 from utils import audit_logger
+from translations import gettext as _
 
 auth_bp = Blueprint('auth', __name__)
+
+@auth_bp.route('/set-language/<string:lang>')
+def set_language(lang):
+    if lang in ['en', 'es', 'fr', 'hi']:
+        session['lang'] = lang
+        flash(_('Language changed successfully.'), 'success')
+    ref = request.referrer
+    if ref:
+        return redirect(ref)
+    return redirect(url_for('auth.landing'))
 
 @auth_bp.route('/')
 def landing():
@@ -22,14 +33,14 @@ def register():
         email = request.form['email']
         password = request.form['password']
         if Patient.query.filter((Patient.email==email)|(Patient.phone==phone)).first():
-            flash('Email or phone already registered.', 'error')
+            flash(_('Email or phone already registered.'), 'error')
             return redirect(url_for('auth.register'))
         pw_hash = bcrypt.hashpw(password.encode(), bcrypt.gensalt()).decode()
         p = Patient(name=name, phone=phone, email=email, password_hash=pw_hash, role='patient')
         db.session.add(p)
         db.session.commit()
         audit_logger.log_action('Patient Registered', f'New patient: {name}')
-        flash('Registration successful! Please login.', 'success')
+        flash(_('Registration successful! Please login.'), 'success')
         return redirect(url_for('auth.login'))
     return render_template('register.html')
 
@@ -43,7 +54,7 @@ def login():
         staff = Staff.query.filter_by(email=email).first()
         if staff and bcrypt.checkpw(password.encode(), staff.password_hash.encode()):
             if not staff.is_active:
-                flash('Account deactivated. Contact Super Admin.', 'error')
+                flash(_('Account deactivated. Contact Super Admin.'), 'error')
                 return redirect(url_for('auth.login'))
             
             session['user_id'] = staff.id
@@ -77,7 +88,7 @@ def login():
             return redirect(url_for('auth.verify_otp'))
             
         audit_logger.log_action('Failed Login Attempt', f'Email: {email}')
-        flash('Invalid email or password.', 'error')
+        flash(_('Invalid email or password.'), 'error')
     return render_template('login.html')
 
 @auth_bp.route('/doctor-login', methods=['GET', 'POST'])
@@ -91,12 +102,12 @@ def doctor_login():
         doctor = Doctor.query.filter_by(email=email).first()
         
         if not doctor:
-            flash('No doctor account found with this email', 'error')
+            flash(_('No doctor account found with this email'), 'error')
             return redirect(url_for('auth.doctor_login'))
             
         if bcrypt.checkpw(password.encode(), doctor.password_hash.encode()):
             if not getattr(doctor, 'is_active', True):
-                flash('Account deactivated. Contact Super Admin.', 'error')
+                flash(_('Account deactivated. Contact Super Admin.'), 'error')
                 return redirect(url_for('auth.doctor_login'))
             
             # Set sessions as requested
@@ -109,7 +120,7 @@ def doctor_login():
             audit_logger.log_action('Doctor Login', f'{doctor.name} logged in')
             return redirect(url_for('doctor.doctor_dashboard', doctor_id=doctor.id))
             
-        flash('Incorrect password', 'error')
+        flash(_('Incorrect password'), 'error')
         return redirect(url_for('auth.doctor_login'))
         
     return render_template('doctor_login.html')
@@ -124,18 +135,18 @@ def verify_otp():
         expiry_str = session.get('otp_expiry')
         
         if not expiry_str:
-            flash('OTP session invalid. Please login again.', 'error')
+            flash(_('OTP session invalid. Please login again.'), 'error')
             session.pop('otp', None)
             return redirect(url_for('auth.login'))
             
         try:
             otp_expiry = datetime.fromisoformat(expiry_str)
             if datetime.utcnow() > otp_expiry:
-                flash('OTP expired. Please request a new one.', 'error')
+                flash(_('OTP expired. Please request a new one.'), 'error')
                 session.pop('otp', None)
                 return redirect(url_for('auth.login'))
         except ValueError:
-            flash('OTP session corrupted. Please login again.', 'error')
+            flash(_('OTP session corrupted. Please login again.'), 'error')
             session.pop('otp', None)
             return redirect(url_for('auth.login'))
             
@@ -154,10 +165,10 @@ def verify_otp():
             session['user_name'] = patient.name
             
             audit_logger.log_action('Patient Login', f'{patient.name} logged in')
-            flash('Login successful!', 'success')
+            flash(_('Login successful!'), 'success')
             return redirect(url_for('patient.dashboard'))
             
-        flash('Wrong OTP', 'error')
+        flash(_('Wrong OTP'), 'error')
         return redirect(url_for('auth.verify_otp'))
         
     otp = session.get('otp', 'Not generated')
@@ -186,7 +197,7 @@ def logout():
     audit_logger.log_action('Logout', f"User {session.get('user_name')} logged out")
     logout_user()
     session.clear()
-    flash('Logged out successfully.', 'success')
+    flash(_('Logged out successfully.'), 'success')
     return redirect(url_for('auth.landing'))
 
 @auth_bp.route('/unauthorized')

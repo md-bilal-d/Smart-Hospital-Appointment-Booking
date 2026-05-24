@@ -1,13 +1,13 @@
 {% extends 'base.html' %}
-{% block title %}Dashboard{% endblock %}
+{% block title %}{{ _('Dashboard') }}{% endblock %}
 {% block content %}
 <div class="max-w-6xl mx-auto px-4 py-12">
     
     <!-- Top Header & Live Pulse -->
     <div class="flex flex-col md:flex-row md:items-center justify-between gap-6 mb-12">
         <div>
-            <h1 class="text-4xl font-black tracking-tight text-white mb-2">Patient Dashboard</h1>
-            <p class="text-white/60 font-medium">Manage your health journey and active queues.</p>
+            <h1 class="text-4xl font-black tracking-tight text-white mb-2">{{ _('Patient Dashboard') }}</h1>
+            <p class="text-white/60 font-medium">{{ _('Manage your health journey and active queues.') }}</p>
         </div>
         <div class="flex items-center gap-4">
             <div class="glass px-6 py-3 flex items-center gap-3">
@@ -15,7 +15,7 @@
                     <span class="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75"></span>
                     <span class="relative inline-flex rounded-full h-3 w-3 bg-emerald-500"></span>
                 </span>
-                <span class="text-sm font-bold tracking-widest text-emerald-400 uppercase">Live Queue Connected</span>
+                <span class="text-sm font-bold tracking-widest text-emerald-400 uppercase">{{ _('Live Queue Connected') }}</span>
             </div>
         </div>
     </div>
@@ -23,15 +23,15 @@
     <!-- Stats Row -->
     <div class="grid grid-cols-1 sm:grid-cols-3 gap-6 mb-12">
         <div class="glass p-6 group hover:border-white/30 transition-all">
-            <p class="text-xs font-black text-white/40 uppercase tracking-widest mb-1">Total Appointments</p>
+            <p class="text-xs font-black text-white/40 uppercase tracking-widest mb-1">{{ _('Total Appointments') }}</p>
             <p class="text-3xl font-black text-white">{{ total_count }}</p>
         </div>
         <div class="glass p-6 border-l-4 border-emerald-500/50">
-            <p class="text-xs font-black text-white/40 uppercase tracking-widest mb-1">Completed / Seen</p>
+            <p class="text-xs font-black text-white/40 uppercase tracking-widest mb-1">{{ _('Completed / Seen') }}</p>
             <p class="text-3xl font-black text-emerald-400">{{ seen_count }}</p>
         </div>
         <div class="glass p-6 border-l-4 border-indigo-500/50">
-            <p class="text-xs font-black text-white/40 uppercase tracking-widest mb-1">Active / Waiting</p>
+            <p class="text-xs font-black text-white/40 uppercase tracking-widest mb-1">{{ _('Active / Waiting') }}</p>
             <p class="text-3xl font-black text-indigo-400">{{ waiting_count }}</p>
         </div>
     </div>
@@ -40,7 +40,7 @@
     <div class="mb-16">
         <h2 class="text-xl font-black text-white mb-6 flex items-center gap-3">
             <span class="p-2 bg-indigo-500/20 rounded-lg">🔔</span>
-            Active Appointments
+            {{ _('Active Appointments') }}
         </h2>
         
         {% if active %}
@@ -55,7 +55,7 @@
                     <div class="flex items-center gap-8">
                         <div class="relative">
                             <div class="w-24 h-24 rounded-full flex flex-col items-center justify-center shadow-2xl btn-gradient animate-pulse">
-                                <span class="text-xs font-black text-white/60 uppercase">Token</span>
+                                <span class="text-xs font-black text-white/60 uppercase">{{ _('Token') }}</span>
                                 <span class="text-4xl font-black text-white">#{{ appt.token_number }}</span>
                             </div>
                         </div>
@@ -64,14 +64,14 @@
                             <p class="text-white/60 font-bold mb-3">{{ appt.slot.date }} · {{ appt.slot.time_label }}</p>
                             <div class="flex flex-wrap gap-2">
                                 <span class="px-3 py-1 rounded-full text-[10px] font-black uppercase tracking-widest status-{{ appt.status }}">
-                                    {{ appt.status }}
+                                    {{ _(appt.status) }}
                                 </span>
                                 <span class="px-3 py-1 rounded-full text-[10px] font-black uppercase tracking-widest bg-white/10 text-white/80 border border-white/10">
-                                    {{ appt.consultation_mode }}
+                                    {{ _(appt.consultation_mode) }}
                                 </span>
                                 {% if appt.risk_flag == 'high' %}
                                 <span class="px-3 py-1 rounded-full text-[10px] font-black uppercase tracking-widest bg-red-500/20 text-red-400 border border-red-500/30">
-                                    High Risk Pattern
+                                    {{ _('High Risk Pattern') }}
                                 </span>
                                 {% endif %}
                             </div>
@@ -82,13 +82,13 @@
                     <div class="flex flex-col lg:items-end justify-center gap-4">
                         <div class="flex items-center gap-10">
                             <div class="text-center lg:text-right">
-                                <p class="text-[10px] font-black text-white/40 uppercase tracking-tighter">Queue Position</p>
+                                <p class="text-[10px] font-black text-white/40 uppercase tracking-tighter">{{ _('Queue Position') }}</p>
                                 <p class="text-4xl font-black text-indigo-400 drop-shadow-[0_0_15px_rgba(129,140,248,0.5)]" id="pos-{{ appt.id }}">
                                     #{{ positions[appt.id] + 1 }}
                                 </p>
                             </div>
                             <div class="text-center lg:text-right">
-                                <p class="text-[10px] font-black text-white/40 uppercase tracking-tighter">Est. Wait Time</p>
+                                <p class="text-[10px] font-black text-white/40 uppercase tracking-tighter">{{ _('Est. Wait Time') }}</p>
                                 <p class="text-4xl font-black text-emerald-400 drop-shadow-[0_0_15px_rgba(52,211,153,0.5)]" id="eta-{{ appt.id }}">
                                     {{ etas[appt.id] }}<span class="text-lg">m</span>
                                 </p>
@@ -107,18 +107,18 @@
                             {% if 'video' in appt.consultation_mode.lower() and appt.status in ['waiting', 'called'] %}
                             <a href="https://meet.jit.si/MediSlot-Consultation-{{ appt.id }}" target="_blank" 
                                class="px-5 py-2 btn-gradient text-white text-[11px] font-black uppercase tracking-widest rounded-xl transition-all flex items-center gap-1.5 shadow-[0_0_15px_rgba(102,126,234,0.5)]">
-                                <i class="fas fa-video animate-pulse"></i> Join Video Call
+                                <i class="fas fa-video animate-pulse"></i> {{ _('Join Video Call') }}
                             </a>
                             {% endif %}
                             
                             {% if appt.status == 'waiting' %}
                             <button onclick="openRescheduleModal({{ appt.id }}, {{ appt.slot.doctor_id }}, '{{ appt.slot.doctor.name }}')" 
                                     class="px-5 py-2 bg-white/10 hover:bg-white/20 text-white text-[11px] font-black uppercase tracking-widest rounded-xl transition-all">
-                                Reschedule
+                                {{ _('Reschedule') }}
                             </button>
                             <button onclick="cancelAppointment({{ appt.id }})" 
                                     class="px-5 py-2 bg-red-500/10 hover:bg-red-500/20 text-red-400 text-[11px] font-black uppercase tracking-widest rounded-xl transition-all">
-                                Cancel
+                                {{ _('Cancel') }}
                             </button>
                             {% endif %}
                         </div>
@@ -127,7 +127,7 @@
                 
                 <!-- Alerts -->
                 <div id="alert-{{ appt.id }}" class="hidden mt-6 p-4 bg-emerald-500/20 border border-emerald-500/40 text-emerald-300 rounded-2xl text-center font-black tracking-widest text-sm animate-pulse">
-                    🚀 YOU ARE NEXT IN QUEUE! PLEASE HEAD TO CLINIC
+                    🚀 {{ _('YOU ARE NEXT IN QUEUE! PLEASE HEAD TO CLINIC') }}
                 </div>
             </div>
             {% endfor %}
@@ -135,9 +135,9 @@
         {% else %}
         <div class="glass p-16 text-center">
             <div class="text-6xl mb-6">📅</div>
-            <h3 class="text-2xl font-black text-white mb-2">No Active Bookings</h3>
-            <p class="text-white/50 mb-8">Ready to take care of your health? Schedule a visit now.</p>
-            <a href="/book" class="inline-block px-8 py-4 btn-gradient rounded-2xl font-black tracking-widest text-sm shadow-2xl">BOOK APPOINTMENT</a>
+            <h3 class="text-2xl font-black text-white mb-2">{{ _('No Active Bookings') }}</h3>
+            <p class="text-white/50 mb-8">{{ _('Ready to take care of your health? Schedule a visit now.') }}</p>
+            <a href="/book" class="inline-block px-8 py-4 btn-gradient rounded-2xl font-black tracking-widest text-sm shadow-2xl">{{ _('BOOK APPOINTMENT') }}</a>
         </div>
         {% endif %}
     </div>
@@ -147,19 +147,19 @@
         <div class="absolute -right-16 -top-16 w-40 h-40 bg-indigo-500/10 rounded-full blur-3xl"></div>
         <div class="flex flex-col md:flex-row justify-between items-start md:items-center gap-6">
             <div>
-                <span class="inline-block px-3 py-1 rounded-full text-[9px] font-black uppercase tracking-widest bg-indigo-500/20 text-indigo-300 border border-indigo-500/30 mb-3">Vitals Log Vault</span>
-                <h3 class="text-2xl font-black text-white mb-2"><i class="fas fa-heartbeat text-red-400 animate-pulse mr-2"></i> Track Your Health Trends</h3>
-                <p class="text-white/60 text-sm font-semibold max-w-2xl leading-relaxed">Record your Blood Pressure, Blood Sugar, Heart Rate, and BMI. See clinical charts and receive personalized AI health recommendations.</p>
+                <span class="inline-block px-3 py-1 rounded-full text-[9px] font-black uppercase tracking-widest bg-indigo-500/20 text-indigo-300 border border-indigo-500/30 mb-3">{{ _('Vitals Log Vault') }}</span>
+                <h3 class="text-2xl font-black text-white mb-2"><i class="fas fa-heartbeat text-red-400 animate-pulse mr-2"></i> {{ _('Track Your Health Trends') }}</h3>
+                <p class="text-white/60 text-sm font-semibold max-w-2xl leading-relaxed">{{ _('Record your Blood Pressure, Blood Sugar, Heart Rate, and BMI. See clinical charts and receive personalized AI health recommendations.') }}</p>
             </div>
             <a href="/health-tracker" class="w-full md:w-auto text-center px-8 py-4 btn-gradient rounded-2xl font-black uppercase tracking-widest text-xs shadow-2xl transition-all hover:scale-105 shrink-0">
-                Open Health Tracker
+                {{ _('Open Health Tracker') }}
             </a>
         </div>
     </div>
 
     <!-- Prescriptions -->
     <div class="mb-16">
-        <h2 class="text-xl font-black text-white mb-6">📄 Health Documents</h2>
+        <h2 class="text-xl font-black text-white mb-6">📄 {{ _('Health Documents') }}</h2>
         {% if prescriptions %}
         <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
             {% for pr in prescriptions %}
@@ -184,25 +184,25 @@
         </div>
         {% else %}
         <div class="glass p-10 text-center border-dashed opacity-50">
-            <p class="text-white/40 font-bold uppercase tracking-widest text-xs">No digital prescriptions yet</p>
+            <p class="text-white/40 font-bold uppercase tracking-widest text-xs">{{ _('No digital prescriptions yet') }}</p>
         </div>
         {% endif %}
     </div>
 
     <!-- Past History -->
     <div class="mb-12">
-        <h2 class="text-xl font-black text-white mb-6">📋 History</h2>
+        <h2 class="text-xl font-black text-white mb-6">📋 {{ _('History') }}</h2>
         {% if past %}
         <div class="glass overflow-hidden">
             <div class="overflow-x-auto">
                 <table class="w-full text-sm">
                     <thead>
                         <tr class="bg-white/5 text-white/40 text-[10px] font-black uppercase tracking-widest">
-                            <th class="px-8 py-5 text-left">Date</th>
-                            <th class="px-8 py-5 text-left">Doctor / Specialty</th>
-                            <th class="px-8 py-5 text-left">Mode</th>
-                            <th class="px-8 py-5 text-left">Status</th>
-                            <th class="px-8 py-5 text-left">Action</th>
+                            <th class="px-8 py-5 text-left">{{ _('Date') }}</th>
+                            <th class="px-8 py-5 text-left">{{ _('Doctor / Specialty') }}</th>
+                            <th class="px-8 py-5 text-left">{{ _('Mode') }}</th>
+                            <th class="px-8 py-5 text-left">{{ _('Status') }}</th>
+                            <th class="px-8 py-5 text-left">{{ _('Action') }}</th>
                         </tr>
                     </thead>
                     <tbody class="divide-y divide-white/5">
@@ -211,21 +211,21 @@
                             <td class="px-8 py-5 font-bold text-white">{{ appt.slot.date }}</td>
                             <td class="px-8 py-5">
                                 <p class="font-bold text-white">Dr. {{ appt.slot.doctor.name }}</p>
-                                <p class="text-[10px] font-bold text-white/40 uppercase">{{ appt.slot.doctor.specialization }}</p>
+                                <p class="text-[10px] font-bold text-white/40 uppercase">{{ _(appt.slot.doctor.specialization) }}</p>
                             </td>
                             <td class="px-8 py-5">
-                                <span class="text-[10px] font-black text-white/60 uppercase tracking-widest">{{ appt.consultation_mode }}</span>
+                                <span class="text-[10px] font-black text-white/60 uppercase tracking-widest">{{ _(appt.consultation_mode) }}</span>
                             </td>
                             <td class="px-8 py-5">
                                 <span class="px-3 py-1 rounded-full text-[10px] font-black uppercase status-{{ appt.status }}">
-                                    {{ appt.status }}
+                                    {{ _(appt.status) }}
                                 </span>
                             </td>
                             <td class="px-8 py-5">
                                 {% if appt.status == 'seen' and not appt.review %}
                                 <button onclick="openReviewModal({{ appt.id }}, '{{ appt.slot.doctor.name }}')" 
                                         class="px-4 py-2 bg-indigo-500/20 text-indigo-400 hover:bg-indigo-500/40 text-[10px] font-black uppercase tracking-widest rounded-lg transition-all">
-                                    Rate
+                                    {{ _('Rate') }}
                                 </button>
                                 {% elif appt.review %}
                                 <span class="text-yellow-400 text-xs">
@@ -240,7 +240,7 @@
             </div>
         </div>
         {% else %}
-        <p class="text-white/30 text-center py-10 font-bold uppercase tracking-widest text-xs">History is empty</p>
+        <p class="text-white/30 text-center py-10 font-bold uppercase tracking-widest text-xs">{{ _('History is empty') }}</p>
         {% endif %}
     </div>
 </div>
@@ -249,15 +249,15 @@
 <div id="rescheduleModal" class="hidden fixed inset-0 z-[100] flex items-center justify-center p-4 bg-black/80 backdrop-blur-sm">
     <div class="glass w-full max-w-lg p-8 animate-card-entrance">
         <div class="flex items-center justify-between mb-8">
-            <h2 class="text-2xl font-black text-white">Reschedule Visit</h2>
+            <h2 class="text-2xl font-black text-white">{{ _('Reschedule Visit') }}</h2>
             <button onclick="closeRescheduleModal()" class="text-white/40 hover:text-white transition-colors text-2xl">&times;</button>
         </div>
         
-        <p class="text-white/60 font-bold mb-6">Select a new slot with <span id="reschedDoctorName" class="text-white"></span></p>
+        <p class="text-white/60 font-bold mb-6">{{ _('Select a new slot with') }} <span id="reschedDoctorName" class="text-white"></span></p>
         
         <div id="modalSlotsContainer" class="max-h-64 overflow-y-auto space-y-3 mb-8 pr-2">
             <!-- Slots loaded via JS -->
-            <p class="text-center text-white/40 py-10 animate-pulse">Scanning available slots...</p>
+            <p class="text-center text-white/40 py-10 animate-pulse">{{ _('Scanning available slots...') }}</p>
         </div>
 
         <form id="rescheduleForm" action="" method="POST" class="hidden">
@@ -265,8 +265,8 @@
         </form>
 
         <div class="flex gap-4">
-            <button onclick="closeRescheduleModal()" class="flex-1 px-6 py-3 glass hover:bg-white/10 text-white font-black uppercase tracking-widest text-xs">Cancel</button>
-            <button onclick="submitReschedule()" id="confirmReschedBtn" disabled class="flex-1 px-6 py-3 btn-gradient opacity-50 cursor-not-allowed rounded-xl font-black uppercase tracking-widest text-xs transition-all">Confirm Change</button>
+            <button onclick="closeRescheduleModal()" class="flex-1 px-6 py-3 glass hover:bg-white/10 text-white font-black uppercase tracking-widest text-xs">{{ _('Cancel') }}</button>
+            <button onclick="submitReschedule()" id="confirmReschedBtn" disabled class="flex-1 px-6 py-3 btn-gradient opacity-50 cursor-not-allowed rounded-xl font-black uppercase tracking-widest text-xs transition-all">{{ _('Confirm Change') }}</button>
         </div>
     </div>
 </div>
@@ -275,11 +275,11 @@
 <div id="reviewModal" class="hidden fixed inset-0 z-[100] flex items-center justify-center p-4 bg-black/80 backdrop-blur-sm">
     <div class="glass w-full max-w-lg p-8 animate-card-entrance">
         <div class="flex items-center justify-between mb-8">
-            <h2 class="text-2xl font-black text-white">Rate Your Visit</h2>
+            <h2 class="text-2xl font-black text-white">{{ _('Rate Your Visit') }}</h2>
             <button onclick="closeReviewModal()" class="text-white/40 hover:text-white transition-colors text-2xl">&times;</button>
         </div>
         
-        <p class="text-white/60 font-bold mb-6">How was your experience with <span id="reviewDoctorName" class="text-white"></span>?</p>
+        <p class="text-white/60 font-bold mb-6">{{ _('How was your experience with') }} <span id="reviewDoctorName" class="text-white"></span>?</p>
         
         <form id="reviewForm" action="" method="POST">
             <div class="mb-6 flex gap-2 justify-center" id="starRatingContainer">
@@ -291,11 +291,11 @@
                 <button type="button" onclick="setRating(5)" class="star-btn text-4xl text-yellow-400 transition-transform hover:scale-110">★</button>
             </div>
             
-            <textarea name="feedback" rows="3" placeholder="Leave a review (optional)..." class="w-full glass p-4 text-white text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500 mb-6"></textarea>
+            <textarea name="feedback" rows="3" placeholder="{{ _('Leave a review (optional)...') }}" class="w-full glass p-4 text-white text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500 mb-6"></textarea>
             
             <div class="flex gap-4">
-                <button type="button" onclick="closeReviewModal()" class="flex-1 px-6 py-3 glass hover:bg-white/10 text-white font-black uppercase tracking-widest text-xs">Cancel</button>
-                <button type="submit" class="flex-1 px-6 py-3 btn-gradient rounded-xl font-black uppercase tracking-widest text-xs transition-all">Submit Review</button>
+                <button type="button" onclick="closeReviewModal()" class="flex-1 px-6 py-3 glass hover:bg-white/10 text-white font-black uppercase tracking-widest text-xs">{{ _('Cancel') }}</button>
+                <button type="submit" class="flex-1 px-6 py-3 btn-gradient rounded-xl font-black uppercase tracking-widest text-xs transition-all">{{ _('Submit Review') }}</button>
             </div>
         </form>
     </div>
@@ -344,8 +344,8 @@ function refresh() {
             if(d.is_next) {
                 if(alertEl && alertEl.classList.contains('hidden')) {
                     if (Notification.permission === "granted") {
-                        new Notification("MediSlot: You are next!", {
-                            body: "Please proceed to your appointment with Dr. " + d.doctor_name
+                        new Notification("{{ _('MediSlot: You are next!') }}", {
+                            body: "{{ _('Please proceed to your appointment with Dr.') }} " + d.doctor_name
                         });
                     }
                 }
@@ -360,7 +360,7 @@ socket.on('queue_update', (data) => {
 });
 
 function cancelAppointment(id) {
-    if(!confirm("Are you sure you want to cancel?")) return;
+    if(!confirm("{{ _('Are you sure you want to cancel?') }}")) return;
     fetch('/cancel/' + id, { method: 'POST' }).then(() => window.location.reload());
 }
 
@@ -371,7 +371,7 @@ function openRescheduleModal(apptId, doctorId, doctorName) {
     document.getElementById('rescheduleForm').action = '/reschedule/' + apptId;
     
     const container = document.getElementById('modalSlotsContainer');
-    container.innerHTML = '<p class="text-center text-white/40 py-10 animate-pulse uppercase tracking-widest text-[10px] font-black">Loading Matrix Slots...</p>';
+    container.innerHTML = '<p class="text-center text-white/40 py-10 animate-pulse uppercase tracking-widest text-[10px] font-black">{{ _("Loading Matrix Slots...") }}</p>';
     
     const today = new Date().toISOString().split('T')[0];
     fetch(`/api/slots/${doctorId}/${today}`)
@@ -379,7 +379,7 @@ function openRescheduleModal(apptId, doctorId, doctorName) {
     .then(data => {
         container.innerHTML = '';
         if(data.slots.length === 0) {
-            container.innerHTML = '<p class="text-center text-red-400 py-10 font-bold uppercase text-xs">No available slots found for today.</p>';
+            container.innerHTML = '<p class="text-center text-red-400 py-10 font-bold uppercase text-xs">{{ _("No available slots found for today.") }}</p>';
             return;
         }
         
@@ -390,7 +390,7 @@ function openRescheduleModal(apptId, doctorId, doctorName) {
             btn.onclick = () => selectSlot(slot.id, btn);
             btn.innerHTML = `
                 <span class="font-black text-white uppercase tracking-wider">${slot.time}</span>
-                <span class="text-[10px] font-black text-white/40 uppercase">${slot.available} SPOTS LEFT</span>
+                <span class="text-[10px] font-black text-white/40 uppercase">\${slot.available} \${"{{ _('SPOTS LEFT') }}"}</span>
             `;
             container.appendChild(btn);
         });

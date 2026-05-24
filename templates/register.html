@@ -1,34 +1,34 @@
 {% extends 'base.html' %}
-{% block title %}Register{% endblock %}
+{% block title %}{{ _('Register') }}{% endblock %}
 {% block content %}
 <div class="min-h-[80vh] flex items-center justify-center px-4 py-12">
     <div class="w-full max-w-md">
         <div class="glass p-10 animate-card-entrance">
             <div class="text-center mb-8">
                 <div class="w-20 h-20 mx-auto mb-6 rounded-2xl btn-gradient flex items-center justify-center text-3xl shadow-2xl">📋</div>
-                <h1 class="text-3xl font-black text-white">Join MediSlot</h1>
-                <p class="text-white/40 font-bold uppercase tracking-widest text-[10px] mt-2">Start your smart health journey</p>
+                <h1 class="text-3xl font-black text-white">{{ _('Join MediSlot') }}</h1>
+                <p class="text-white/40 font-bold uppercase tracking-widest text-[10px] mt-2">{{ _('Start your smart health journey') }}</p>
             </div>
             <form method="POST" class="space-y-5">
                 <div>
-                    <label class="block text-[10px] font-black text-white/40 uppercase tracking-widest mb-2 ml-1">Full Name</label>
+                    <label class="block text-[10px] font-black text-white/40 uppercase tracking-widest mb-2 ml-1">{{ _('Full Name') }}</label>
                     <input type="text" name="name" required placeholder="John Doe" class="w-full glass-input px-5 py-4">
                 </div>
                 <div>
-                    <label class="block text-[10px] font-black text-white/40 uppercase tracking-widest mb-2 ml-1">Phone Number</label>
+                    <label class="block text-[10px] font-black text-white/40 uppercase tracking-widest mb-2 ml-1">{{ _('Phone Number') }}</label>
                     <input type="tel" name="phone" required placeholder="9876543210" class="w-full glass-input px-5 py-4">
                 </div>
                 <div>
-                    <label class="block text-[10px] font-black text-white/40 uppercase tracking-widest mb-2 ml-1">Email Address</label>
+                    <label class="block text-[10px] font-black text-white/40 uppercase tracking-widest mb-2 ml-1">{{ _('Email Address') }}</label>
                     <input type="email" name="email" required placeholder="you@example.com" class="w-full glass-input px-5 py-4">
                 </div>
                 <div>
-                    <label class="block text-[10px] font-black text-white/40 uppercase tracking-widest mb-2 ml-1">Create Password</label>
-                    <input type="password" name="password" required minlength="6" placeholder="Min 6 characters" class="w-full glass-input px-5 py-4">
+                    <label class="block text-[10px] font-black text-white/40 uppercase tracking-widest mb-2 ml-1">{{ _('Create Password') }}</label>
+                    <input type="password" name="password" required minlength="6" placeholder="{{ _('Min 6 characters') }}" class="w-full glass-input px-5 py-4">
                 </div>
-                <button type="submit" class="w-full py-4 btn-gradient text-white font-black uppercase tracking-widest text-sm rounded-xl shadow-2xl transition-all">REGISTER NOW</button>
+                <button type="submit" class="w-full py-4 btn-gradient text-white font-black uppercase tracking-widest text-sm rounded-xl shadow-2xl transition-all">{{ _('REGISTER NOW') }}</button>
             </form>
-            <p class="mt-8 text-center text-[10px] font-bold text-white/40 uppercase tracking-widest">Already have an account? <a href="/login" class="text-indigo-400 hover:text-white transition-colors">Sign In</a></p>
+            <p class="mt-8 text-center text-[10px] font-bold text-white/40 uppercase tracking-widest">{{ _('Already have an account?') }} <a href="/login" class="text-indigo-400 hover:text-white transition-colors">{{ _('Sign In') }}</a></p>
         </div>
     </div>
 </div>

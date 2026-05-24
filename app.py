@@ -23,6 +23,10 @@ def create_app():
     jwt.init_app(app)
     limiter.init_app(app)
     mail.init_app(app)
+
+    from translations import gettext
+    from flask import session
+    app.jinja_env.globals.update(_=gettext, get_locale=lambda: session.get('lang', 'en'))
     
     login_manager.login_view = 'auth.login'
 

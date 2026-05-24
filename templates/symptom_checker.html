@@ -1,5 +1,5 @@
 {% extends 'base.html' %}
-{% block title %}AI Symptom Checker & Instant Scheduler{% endblock %}
+{% block title %}{{ _('AI Symptom Checker & Instant Scheduler') }}{% endblock %}
 {% block content %}
 <div class="max-w-6xl mx-auto px-4 py-8 relative">
     <!-- Ambient Blur Background Blobs -->
@@ -8,13 +8,13 @@
 
     <div class="text-center mb-8">
         <span class="px-4 py-1.5 bg-indigo-500/10 text-indigo-300 border border-indigo-500/20 rounded-full text-xs font-bold tracking-widest uppercase animate-pulse">
-            <i class="fas fa-robot mr-1"></i> Interactive AI Triaging
+            <i class="fas fa-robot mr-1"></i> {{ _('Interactive AI Triaging') }}
         </span>
         <h1 class="text-4xl sm:text-5xl font-black text-white mt-4 tracking-tighter uppercase">
-            MediSlot Triage Assistant
+            {{ _('MediSlot Triage Assistant') }}
         </h1>
         <p class="text-white/60 mt-3 text-base sm:text-lg max-w-2xl mx-auto">
-            Describe your symptoms or use our step-by-step diagnostic wizard to instantly schedule the perfect specialist slot.
+            {{ _('Describe your symptoms or use our step-by-step diagnostic wizard to instantly schedule the perfect specialist slot.') }}
         </p>
     </div>
 
@@ -22,11 +22,11 @@
     <div class="flex justify-center gap-4 mb-8">
         <button id="toggle-chat-btn" 
                 class="px-6 py-3 rounded-xl text-xs font-black uppercase tracking-widest transition-all duration-300 flex items-center gap-2 border border-indigo-500/40 bg-indigo-500/25 text-white shadow-[0_0_20px_rgba(99,102,241,0.25)] select-none">
-            <i class="fas fa-comments text-sm animate-pulse"></i> MediBot AI Chat
+            <i class="fas fa-comments text-sm animate-pulse"></i> {{ _('MediBot AI Chat') }}
         </button>
         <button id="toggle-wizard-btn" 
                 class="px-6 py-3 rounded-xl text-xs font-black uppercase tracking-widest transition-all duration-300 flex items-center gap-2 border border-white/10 bg-white/5 text-white/50 hover:bg-white/10 hover:text-white select-none">
-            <i class="fas fa-wand-magic-sparkles text-sm"></i> Smart Diagnosis Wizard
+            <i class="fas fa-wand-magic-sparkles text-sm"></i> {{ _('Smart Diagnosis Wizard') }}
         </button>
     </div>
 
@@ -41,37 +41,37 @@
                         <i class="fas fa-stethoscope"></i>
                     </div>
                     <div>
-                        <h4 class="font-bold text-white leading-tight">MediSlot Smart Triage</h4>
+                        <h4 class="font-bold text-white leading-tight">{{ _('MediSlot Smart Triage') }}</h4>
                         <span class="text-[10px] text-emerald-400 font-bold uppercase tracking-wider flex items-center gap-1">
-                            <span class="w-1.5 h-1.5 bg-emerald-500 rounded-full animate-ping"></span> Live & Active
+                            <span class="w-1.5 h-1.5 bg-emerald-500 rounded-full animate-ping"></span> {{ _('Live & Active') }}
                         </span>
                     </div>
                 </div>
 
                 <div class="space-y-4">
-                    <h5 class="text-[10px] font-black text-white/40 uppercase tracking-widest">How it works</h5>
+                    <h5 class="text-[10px] font-black text-white/40 uppercase tracking-widest">{{ _('How it works') }}</h5>
                     
                     <div class="flex gap-3 items-start text-sm">
                         <span class="w-6 h-6 rounded-full bg-indigo-500/15 border border-indigo-500/30 flex items-center justify-center text-xs font-bold text-indigo-300 mt-0.5">1</span>
                         <div>
-                            <h6 class="font-semibold text-white/90">Explain symptoms</h6>
-                            <p class="text-xs text-white/50">Describe what you are experiencing in plain words.</p>
+                            <h6 class="font-semibold text-white/90">{{ _('Explain symptoms') }}</h6>
+                            <p class="text-xs text-white/50">{{ _('Describe what you are experiencing in plain words.') }}</p>
                         </div>
                     </div>
                     
                     <div class="flex gap-3 items-start text-sm">
                         <span class="w-6 h-6 rounded-full bg-indigo-500/15 border border-indigo-500/30 flex items-center justify-center text-xs font-bold text-indigo-300 mt-0.5">2</span>
                         <div>
-                            <h6 class="font-semibold text-white/90">Choose Specialist</h6>
-                            <p class="text-xs text-white/50">Get instant doctor recommendations based on clinic database.</p>
+                            <h6 class="font-semibold text-white/90">{{ _('Choose Specialist') }}</h6>
+                            <p class="text-xs text-white/50">{{ _('Get instant doctor recommendations based on clinic database.') }}</p>
                         </div>
                     </div>
                     
                     <div class="flex gap-3 items-start text-sm">
                         <span class="w-6 h-6 rounded-full bg-indigo-500/15 border border-indigo-500/30 flex items-center justify-center text-xs font-bold text-indigo-300 mt-0.5">3</span>
                         <div>
-                            <h6 class="font-semibold text-white/90">Pick Time & Confirm</h6>
-                            <p class="text-xs text-white/50">Browse dynamic slots and configure booking details inside the conversation.</p>
+                            <h6 class="font-semibold text-white/90">{{ _('Pick Time & Confirm') }}</h6>
+                            <p class="text-xs text-white/50">{{ _('Browse dynamic slots and configure booking details inside the conversation.') }}</p>
                         </div>
                     </div>
                 </div>
@@ -79,9 +79,9 @@
 
             <!-- Notice Disclaimer -->
             <div class="mt-6 p-4 bg-indigo-500/5 border border-indigo-500/10 rounded-xl">
-                <span class="text-[9px] font-bold text-indigo-300 uppercase tracking-widest block mb-1">🏥 Clinical Disclaimer</span>
+                <span class="text-[9px] font-bold text-indigo-300 uppercase tracking-widest block mb-1">🏥 {{ _('Clinical Disclaimer') }}</span>
                 <p class="text-[11px] text-white/40 leading-relaxed">
-                    MediBot is a clinical recommendation engine, not a replacement for emergency care. If you are experiencing critical symptoms, please seek emergency medical services immediately.
+                    {{ _('MediBot is a clinical recommendation engine, not a replacement for emergency care. If you are experiencing critical symptoms, please seek emergency medical services immediately.') }}
                 </p>
             </div>
         </div>
@@ -110,7 +110,7 @@
                 <form id="clinical-chat-form" class="flex gap-3 relative items-center">
                     <input type="text" id="clinical-chat-input" 
                            class="w-full glass-input pl-5 pr-16 py-4 rounded-xl text-sm text-white focus:outline-none placeholder-white/30"
-                           placeholder="Type your symptoms here (e.g. severe migraine and dizziness)..." 
+                           placeholder="{{ _('Type your symptoms here (e.g. severe migraine and dizziness)...') }}" 
                            required autocomplete="off">
                     <button type="submit" 
                             class="absolute right-2.5 top-2.5 w-11 h-11 rounded-lg btn-gradient flex items-center justify-center shadow-lg transition-transform hover:scale-105">
@@ -133,47 +133,47 @@
                         <i class="fas fa-wand-magic-sparkles"></i>
                     </div>
                     <div>
-                        <h4 class="font-bold text-white leading-tight">Smart Diagnosis</h4>
+                        <h4 class="font-bold text-white leading-tight">{{ _('Smart Diagnosis') }}</h4>
                         <span class="text-[10px] text-indigo-300 font-bold uppercase tracking-wider flex items-center gap-1">
-                            <span class="w-1.5 h-1.5 bg-indigo-500 rounded-full animate-ping"></span> Clinical Wizard
+                            <span class="w-1.5 h-1.5 bg-indigo-500 rounded-full animate-ping"></span> {{ _('Clinical Wizard') }}
                         </span>
                     </div>
                 </div>
 
                 <div class="space-y-6">
-                    <h5 class="text-[10px] font-black text-white/40 uppercase tracking-widest">Diagnostic Progress</h5>
+                    <h5 class="text-[10px] font-black text-white/40 uppercase tracking-widest">{{ _('Diagnostic Progress') }}</h5>
                     
                     <!-- Progress Step 1 -->
                     <div id="step-nav-1" class="flex gap-3.5 items-center text-sm font-semibold text-white transition-colors duration-300">
                         <span id="step-circle-1" class="w-7 h-7 rounded-full bg-indigo-500 border border-indigo-400 flex items-center justify-center text-xs font-bold text-white shadow-[0_0_10px_rgba(99,102,241,0.4)]">1</span>
-                        <span id="step-label-1" class="text-white">Primary Symptoms</span>
+                        <span id="step-label-1" class="text-white">{{ _('Primary Symptoms') }}</span>
                     </div>
                     
                     <!-- Progress Step 2 -->
                     <div id="step-nav-2" class="flex gap-3.5 items-center text-sm font-semibold text-white/40 transition-colors duration-300">
                         <span id="step-circle-2" class="w-7 h-7 rounded-full bg-white/5 border border-white/10 flex items-center justify-center text-xs font-bold text-white/50">2</span>
-                        <span id="step-label-2" class="text-white/40">Severity & Timeline</span>
+                        <span id="step-label-2" class="text-white/40">{{ _('Severity & Timeline') }}</span>
                     </div>
                     
                     <!-- Progress Step 3 -->
                     <div id="step-nav-3" class="flex gap-3.5 items-center text-sm font-semibold text-white/40 transition-colors duration-300">
                         <span id="step-circle-3" class="w-7 h-7 rounded-full bg-white/5 border border-white/10 flex items-center justify-center text-xs font-bold text-white/50">3</span>
-                        <span id="step-label-3" class="text-white/40">Secondary Symptoms</span>
+                        <span id="step-label-3" class="text-white/40">{{ _('Secondary Symptoms') }}</span>
                     </div>
 
                     <!-- Progress Step 4 -->
                     <div id="step-nav-4" class="flex gap-3.5 items-center text-sm font-semibold text-white/40 transition-colors duration-300">
                         <span id="step-circle-4" class="w-7 h-7 rounded-full bg-white/5 border border-white/10 flex items-center justify-center text-xs font-bold text-white/50">4</span>
-                        <span id="step-label-4" class="text-white/40">Diagnostics & Schedule</span>
+                        <span id="step-label-4" class="text-white/40">{{ _('Diagnostics & Schedule') }}</span>
                     </div>
                 </div>
             </div>
 
             <!-- Notice Disclaimer -->
             <div class="mt-8 p-4 bg-indigo-500/5 border border-indigo-500/10 rounded-xl">
-                <span class="text-[9px] font-bold text-indigo-300 uppercase tracking-widest block mb-1">🏥 Wizard Note</span>
+                <span class="text-[9px] font-bold text-indigo-300 uppercase tracking-widest block mb-1">🏥 {{ _('Wizard Note') }}</span>
                 <p class="text-[11px] text-white/40 leading-relaxed">
-                    This wizard triages symptoms to recommend the most suitable clinical department. Do not use for immediate medical emergencies.
+                    {{ _('This wizard triages symptoms to recommend the most suitable clinical department. Do not use for immediate medical emergencies.') }}
                 </p>
             </div>
         </div>
@@ -186,9 +186,9 @@
                 <!-- STEP 1: Primary Symptoms -->
                 <div id="wizard-step-1" class="space-y-6 animate-fadeIn">
                     <div>
-                        <span class="px-2.5 py-1 bg-indigo-500/10 text-indigo-300 border border-indigo-500/20 rounded-full text-[10px] font-black tracking-widest uppercase">Step 1 of 4</span>
-                        <h3 class="text-2xl font-black text-white mt-2 tracking-tight uppercase">Where is the primary discomfort?</h3>
-                        <p class="text-xs text-white/60 mt-1">Select the primary system or area of your symptoms to help focus our clinical analysis.</p>
+                        <span class="px-2.5 py-1 bg-indigo-500/10 text-indigo-300 border border-indigo-500/20 rounded-full text-[10px] font-black tracking-widest uppercase">{{ _('Step 1 of 4') }}</span>
+                        <h3 class="text-2xl font-black text-white mt-2 tracking-tight uppercase">{{ _('Where is the primary discomfort?') }}</h3>
+                        <p class="text-xs text-white/60 mt-1">{{ _('Select the primary system or area of your symptoms to help focus our clinical analysis.') }}</p>
                     </div>
 
                     <div class="grid grid-cols-2 lg:grid-cols-4 gap-4 pt-2">
@@ -199,8 +199,8 @@
                             <div class="w-12 h-12 rounded-xl bg-indigo-500/10 border border-indigo-500/20 flex items-center justify-center text-indigo-300 text-xl group-hover:bg-indigo-500/20 group-hover:scale-110 transition-all mb-4">
                                 <i class="fas fa-brain animate-pulse"></i>
                             </div>
-                            <h5 class="font-bold text-sm text-white group-hover:text-indigo-300 transition-colors">Head / Brain</h5>
-                            <span class="text-[10px] text-white/40 mt-1">Neurology</span>
+                            <h5 class="font-bold text-sm text-white group-hover:text-indigo-300 transition-colors">{{ _('Head / Brain') }}</h5>
+                            <span class="text-[10px] text-white/40 mt-1">{{ _('Neurology') }}</span>
                         </button>
 
                         <!-- Card 2: Cardiology -->
@@ -210,8 +210,8 @@
                             <div class="w-12 h-12 rounded-xl bg-red-500/10 border border-red-500/20 flex items-center justify-center text-red-400 text-xl group-hover:bg-red-500/20 group-hover:scale-110 transition-all mb-4">
                                 <i class="fas fa-heart animate-pulse"></i>
                             </div>
-                            <h5 class="font-bold text-sm text-white group-hover:text-red-400 transition-colors">Chest / Heart</h5>
-                            <span class="text-[10px] text-white/40 mt-1">Cardiology</span>
+                            <h5 class="font-bold text-sm text-white group-hover:text-red-400 transition-colors">{{ _('Chest / Heart') }}</h5>
+                            <span class="text-[10px] text-white/40 mt-1">{{ _('Cardiology') }}</span>
                         </button>
 
                         <!-- Card 3: General Medicine -->
@@ -221,8 +221,8 @@
                             <div class="w-12 h-12 rounded-xl bg-emerald-500/10 border border-emerald-500/20 flex items-center justify-center text-emerald-400 text-xl group-hover:bg-emerald-500/20 group-hover:scale-110 transition-all mb-4">
                                 <i class="fas fa-virus-covid animate-pulse"></i>
                             </div>
-                            <h5 class="font-bold text-sm text-white group-hover:text-emerald-400 transition-colors">General / Fever</h5>
-                            <span class="text-[10px] text-white/40 mt-1">General Medicine</span>
+                            <h5 class="font-bold text-sm text-white group-hover:text-emerald-400 transition-colors">{{ _('General / Fever') }}</h5>
+                            <span class="text-[10px] text-white/40 mt-1">{{ _('General Medicine') }}</span>
                         </button>
 
                         <!-- Card 4: Orthopedics -->
@@ -232,8 +232,8 @@
                             <div class="w-12 h-12 rounded-xl bg-amber-500/10 border border-amber-500/20 flex items-center justify-center text-amber-400 text-xl group-hover:bg-amber-500/20 group-hover:scale-110 transition-all mb-4">
                                 <i class="fas fa-bone animate-pulse"></i>
                             </div>
-                            <h5 class="font-bold text-sm text-white group-hover:text-amber-400 transition-colors">Bones / Joints</h5>
-                            <span class="text-[10px] text-white/40 mt-1">Orthopedics</span>
+                            <h5 class="font-bold text-sm text-white group-hover:text-amber-400 transition-colors">{{ _('Bones / Joints') }}</h5>
+                            <span class="text-[10px] text-white/40 mt-1">{{ _('Orthopedics') }}</span>
                         </button>
 
                         <!-- Card 5: Dermatology -->
@@ -243,8 +243,8 @@
                             <div class="w-12 h-12 rounded-xl bg-pink-500/10 border border-pink-500/20 flex items-center justify-center text-pink-400 text-xl group-hover:bg-pink-500/20 group-hover:scale-110 transition-all mb-4">
                                 <i class="fas fa-hand-holding-medical animate-pulse"></i>
                             </div>
-                            <h5 class="font-bold text-sm text-white group-hover:text-pink-400 transition-colors">Skin / Rashes</h5>
-                            <span class="text-[10px] text-white/40 mt-1">Dermatology</span>
+                            <h5 class="font-bold text-sm text-white group-hover:text-pink-400 transition-colors">{{ _('Skin / Rashes') }}</h5>
+                            <span class="text-[10px] text-white/40 mt-1">{{ _('Dermatology') }}</span>
                         </button>
 
                         <!-- Card 6: ENT -->
@@ -254,8 +254,8 @@
                             <div class="w-12 h-12 rounded-xl bg-teal-500/10 border border-teal-500/20 flex items-center justify-center text-teal-400 text-xl group-hover:bg-teal-500/20 group-hover:scale-110 transition-all mb-4">
                                 <i class="fas fa-ear-deaf animate-pulse"></i>
                             </div>
-                            <h5 class="font-bold text-sm text-white group-hover:text-teal-400 transition-colors">Ear, Nose, Throat</h5>
-                            <span class="text-[10px] text-white/40 mt-1">ENT</span>
+                            <h5 class="font-bold text-sm text-white group-hover:text-teal-400 transition-colors">{{ _('Ear, Nose, Throat') }}</h5>
+                            <span class="text-[10px] text-white/40 mt-1">{{ _('ENT') }}</span>
                         </button>
 
                         <!-- Card 7: Gynecology -->
@@ -265,8 +265,8 @@
                             <div class="w-12 h-12 rounded-xl bg-purple-500/10 border border-purple-500/20 flex items-center justify-center text-purple-400 text-xl group-hover:bg-purple-500/20 group-hover:scale-110 transition-all mb-4">
                                 <i class="fas fa-person-pregnant animate-pulse"></i>
                             </div>
-                            <h5 class="font-bold text-sm text-white group-hover:text-purple-400 transition-colors">Women Health</h5>
-                            <span class="text-[10px] text-white/40 mt-1">Gynecology</span>
+                            <h5 class="font-bold text-sm text-white group-hover:text-purple-400 transition-colors">{{ _('Women Health') }}</h5>
+                            <span class="text-[10px] text-white/40 mt-1">{{ _('Gynecology') }}</span>
                         </button>
 
                         <!-- Card 8: Pediatrics -->
@@ -276,8 +276,8 @@
                             <div class="w-12 h-12 rounded-xl bg-cyan-500/10 border border-cyan-500/20 flex items-center justify-center text-cyan-400 text-xl group-hover:bg-cyan-500/20 group-hover:scale-110 transition-all mb-4">
                                 <i class="fas fa-baby animate-pulse"></i>
                             </div>
-                            <h5 class="font-bold text-sm text-white group-hover:text-cyan-400 transition-colors">Child Care</h5>
-                            <span class="text-[10px] text-white/40 mt-1">Pediatrics</span>
+                            <h5 class="font-bold text-sm text-white group-hover:text-cyan-400 transition-colors">{{ _('Child Care') }}</h5>
+                            <span class="text-[10px] text-white/40 mt-1">{{ _('Pediatrics') }}</span>
                         </button>
                     </div>
                 </div>
@@ -285,15 +285,15 @@
                 <!-- STEP 2: Severity & Timeline -->
                 <div id="wizard-step-2" class="hidden space-y-8 animate-fadeIn">
                     <div>
-                        <span class="px-2.5 py-1 bg-indigo-500/10 text-indigo-300 border border-indigo-500/20 rounded-full text-[10px] font-black tracking-widest uppercase">Step 2 of 4</span>
-                        <h3 class="text-2xl font-black text-white mt-2 tracking-tight uppercase">Severity and Duration</h3>
-                        <p class="text-xs text-white/60 mt-1">Provide estimates on symptom intensity and active duration to assess triage urgency.</p>
+                        <span class="px-2.5 py-1 bg-indigo-500/10 text-indigo-300 border border-indigo-500/20 rounded-full text-[10px] font-black tracking-widest uppercase">{{ _('Step 2 of 4') }}</span>
+                        <h3 class="text-2xl font-black text-white mt-2 tracking-tight uppercase">{{ _('Severity and Duration') }}</h3>
+                        <p class="text-xs text-white/60 mt-1">{{ _('Provide estimates on symptom intensity and active duration to assess triage urgency.') }}</p>
                     </div>
 
                     <!-- Severity Slider -->
                     <div class="glass bg-white/5 border border-white/10 rounded-2xl p-6 space-y-4">
                         <div class="flex justify-between items-center">
-                            <label class="text-[10px] font-black text-white/40 uppercase tracking-widest">Pain / Discomfort Severity</label>
+                            <label class="text-[10px] font-black text-white/40 uppercase tracking-widest">{{ _('Pain / Discomfort Severity') }}</label>
                             <span id="severity-display" class="px-3.5 py-1 bg-emerald-500/20 border border-emerald-500/30 text-emerald-400 rounded-full text-xs font-black tracking-wider transition-all duration-300">
                                 3/10 (Mild 😊)
                             </span>
@@ -302,35 +302,35 @@
                                oninput="window.updateSeverityDisplay(this.value)"
                                class="w-full h-2.5 bg-white/10 rounded-lg appearance-none cursor-pointer accent-indigo-500">
                         <div class="flex justify-between text-[10px] text-white/30 font-bold uppercase tracking-wider px-1">
-                            <span>1 (Negligible)</span>
-                            <span>5 (Moderate)</span>
-                            <span>10 (Unbearable)</span>
+                            <span>{{ _('1 (Negligible)') }}</span>
+                            <span>{{ _('5 (Moderate)') }}</span>
+                            <span>{{ _('10 (Unbearable)') }}</span>
                         </div>
                     </div>
 
                     <!-- Duration Picker -->
                     <div class="space-y-4">
-                        <label class="block text-[10px] font-black text-white/40 uppercase tracking-widest">How long have you felt these symptoms?</label>
+                        <label class="block text-[10px] font-black text-white/40 uppercase tracking-widest">{{ _('How long have you felt these symptoms?') }}</label>
                         <div class="grid grid-cols-2 sm:grid-cols-4 gap-3">
                             <button onclick="window.selectDuration('Less than 24h')" 
                                     class="duration-pill-btn p-4 rounded-xl border text-center transition-all bg-white/5 border-white/10 text-white font-semibold hover:border-indigo-500/30 hover:bg-white/10 outline-none select-none"
                                     data-duration="Less than 24h">
-                                <span class="text-xs block">Less than 24h</span>
+                                <span class="text-xs block">{{ _('Less than 24h') }}</span>
                             </button>
                             <button onclick="window.selectDuration('1-3 Days')" 
                                     class="duration-pill-btn p-4 rounded-xl border text-center transition-all bg-white/5 border-white/10 text-white font-semibold hover:border-indigo-500/30 hover:bg-white/10 outline-none select-none"
                                     data-duration="1-3 Days">
-                                <span class="text-xs block">1 - 3 Days</span>
+                                <span class="text-xs block">{{ _('1 - 3 Days') }}</span>
                             </button>
                             <button onclick="window.selectDuration('4-7 Days')" 
                                     class="duration-pill-btn p-4 rounded-xl border text-center transition-all bg-white/5 border-white/10 text-white font-semibold hover:border-indigo-500/30 hover:bg-white/10 outline-none select-none"
                                     data-duration="4-7 Days">
-                                <span class="text-xs block">4 - 7 Days</span>
+                                <span class="text-xs block">{{ _('4 - 7 Days') }}</span>
                             </button>
                             <button onclick="window.selectDuration('Chronic / Multi-week')" 
                                     class="duration-pill-btn p-4 rounded-xl border text-center transition-all bg-white/5 border-white/10 text-white font-semibold hover:border-indigo-500/30 hover:bg-white/10 outline-none select-none"
                                     data-duration="Chronic / Multi-week">
-                                <span class="text-xs block">Chronic (1wk+)</span>
+                                <span class="text-xs block">{{ _('Chronic (1wk+)') }}</span>
                             </button>
                         </div>
                     </div>
@@ -339,14 +339,14 @@
                 <!-- STEP 3: Accompanying Symptoms -->
                 <div id="wizard-step-3" class="hidden space-y-6 animate-fadeIn">
                     <div>
-                        <span class="px-2.5 py-1 bg-indigo-500/10 text-indigo-300 border border-indigo-500/20 rounded-full text-[10px] font-black tracking-widest uppercase">Step 3 of 4</span>
-                        <h3 class="text-2xl font-black text-white mt-2 tracking-tight uppercase">Accompanying Symptoms</h3>
-                        <p class="text-xs text-white/60 mt-1">Select any additional secondary symptoms to optimize diagnostic department matching.</p>
+                        <span class="px-2.5 py-1 bg-indigo-500/10 text-indigo-300 border border-indigo-500/20 rounded-full text-[10px] font-black tracking-widest uppercase">{{ _('Step 3 of 4') }}</span>
+                        <h3 class="text-2xl font-black text-white mt-2 tracking-tight uppercase">{{ _('Accompanying Symptoms') }}</h3>
+                        <p class="text-xs text-white/60 mt-1">{{ _('Select any additional secondary symptoms to optimize diagnostic department matching.') }}</p>
                     </div>
 
                     <!-- Badge cloud container -->
                     <div class="glass bg-white/5 border border-white/10 rounded-2xl p-6">
-                        <label class="block text-[10px] font-black text-white/40 uppercase tracking-widest mb-4">Click to select all that apply</label>
+                        <label class="block text-[10px] font-black text-white/40 uppercase tracking-widest mb-4">{{ _('Click to select all that apply') }}</label>
                         <div id="secondary-badges-container" class="flex flex-wrap gap-2.5">
                             <!-- Populated dynamically via JS -->
                         </div>
@@ -356,9 +356,9 @@
                 <!-- STEP 4: Diagnostics, Urgency, Doctors and Booking -->
                 <div id="wizard-step-4" class="hidden space-y-6 animate-fadeIn">
                     <div>
-                        <span class="px-2.5 py-1 bg-indigo-500/10 text-indigo-300 border border-indigo-500/20 rounded-full text-[10px] font-black tracking-widest uppercase">Step 4 of 4</span>
-                        <h3 class="text-2xl font-black text-white mt-2 tracking-tight uppercase">AI Clinical Diagnostic Report</h3>
-                        <p class="text-xs text-white/60 mt-1">Our assessment points to the department details below. You can schedule a session with a specialist directly.</p>
+                        <span class="px-2.5 py-1 bg-indigo-500/10 text-indigo-300 border border-indigo-500/20 rounded-full text-[10px] font-black tracking-widest uppercase">{{ _('Step 4 of 4') }}</span>
+                        <h3 class="text-2xl font-black text-white mt-2 tracking-tight uppercase">{{ _('AI Clinical Diagnostic Report') }}</h3>
+                        <p class="text-xs text-white/60 mt-1">{{ _('Our assessment points to the department details below. You can schedule a session with a specialist directly.') }}</p>
                     </div>
 
                     <!-- AI Diagnostic details panel -->
@@ -367,17 +367,17 @@
                         <div class="lg:col-span-1 space-y-4">
                             <!-- Triage Urgency Banner -->
                             <div id="wizard-urgency-banner" class="p-5 rounded-2xl text-center border">
-                                <span class="text-[9px] font-black uppercase tracking-widest block mb-1">Triaged Urgency</span>
+                                <span class="text-[9px] font-black uppercase tracking-widest block mb-1">{{ _('Triaged Urgency') }}</span>
                                 <h4 id="wizard-urgency-level" class="text-3xl font-black tracking-tighter uppercase">---</h4>
                             </div>
 
                             <div class="glass bg-white/5 border border-white/10 rounded-2xl p-5 space-y-3.5">
                                 <div>
-                                    <span class="text-[9px] font-black text-white/40 uppercase tracking-widest block">Recommended Specialty</span>
+                                    <span class="text-[9px] font-black text-white/40 uppercase tracking-widest block">{{ _('Recommended Specialty') }}</span>
                                     <h4 id="wizard-recommended-dept" class="font-bold text-white text-base leading-tight">---</h4>
                                 </div>
                                 <div class="border-t border-white/5 pt-3">
-                                    <span class="text-[9px] font-black text-white/40 uppercase tracking-widest block">Triage Analysis Summary</span>
+                                    <span class="text-[9px] font-black text-white/40 uppercase tracking-widest block">{{ _('Triage Analysis Summary') }}</span>
                                     <p id="wizard-analysis-summary" class="text-xs text-white/60 leading-relaxed mt-1">---</p>
                                 </div>
                             </div>
@@ -387,7 +387,7 @@
                         <div class="lg:col-span-2 space-y-6">
                             <!-- Section: Select Doctor -->
                             <div class="space-y-3">
-                                <label class="block text-[10px] font-black text-white/40 uppercase tracking-widest">Available Specialists</label>
+                                <label class="block text-[10px] font-black text-white/40 uppercase tracking-widest">{{ _('Available Specialists') }}</label>
                                 <div id="wizard-doctors-grid" class="grid grid-cols-1 sm:grid-cols-2 gap-3.5">
                                     <!-- Populated dynamically via JS -->
                                 </div>
@@ -396,7 +396,7 @@
                             <!-- Section: Slot Picker & Booking Form -->
                             <div id="wizard-scheduler-section" class="hidden space-y-6 border-t border-white/5 pt-6">
                                 <h4 class="text-sm font-bold text-white uppercase tracking-wider flex items-center gap-1.5">
-                                    <i class="far fa-calendar-alt text-indigo-400"></i> Configure & Choose Appointment Slot
+                                    <i class="far fa-calendar-alt text-indigo-400"></i> {{ _('Configure & Choose Appointment Slot') }}
                                 </h4>
                                 
                                 <div id="wizard-slot-picker-container">
@@ -413,11 +413,11 @@
             <div id="wizard-footer-buttons" class="mt-8 border-t border-white/10 pt-5 flex justify-between items-center">
                 <button id="wizard-prev-btn" onclick="window.wizardPrevStep()" 
                         class="px-5 py-3 rounded-xl bg-white/5 hover:bg-white/10 text-xs font-black uppercase tracking-widest border border-white/5 text-white/70 hover:text-white transition-all disabled:opacity-30 disabled:cursor-not-allowed select-none" disabled>
-                    <i class="fas fa-chevron-left mr-1.5"></i> Back
+                    <i class="fas fa-chevron-left mr-1.5"></i> {{ _('Back') }}
                 </button>
                 <button id="wizard-next-btn" onclick="window.wizardNextStep()" 
                         class="px-6 py-3 rounded-xl btn-gradient text-xs font-black uppercase tracking-widest text-white shadow-lg transition-transform hover:scale-[1.01] select-none">
-                    Next <i class="fas fa-chevron-right ml-1.5"></i>
+                    {{ _('Next') }} <i class="fas fa-chevron-right ml-1.5"></i>
                 </button>
             </div>
         </div>
@@ -519,9 +519,7 @@
             setTimeout(() => {
                 showTyping(false);
                 appendBotMessage(
-                    "Hello! I am **MediBot**, your intelligent clinical assistant. 🏥<br><br>" +
-                    "Please describe the symptoms you are experiencing today in detail. " +
-                    "I will evaluate your inputs, recommend the correct clinical department, and help you book a specialist appointment instantly."
+                    {{ _("Hello! I am **MediBot**, your intelligent clinical assistant. 🏥<br><br>Please describe the symptoms you are experiencing today in detail. I will evaluate your inputs, recommend the correct clinical department, and help you book a specialist appointment instantly.") | tojson }}
                 );
             }, 1000);
         }
@@ -561,15 +559,15 @@
                                                 <div class="flex items-center gap-1.5 mt-1 text-[11px] text-amber-400">
                                                     <i class="fas fa-star text-[10px]"></i>
                                                     <span class="font-bold">${doc.rating.toFixed(1)}</span>
-                                                    <span class="text-white/30">(${doc.num_reviews} reviews)</span>
+                                                    <span class="text-white/30">(${doc.num_reviews} ` + {{ _("reviews") | tojson }} + `)</span>
                                                 </div>
                                             </div>
                                         </div>
                                         <div class="mt-3 flex items-center justify-between border-t border-white/5 pt-2 text-[11px]">
-                                            <span class="text-white/40"><i class="fas fa-briefcase mr-1"></i> ${doc.experience_years} Yrs Exp</span>
+                                            <span class="text-white/40"><i class="fas fa-briefcase mr-1"></i> ${doc.experience_years} ` + {{ _("Yrs Exp") | tojson }} + `</span>
                                             <button onclick="window.fetchSlots(${doc.id}, '${doc.name.replace(/'/g, "\\'")}')" 
                                                     class="px-3 py-1.5 bg-indigo-500/20 hover:bg-indigo-500/40 text-indigo-300 hover:text-white rounded-lg font-bold border border-indigo-500/20 transition-all select-doc-btn select-none outline-none">
-                                                Select & View Slots
+                                                ` + {{ _("Select & View Slots") | tojson }} + `
                                             </button>
                                         </div>
                                     </div>
@@ -577,7 +575,7 @@
                             </div>
                         `;
                     } else {
-                        docCardsHtml = `<p class="mt-3 text-xs text-white/40 italic"><i class="fas fa-info-circle mr-1"></i> No active doctors currently found in this department.</p>`;
+                        docCardsHtml = `<p class="mt-3 text-xs text-white/40 italic"><i class="fas fa-info-circle mr-1"></i> ` + {{ _("No active doctors currently found in this department.") | tojson }} + `</p>`;
                     }
 
                     appendBotMessage(`
@@ -586,12 +584,12 @@
                     `);
 
                 } else {
-                    appendBotMessage(`<span class="text-red-400 font-semibold"><i class="fas fa-exclamation-circle mr-1"></i> Error: ${data.error || "Failed to process symptoms."}</span>`);
+                    appendBotMessage(`<span class="text-red-400 font-semibold"><i class="fas fa-exclamation-circle mr-1"></i> ` + {{ _("Error") | tojson }} + `: ${data.error || {{ _("Failed to process symptoms.") | tojson }}}</span>`);
                 }
 
             } catch (err) {
                 showTyping(false);
-                appendBotMessage(`<span class="text-red-400 font-semibold"><i class="fas fa-wifi mr-1"></i> Failed to connect. Please check your internet connection.</span>`);
+                appendBotMessage(`<span class="text-red-400 font-semibold"><i class="fas fa-wifi mr-1"></i> ` + {{ _("Failed to connect. Please check your internet connection.") | tojson }} + `</span>`);
             }
         });
 
@@ -609,7 +607,9 @@
 
                 const dates = Object.keys(slotsByDate);
                 if (dates.length === 0) {
-                    appendBotMessage(`Sorry, there are no active appointment slots scheduled for **${doctorName}** in the next 7 days.`);
+                    appendBotMessage(
+                        {{ _("Sorry, there are no active appointment slots scheduled for **{doctor_name}** in the next 7 days.") | tojson }}.replace('{doctor_name}', doctorName)
+                    );
                     return;
                 }
 
@@ -639,16 +639,16 @@
                                         ${s.available_spots <= 0 ? 'disabled' : ''}>
                                     <span class="text-xs font-bold">${s.time_label}</span>
                                     <span class="text-[9px] font-semibold tracking-wider uppercase mt-1 ${s.available_spots > 0 ? 'text-emerald-400' : 'text-red-400'}">
-                                        ${s.available_spots > 0 ? `${s.available_spots} left` : 'Full'}
+                                        ${s.available_spots > 0 ? `${s.available_spots} ` + {{ _("left") | tojson }} : {{ _("Full") | tojson }}}
                                     </span>
                                 </button>
-                            `).join("") : `<div class="col-span-3 py-4 text-center text-xs text-white/40 italic"><i class="fas fa-calendar-times mr-1"></i> No slots available on this date.</div>`}
+                            `).join("") : `<div class="col-span-3 py-4 text-center text-xs text-white/40 italic"><i class="fas fa-calendar-times mr-1"></i> ` + {{ _("No slots available on this date.") | tojson }} + `</div>`}
                         </div>
                     `;
                 });
 
-                appendBotMessage(`
-                    I found the following slots available for **${doctorName}**. Please select your preferred date and time:
+                appendBotMessage(
+                    {{ _("I found the following slots available for **{doctor_name}**. Please select your preferred date and time:") | tojson }}.replace('{doctor_name}', doctorName) + `
                     <div id="${pickerId}" class="mt-4 p-4 glass bg-white/5 border border-white/10 rounded-2xl">
                         <div class="flex gap-2 pb-2 overflow-x-auto select-none border-b border-white/5 scrollbar-none">
                             ${dateTabsHtml}
@@ -659,7 +659,7 @@
 
             } catch (err) {
                 showTyping(false);
-                appendBotMessage(`<span class="text-red-400 font-semibold"><i class="fas fa-wifi mr-1"></i> Failed to retrieve doctor schedules.</span>`);
+                appendBotMessage(`<span class="text-red-400 font-semibold"><i class="fas fa-wifi mr-1"></i> ` + {{ _("Failed to retrieve doctor schedules.") | tojson }} + `</span>`);
             }
         };
 
@@ -697,61 +697,61 @@
             setTimeout(() => {
                 showTyping(false);
                 const formCardId = `booking-form-${Date.now()}`;
+                const formattedDateLoc = new Date(dateStr).toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric" });
                 
-                appendBotMessage(`
-                    Great selection! You have selected **${timeStr}** on **${new Date(dateStr).toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric" })}** with **${currentDoctorName}**.
-                    <br><br>
-                    Configure your clinical preferences below to secure your booking:
+                appendBotMessage(
+                    {{ _("Great selection! You have selected **{time}** on **{date}** with **{doctor_name}**.") | tojson }}.replace('{time}', timeStr).replace('{date}', formattedDateLoc).replace('{doctor_name}', currentDoctorName) +
+                    `<br><br>` + {{ _("Configure your clinical preferences below to secure your booking:") | tojson }} + `
                     
                     <form id="${formCardId}" onsubmit="window.submitInlineBooking(event, '${formCardId}')" class="mt-4 p-5 glass bg-white/5 border border-white/10 rounded-2xl space-y-4 text-left">
                         <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
                             <div>
-                                <label class="block text-[9px] font-black text-white/40 uppercase tracking-widest mb-1.5">Consultation Mode</label>
+                                <label class="block text-[9px] font-black text-white/40 uppercase tracking-widest mb-1.5">{{ _('Consultation Mode') }}</label>
                                 <select id="cons-mode" class="w-full bg-white/5 border border-white/10 rounded-lg p-2.5 text-xs text-white placeholder-white/40 focus:outline-none" required>
-                                    <option value="In-Person">In-Person Clinic Visit</option>
-                                    <option value="Video">Video Consultation (Telehealth)</option>
+                                    <option value="In-Person">{{ _('In-Person Clinic Visit') }}</option>
+                                    <option value="Video">{{ _('Video Consultation (Telehealth)') }}</option>
                                 </select>
                             </div>
                             <div>
-                                <label class="block text-[9px] font-black text-white/40 uppercase tracking-widest mb-1.5">Appointment Type</label>
+                                <label class="block text-[9px] font-black text-white/40 uppercase tracking-widest mb-1.5">{{ _('Appointment Type') }}</label>
                                 <select id="appt-type" class="w-full bg-white/5 border border-white/10 rounded-lg p-2.5 text-xs text-white placeholder-white/40 focus:outline-none" required>
-                                    <option value="normal">Normal (Routine Checkup)</option>
-                                    <option value="urgent">Urgent Clinic Consultation</option>
-                                    <option value="follow-up">Follow-Up Consultation</option>
+                                    <option value="normal">{{ _('Normal (Routine Checkup)') }}</option>
+                                    <option value="urgent">{{ _('Urgent Clinic Consultation') }}</option>
+                                    <option value="follow-up">{{ _('Follow-Up Consultation') }}</option>
                                 </select>
                             </div>
                         </div>
 
                         <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
                             <div>
-                                <label class="block text-[9px] font-black text-white/40 uppercase tracking-widest mb-1.5">Preferred Language</label>
+                                <label class="block text-[9px] font-black text-white/40 uppercase tracking-widest mb-1.5">{{ _('Preferred Language') }}</label>
                                 <select id="pref-lang" class="w-full bg-white/5 border border-white/10 rounded-lg p-2.5 text-xs text-white placeholder-white/40 focus:outline-none" required>
-                                    <option value="English">English</option>
-                                    <option value="Hindi">Hindi</option>
-                                    <option value="Spanish">Spanish</option>
-                                    <option value="Arabic">Arabic</option>
-                                    <option value="French">French</option>
+                                    <option value="English">{{ _('English') }}</option>
+                                    <option value="Hindi">{{ _('Hindi') }}</option>
+                                    <option value="Spanish">{{ _('Spanish') }}</option>
+                                    <option value="Arabic">{{ _('Arabic') }}</option>
+                                    <option value="French">{{ _('French') }}</option>
                                 </select>
                             </div>
                             <div>
-                                <label class="block text-[9px] font-black text-white/40 uppercase tracking-widest mb-1.5">Emergency Contact Mobile</label>
-                                <input type="tel" id="em-phone" class="w-full bg-white/5 border border-white/10 rounded-lg p-2.5 text-xs text-white placeholder-white/40 focus:outline-none" placeholder="E.g. +91 99999 99999">
+                                <label class="block text-[9px] font-black text-white/40 uppercase tracking-widest mb-1.5">{{ _('Emergency Contact Mobile') }}</label>
+                                <input type="tel" id="em-phone" class="w-full bg-white/5 border border-white/10 rounded-lg p-2.5 text-xs text-white placeholder-white/40 focus:outline-none" placeholder="{{ _('E.g. +91 99999 99999') }}">
                             </div>
                         </div>
 
                         <div>
-                            <label class="block text-[9px] font-black text-white/40 uppercase tracking-widest mb-1.5">Emergency Contact Name</label>
-                            <input type="text" id="em-name" class="w-full bg-white/5 border border-white/10 rounded-lg p-2.5 text-xs text-white placeholder-white/40 focus:outline-none" placeholder="E.g. Emergency Contact Name">
+                            <label class="block text-[9px] font-black text-white/40 uppercase tracking-widest mb-1.5">{{ _('Emergency Contact Name') }}</label>
+                            <input type="text" id="em-name" class="w-full bg-white/5 border border-white/10 rounded-lg p-2.5 text-xs text-white placeholder-white/40 focus:outline-none" placeholder="{{ _('E.g. Emergency Contact Name') }}">
                         </div>
 
                         <div>
-                            <label class="block text-[9px] font-black text-white/40 uppercase tracking-widest mb-1.5">Clinical Symptoms / Extra Notes</label>
-                            <textarea id="appt-notes" rows="2" class="w-full bg-white/5 border border-white/10 rounded-lg p-2.5 text-xs text-white placeholder-white/40 focus:outline-none" placeholder="Add details for your doctor..."></textarea>
+                            <label class="block text-[9px] font-black text-white/40 uppercase tracking-widest mb-1.5">{{ _('Clinical Symptoms / Extra Notes') }}</label>
+                            <textarea id="appt-notes" rows="2" class="w-full bg-white/5 border border-white/10 rounded-lg p-2.5 text-xs text-white placeholder-white/40 focus:outline-none" placeholder="{{ _('Add details for your doctor...') }}"></textarea>
                         </div>
 
                         <button type="submit" class="w-full py-3 btn-gradient text-xs font-black uppercase tracking-widest text-white rounded-xl shadow-lg transition-transform hover:scale-[1.01] flex items-center justify-center gap-1.5 select-none outline-none">
                             <i class="fas fa-check-circle"></i>
-                            Confirm Appointment Booking
+                            {{ _('Confirm Appointment Booking') }}
                         </button>
                     </form>
                 `);
@@ -802,70 +802,70 @@
                             <div class="w-16 h-16 bg-emerald-500/20 border border-emerald-500/30 rounded-full flex items-center justify-center mx-auto mb-4 text-emerald-400 text-3xl animate-bounce">
                                 <i class="fas fa-check-circle"></i>
                             </div>
-                            <span class="px-3 py-1 bg-emerald-500/10 text-emerald-400 border border-emerald-500/20 rounded-full text-[10px] font-black tracking-widest uppercase">Booking Confirmed</span>
+                            <span class="px-3 py-1 bg-emerald-500/10 text-emerald-400 border border-emerald-500/20 rounded-full text-[10px] font-black tracking-widest uppercase">` + {{ _("Booking Confirmed") | tojson }} + `</span>
                             
-                            <h4 class="text-2xl font-black text-white mt-3 tracking-tight">Your Slot is Secured!</h4>
-                            <p class="text-xs text-white/50 mt-1 max-w-sm mx-auto">We have registered your details and queued you in the wait list.</p>
+                            <h4 class="text-2xl font-black text-white mt-3 tracking-tight">` + {{ _("Your Slot is Secured!") | tojson }} + `</h4>
+                            <p class="text-xs text-white/50 mt-1 max-w-sm mx-auto">` + {{ _("We have registered your details and queued you in the wait list.") | tojson }} + `</p>
                             
                             <!-- Premium Pass Details -->
                             <div class="mt-5 glass bg-white/5 border border-white/10 rounded-2xl overflow-hidden text-left shadow-2xl">
                                 <div class="p-4 bg-indigo-600/25 border-b border-white/5 flex items-center justify-between">
                                     <div>
-                                        <span class="text-[9px] font-black text-indigo-300 uppercase tracking-widest block">Specialist</span>
+                                        <span class="text-[9px] font-black text-indigo-300 uppercase tracking-widest block">` + {{ _("Specialist") | tojson }} + `</span>
                                         <h5 class="font-bold text-white text-sm leading-tight">${data.appointment.doctor_name}</h5>
                                     </div>
                                     <div class="text-right">
-                                        <span class="text-[9px] font-black text-indigo-300 uppercase tracking-widest block">Token ID</span>
+                                        <span class="text-[9px] font-black text-indigo-300 uppercase tracking-widest block">` + {{ _("Token ID") | tojson }} + `</span>
                                         <span class="font-black text-white text-base">#${data.appointment.token}</span>
                                     </div>
                                 </div>
                                 <div class="p-4 grid grid-cols-2 gap-y-3.5 gap-x-2 text-xs border-b border-white/5">
                                     <div>
-                                        <span class="text-[9px] text-white/40 uppercase font-black tracking-wider block">Specialty</span>
+                                        <span class="text-[9px] text-white/40 uppercase font-black tracking-wider block">` + {{ _("Specialty") | tojson }} + `</span>
                                         <span class="font-bold text-white/90">${data.appointment.specialization}</span>
                                     </div>
                                     <div>
-                                        <span class="text-[9px] text-white/40 uppercase font-black tracking-wider block">Mode</span>
+                                        <span class="text-[9px] text-white/40 uppercase font-black tracking-wider block">` + {{ _("Mode") | tojson }} + `</span>
                                         <span class="font-bold text-white/90 flex items-center gap-1">
                                             <i class="fas ${mode === 'Video' ? 'fa-video text-cyan-400' : 'fa-hospital text-indigo-400'} text-[10px]"></i>
                                             ${data.appointment.consultation_mode}
                                         </span>
                                     </div>
                                     <div class="col-span-2">
-                                        <span class="text-[9px] text-white/40 uppercase font-black tracking-wider block">Schedule Time</span>
+                                        <span class="text-[9px] text-white/40 uppercase font-black tracking-wider block">` + {{ _("Schedule Time") | tojson }} + `</span>
                                         <span class="font-bold text-white/90"><i class="far fa-calendar-alt mr-1"></i> ${formattedSuccessDate} at ${data.appointment.time}</span>
                                     </div>
                                 </div>
                                 <div class="p-4 bg-black/30 flex items-center justify-between text-xs">
                                     <div class="flex items-center gap-2">
                                         <div class="w-2.5 h-2.5 rounded-full bg-emerald-500 animate-ping"></div>
-                                        <span class="font-bold text-white/70">Estimated Wait</span>
+                                        <span class="font-bold text-white/70">` + {{ _("Estimated Wait") | tojson }} + `</span>
                                     </div>
-                                    <span class="font-black text-emerald-400 text-sm">~${data.appointment.eta_minutes} Minutes</span>
+                                    <span class="font-black text-emerald-400 text-sm">~${data.appointment.eta_minutes} ` + {{ _("Minutes") | tojson }} + `</span>
                                 </div>
                             </div>
 
                             <div class="mt-6 flex flex-col sm:flex-row gap-3 justify-center">
                                 <a href="/dashboard" class="px-5 py-3 btn-gradient text-[10px] font-black uppercase tracking-widest text-white rounded-xl shadow-lg flex items-center justify-center gap-1.5 select-none outline-none">
                                     <i class="fas fa-columns"></i>
-                                    Go to Dashboard
+                                    ` + {{ _("Go to Dashboard") | tojson }} + `
                                 </a>
                                 <a href="/calendar" class="px-5 py-3 bg-white/10 hover:bg-white/15 text-[10px] font-black uppercase tracking-widest text-white rounded-xl border border-white/10 transition-colors flex items-center justify-center gap-1.5 select-none outline-none">
                                     <i class="far fa-calendar-alt"></i>
-                                    View in Calendar
+                                    ` + {{ _("View in Calendar") | tojson }} + `
                                 </a>
                             </div>
                         </div>
                     `);
                 } else {
                     form.querySelectorAll("button, select, textarea, input").forEach(el => el.disabled = false);
-                    appendBotMessage(`<span class="text-red-400 font-semibold"><i class="fas fa-exclamation-circle mr-1"></i> Booking failed: ${data.error || "Please verify slot capacity."}</span>`);
+                    appendBotMessage(`<span class="text-red-400 font-semibold"><i class="fas fa-exclamation-circle mr-1"></i> ` + {{ _("Booking failed: ") | tojson }} + ` ${data.error || {{ _("Please verify slot capacity.") | tojson }}}</span>`);
                 }
 
             } catch (err) {
                 form.querySelectorAll("button, select, textarea, input").forEach(el => el.disabled = false);
                 showTyping(false);
-                appendBotMessage(`<span class="text-red-400 font-semibold"><i class="fas fa-wifi mr-1"></i> Failed to submit booking.</span>`);
+                appendBotMessage(`<span class="text-red-400 font-semibold"><i class="fas fa-wifi mr-1"></i> ` + {{ _("Failed to submit booking.") | tojson }} + `</span>`);
             }
         };
 
@@ -887,14 +887,14 @@
 
         // Pool of accompanying symptoms keyed by primary area
         const accompanyingPools = {
-            Cardiology: ['Shortness of breath', 'Chest tightness', 'Palpitations', 'Sweating', 'Nausea', 'Dizziness', 'Fatigue'],
-            Neurology: ['Severe headache', 'Dizziness', 'Numbness / Tingling', 'Seizure activity', 'Fainting / Syncope', 'Blurred vision'],
-            'General Medicine': ['Fever / Chills', 'Persistent cough', 'Runny / Stuffy nose', 'Stomach ache', 'Nausea / Vomiting', 'Fatigue / Body aches'],
-            Orthopedics: ['Joint pain / Swelling', 'Muscle stiffness', 'Inability to bear weight', 'Sprain or recent strain', 'Back or neck pain'],
-            Dermatology: ['Skin redness / Inflammation', 'Itching / Pruritus', 'Pustules or severe acne', 'Allergic hives', 'Dry peeling patches'],
-            ENT: ['Hearing loss', 'Ear ache / Ringing', 'Nasal blockage', 'Sore throat', 'Voice hoarseness', 'Sinus pressure'],
-            Gynecology: ['Severe pelvic cramps', 'Irregular cycle', 'Abnormal discharge', 'Pregnancy confirmation', 'Hormonal swings'],
-            Pediatrics: ['Child fever', 'Persistent crying', 'Dietary rejection', 'Mild cough / Cold', 'Skin rashes']
+            Cardiology: [{{ _('Shortness of breath') | tojson }}, {{ _('Chest tightness') | tojson }}, {{ _('Palpitations') | tojson }}, {{ _('Sweating') | tojson }}, {{ _('Nausea') | tojson }}, {{ _('Dizziness') | tojson }}, {{ _('Fatigue') | tojson }}],
+            Neurology: [{{ _('Severe headache') | tojson }}, {{ _('Dizziness') | tojson }}, {{ _('Numbness / Tingling') | tojson }}, {{ _('Seizure activity') | tojson }}, {{ _('Fainting / Syncope') | tojson }}, {{ _('Blurred vision') | tojson }}],
+            'General Medicine': [{{ _('Fever / Chills') | tojson }}, {{ _('Persistent cough') | tojson }}, {{ _('Runny / Stuffy nose') | tojson }}, {{ _('Stomach ache') | tojson }}, {{ _('Nausea / Vomiting') | tojson }}, {{ _('Fatigue / Body aches') | tojson }}],
+            Orthopedics: [{{ _('Joint pain / Swelling') | tojson }}, {{ _('Muscle stiffness') | tojson }}, {{ _('Inability to bear weight') | tojson }}, {{ _('Sprain or recent strain') | tojson }}, {{ _('Back or neck pain') | tojson }}],
+            Dermatology: [{{ _('Skin redness / Inflammation') | tojson }}, {{ _('Itching / Pruritus') | tojson }}, {{ _('Pustules or severe acne') | tojson }}, {{ _('Allergic hives') | tojson }}, {{ _('Dry peeling patches') | tojson }}],
+            ENT: [{{ _('Hearing loss') | tojson }}, {{ _('Ear ache / Ringing') | tojson }}, {{ _('Nasal blockage') | tojson }}, {{ _('Sore throat') | tojson }}, {{ _('Voice hoarseness') | tojson }}, {{ _('Sinus pressure') | tojson }}],
+            Gynecology: [{{ _('Severe pelvic cramps') | tojson }}, {{ _('Irregular cycle') | tojson }}, {{ _('Abnormal discharge') | tojson }}, {{ _('Pregnancy confirmation') | tojson }}, {{ _('Hormonal swings') | tojson }}],
+            Pediatrics: [{{ _('Child fever') | tojson }}, {{ _('Persistent crying') | tojson }}, {{ _('Dietary rejection') | tojson }}, {{ _('Mild cough / Cold') | tojson }}, {{ _('Skin rashes') | tojson }}]
         };
 
         function initWizard() {
@@ -931,13 +931,13 @@
             wizardData.severity = parseInt(val);
             const el = document.getElementById("severity-display");
             if (val <= 3) {
-                el.textContent = `${val}/10 (Mild 😊)`;
+                el.textContent = `${val}/10 (` + {{ _("Mild 😊") | tojson }} + `)`;
                 el.className = "px-3.5 py-1 bg-emerald-500/20 border border-emerald-500/30 text-emerald-400 rounded-full text-xs font-black tracking-wider transition-all duration-300";
             } else if (val <= 7) {
-                el.textContent = `${val}/10 (Moderate 🙁)`;
+                el.textContent = `${val}/10 (` + {{ _("Moderate 🙁") | tojson }} + `)`;
                 el.className = "px-3.5 py-1 bg-amber-500/20 border border-amber-500/30 text-amber-400 rounded-full text-xs font-black tracking-wider transition-all duration-300";
             } else {
-                el.textContent = `${val}/10 (Severe 😩)`;
+                el.textContent = `${val}/10 (` + {{ _("Severe 😩") | tojson }} + `)`;
                 el.className = "px-3.5 py-1 bg-red-500/20 border border-red-500/30 text-red-400 rounded-full text-xs font-black tracking-wider transition-all duration-300 animate-pulse";
             }
         };
@@ -982,7 +982,7 @@
         async function submitWizardAnalysis() {
             const nextBtn = document.getElementById("wizard-next-btn");
             nextBtn.disabled = true;
-            nextBtn.innerHTML = '<i class="fas fa-spinner animate-spin"></i> Analyzing...';
+            nextBtn.innerHTML = '<i class="fas fa-spinner animate-spin"></i> ' + {{ _("Analyzing...") | tojson }};
 
             try {
                 const response = await fetch("/api/symptom-checker/wizard-analyze", {
@@ -1028,19 +1028,19 @@
                                         <div class="flex items-center gap-1.5 mt-1 text-[11px] text-amber-400">
                                             <i class="fas fa-star text-[10px]"></i>
                                             <span class="font-bold">${doc.rating.toFixed(1)}</span>
-                                            <span class="text-white/30">(${doc.num_reviews} reviews)</span>
+                                            <span class="text-white/30">(${doc.num_reviews} ` + {{ _("reviews") | tojson }} + `)</span>
                                         </div>
                                     </div>
                                 </div>
                                 <div class="mt-3 flex items-center justify-between border-t border-white/5 pt-2 text-[11px]">
-                                    <span class="text-white/40"><i class="fas fa-briefcase mr-1"></i> ${doc.experience_years} Yrs Exp</span>
-                                    <span class="text-indigo-400 font-bold tracking-wide uppercase text-[10px] group-hover:text-white transition-colors">Select & Schedule <i class="fas fa-chevron-right ml-0.5"></i></span>
+                                    <span class="text-white/40"><i class="fas fa-briefcase mr-1"></i> ${doc.experience_years} ` + {{ _("Yrs Exp") | tojson }} + `</span>
+                                    <span class="text-indigo-400 font-bold tracking-wide uppercase text-[10px] group-hover:text-white transition-colors">` + {{ _("Select & Schedule") | tojson }} + ` <i class="fas fa-chevron-right ml-0.5"></i></span>
                                 </div>
                             `;
                             docsGrid.appendChild(card);
                         });
                     } else {
-                        docsGrid.innerHTML = `<div class="col-span-2 py-4 text-center text-xs text-white/40 italic"><i class="fas fa-info-circle mr-1"></i> No active specialists currently found in this department.</div>`;
+                        docsGrid.innerHTML = `<div class="col-span-2 py-4 text-center text-xs text-white/40 italic"><i class="fas fa-info-circle mr-1"></i> ` + {{ _("No active specialists currently found in this department.") | tojson }} + `</div>`;
                     }
 
                     // Proceed to step 4 UI transition
@@ -1048,13 +1048,13 @@
                     updateWizardNav();
                     renderStepUI();
                 } else {
-                    alert(data.error || "Failed to analyze symptoms.");
+                    alert(data.error || {{ _("Failed to analyze symptoms.") | tojson }});
                 }
             } catch (err) {
-                alert("Failed to connect to the triage diagnostic services.");
+                alert({{ _("Failed to connect to the triage diagnostic services.") | tojson }});
             } finally {
                 nextBtn.disabled = false;
-                nextBtn.innerHTML = 'Next <i class="fas fa-chevron-right ml-1.5"></i>';
+                nextBtn.innerHTML = {{ _("Next") | tojson }} + ' <i class="fas fa-chevron-right ml-1.5"></i>';
             }
         }
 
@@ -1078,7 +1078,7 @@
             schedulerSection.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
 
             const slotsContainer = document.getElementById("wizard-slot-picker-container");
-            slotsContainer.innerHTML = '<div class="text-center py-6 text-white/50 text-xs"><i class="fas fa-spinner animate-spin text-base text-indigo-400 mb-2 block"></i> Loading active schedules...</div>';
+            slotsContainer.innerHTML = '<div class="text-center py-6 text-white/50 text-xs"><i class="fas fa-spinner animate-spin text-base text-indigo-400 mb-2 block"></i> ' + {{ _("Loading active schedules...") | tojson }} + '</div>';
 
             try {
                 const response = await fetch(`/api/slots/${doctorId}`);
@@ -1086,7 +1086,7 @@
 
                 const dates = Object.keys(slotsByDate);
                 if (dates.length === 0) {
-                    slotsContainer.innerHTML = `<div class="text-center py-6 text-white/40 text-xs italic"><i class="fas fa-calendar-times mr-1 block text-base mb-1"></i> No appointment slots scheduled for **${doctorName}** in the next 7 days.</div>`;
+                    slotsContainer.innerHTML = `<div class="text-center py-6 text-white/40 text-xs italic"><i class="fas fa-calendar-times mr-1 block text-base mb-1"></i> ` + {{ _("No appointment slots scheduled for **{doctor_name}** in the next 7 days.") | tojson }}.replace('{doctor_name}', doctorName) + `</div>`;
                     return;
                 }
 
@@ -1116,10 +1116,10 @@
                                         ${s.available_spots <= 0 ? 'disabled' : ''} id="wizard-slot-${s.id}">
                                     <span class="text-xs font-bold">${s.time_label}</span>
                                     <span class="text-[9px] font-semibold tracking-wider uppercase mt-1 ${s.available_spots > 0 ? 'text-emerald-400' : 'text-red-400'}">
-                                        ${s.available_spots > 0 ? `${s.available_spots} left` : 'Full'}
+                                        ${s.available_spots > 0 ? `${s.available_spots} ` + {{ _("left") | tojson }} : {{ _("Full") | tojson }}}
                                     </span>
                                 </button>
-                            `).join("") : `<div class="col-span-3 py-4 text-center text-xs text-white/40 italic"><i class="fas fa-calendar-times mr-1"></i> No slots available on this date.</div>`}
+                            `).join("") : `<div class="col-span-3 py-4 text-center text-xs text-white/40 italic"><i class="fas fa-calendar-times mr-1"></i> ` + {{ _("No slots available on this date.") | tojson }} + `</div>`}
                         </div>
                     `;
                 });
@@ -1133,58 +1133,58 @@
                         
                         <!-- Inline Config Form embedded inside scheduler block -->
                         <div id="wizard-inline-form-container" class="hidden mt-6 pt-6 border-t border-white/5 space-y-4">
-                            <span class="px-2.5 py-0.5 bg-indigo-500/10 text-indigo-300 border border-indigo-500/20 rounded-full text-[9px] font-black tracking-widest uppercase">Preferences</span>
+                            <span class="px-2.5 py-0.5 bg-indigo-500/10 text-indigo-300 border border-indigo-500/20 rounded-full text-[9px] font-black tracking-widest uppercase">` + {{ _("Preferences") | tojson }} + `</span>
                             <form id="wizard-appt-form" onsubmit="window.submitWizardBooking(event)" class="space-y-4 text-left">
                                 <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
                                     <div>
-                                        <label class="block text-[9px] font-black text-white/40 uppercase tracking-widest mb-1.5">Consultation Mode</label>
+                                        <label class="block text-[9px] font-black text-white/40 uppercase tracking-widest mb-1.5">` + {{ _("Consultation Mode") | tojson }} + `</label>
                                         <select id="w-cons-mode" class="w-full bg-white/5 border border-white/10 rounded-lg p-2.5 text-xs text-white placeholder-white/40 focus:outline-none" required>
-                                            <option value="In-Person">In-Person Clinic Visit</option>
-                                            <option value="Video">Video Consultation (Telehealth)</option>
+                                            <option value="In-Person">` + {{ _("In-Person Clinic Visit") | tojson }} + `</option>
+                                            <option value="Video">` + {{ _("Video Consultation (Telehealth)") | tojson }} + `</option>
                                         </select>
                                     </div>
                                     <div>
-                                        <label class="block text-[9px] font-black text-white/40 uppercase tracking-widest mb-1.5">Appointment Type</label>
+                                        <label class="block text-[9px] font-black text-white/40 uppercase tracking-widest mb-1.5">` + {{ _("Appointment Type") | tojson }} + `</label>
                                         <select id="w-appt-type" class="w-full bg-white/5 border border-white/10 rounded-lg p-2.5 text-xs text-white placeholder-white/40 focus:outline-none" required>
-                                            <option value="normal">Normal (Routine Checkup)</option>
-                                            <option value="urgent">Urgent Clinic Consultation</option>
-                                            <option value="follow-up">Follow-Up Consultation</option>
+                                            <option value="normal">` + {{ _("Normal (Routine Checkup)") | tojson }} + `</option>
+                                            <option value="urgent">` + {{ _("Urgent Clinic Consultation") | tojson }} + `</option>
+                                            <option value="follow-up">` + {{ _("Follow-Up Consultation") | tojson }} + `</option>
                                         </select>
                                     </div>
                                 </div>
 
                                 <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
                                     <div>
-                                        <label class="block text-[9px] font-black text-white/40 uppercase tracking-widest mb-1.5">Preferred Language</label>
+                                        <label class="block text-[9px] font-black text-white/40 uppercase tracking-widest mb-1.5">` + {{ _("Preferred Language") | tojson }} + `</label>
                                         <select id="w-pref-lang" class="w-full bg-white/5 border border-white/10 rounded-lg p-2.5 text-xs text-white placeholder-white/40 focus:outline-none" required>
-                                            <option value="English">English</option>
-                                            <option value="Hindi">Hindi</option>
-                                            <option value="Spanish">Spanish</option>
-                                            <option value="Arabic">Arabic</option>
-                                            <option value="French">French</option>
+                                            <option value="English">` + {{ _("English") | tojson }} + `</option>
+                                            <option value="Hindi">` + {{ _("Hindi") | tojson }} + `</option>
+                                            <option value="Spanish">` + {{ _("Spanish") | tojson }} + `</option>
+                                            <option value="Arabic">` + {{ _("Arabic") | tojson }} + `</option>
+                                            <option value="French">` + {{ _("French") | tojson }} + `</option>
                                         </select>
                                     </div>
                                     <div>
-                                        <label class="block text-[9px] font-black text-white/40 uppercase tracking-widest mb-1.5">Emergency Contact Mobile</label>
-                                        <input type="tel" id="w-em-phone" class="w-full bg-white/5 border border-white/10 rounded-lg p-2.5 text-xs text-white placeholder-white/40 focus:outline-none" placeholder="E.g. +91 99999 99999">
+                                        <label class="block text-[9px] font-black text-white/40 uppercase tracking-widest mb-1.5">` + {{ _("Emergency Contact Mobile") | tojson }} + `</label>
+                                        <input type="tel" id="w-em-phone" class="w-full bg-white/5 border border-white/10 rounded-lg p-2.5 text-xs text-white placeholder-white/40 focus:outline-none" placeholder="` + {{ _("E.g. +91 99999 99999") | tojson }} + `">
                                     </div>
                                 </div>
 
                                 <div class="grid grid-cols-1 gap-4">
                                     <div>
-                                        <label class="block text-[9px] font-black text-white/40 uppercase tracking-widest mb-1.5">Emergency Contact Name</label>
-                                        <input type="text" id="w-em-name" class="w-full bg-white/5 border border-white/10 rounded-lg p-2.5 text-xs text-white placeholder-white/40 focus:outline-none" placeholder="E.g. Emergency Contact Name">
+                                        <label class="block text-[9px] font-black text-white/40 uppercase tracking-widest mb-1.5">` + {{ _("Emergency Contact Name") | tojson }} + `</label>
+                                        <input type="text" id="w-em-name" class="w-full bg-white/5 border border-white/10 rounded-lg p-2.5 text-xs text-white placeholder-white/40 focus:outline-none" placeholder="` + {{ _("E.g. Emergency Contact Name") | tojson }} + `">
                                     </div>
                                 </div>
 
                                 <div>
-                                    <label class="block text-[9px] font-black text-white/40 uppercase tracking-widest mb-1.5">Clinical Notes / Accompanying Indicators</label>
-                                    <textarea id="w-appt-notes" rows="2" class="w-full bg-white/5 border border-white/10 rounded-lg p-2.5 text-xs text-white placeholder-white/40 focus:outline-none" placeholder="Enter notes..."></textarea>
+                                    <label class="block text-[9px] font-black text-white/40 uppercase tracking-widest mb-1.5">` + {{ _("Clinical Notes / Accompanying Indicators") | tojson }} + `</label>
+                                    <textarea id="w-appt-notes" rows="2" class="w-full bg-white/5 border border-white/10 rounded-lg p-2.5 text-xs text-white placeholder-white/40 focus:outline-none" placeholder="` + {{ _("Enter notes...") | tojson }} + `"></textarea>
                                 </div>
 
                                 <button type="submit" id="wizard-submit-btn" class="w-full py-3.5 btn-gradient text-xs font-black uppercase tracking-widest text-white rounded-xl shadow-lg transition-transform hover:scale-[1.01] flex items-center justify-center gap-1.5 outline-none select-none">
                                     <i class="fas fa-check-circle"></i>
-                                    Secure Slot & Book Token
+                                    ` + {{ _("Secure Slot & Book Token") | tojson }} + `
                                 </button>
                             </form>
                         </div>
@@ -1195,12 +1195,12 @@
                 if (wizardData.accompanying_symptoms.length > 0) {
                     const notesArea = document.getElementById("w-appt-notes");
                     if (notesArea) {
-                        notesArea.value = `Patient experienced: ${wizardData.accompanying_symptoms.join(", ")} (Severity: ${wizardData.severity}/10).`;
+                        notesArea.value = {{ _("Patient experienced:") | tojson }} + ` ${wizardData.accompanying_symptoms.join(", ")} (` + {{ _("Severity:") | tojson }} + ` ${wizardData.severity}/10).`;
                     }
                 }
 
             } catch (err) {
-                slotsContainer.innerHTML = '<div class="text-center py-6 text-red-400 text-xs"><i class="fas fa-wifi mr-1"></i> Failed to retrieve doctor schedules.</div>';
+                slotsContainer.innerHTML = '<div class="text-center py-6 text-red-400 text-xs"><i class="fas fa-wifi mr-1"></i> ' + {{ _("Failed to retrieve doctor schedules.") | tojson }} + '</div>';
             }
         };
 
@@ -1259,7 +1259,7 @@
             const notes = form.querySelector("#w-appt-notes").value.trim();
 
             form.querySelectorAll("button, select, textarea, input").forEach(el => el.disabled = true);
-            submitBtn.innerHTML = '<i class="fas fa-spinner animate-spin"></i> Finalizing Booking...';
+            submitBtn.innerHTML = '<i class="fas fa-spinner animate-spin"></i> ' + {{ _("Finalizing Booking...") | tojson }};
 
             try {
                 const response = await fetch("/api/symptom-checker/book-inline", {
@@ -1279,7 +1279,7 @@
                 const data = await response.json();
 
                 if (response.ok && data.success) {
-                    const formattedSuccessDate = new Date(data.appointment.date).toLocaleDateString("en-US", { weekday: "long", month: "long", day: "numeric", year: "numeric" });
+                    const formattedSuccessDate = new Date(data.appointment.date).toLocaleDateString({{ get_locale() | tojson }}, { weekday: "long", month: "long", day: "numeric", year: "numeric" });
                     
                     // Hide wizard buttons footer
                     document.getElementById("wizard-footer-buttons").classList.add("hidden");
@@ -1294,70 +1294,70 @@
                             <div class="w-16 h-16 bg-emerald-500/20 border border-emerald-500/30 rounded-full flex items-center justify-center mx-auto mb-4 text-emerald-400 text-3xl animate-bounce">
                                 <i class="fas fa-check-circle"></i>
                             </div>
-                            <span class="px-3 py-1 bg-emerald-500/10 text-emerald-400 border border-emerald-500/20 rounded-full text-[10px] font-black tracking-widest uppercase">Booking Confirmed</span>
+                            <span class="px-3 py-1 bg-emerald-500/10 text-emerald-400 border border-emerald-500/20 rounded-full text-[10px] font-black tracking-widest uppercase">` + {{ _("Booking Confirmed") | tojson }} + `</span>
                             
-                            <h4 class="text-2xl font-black text-white mt-3 tracking-tight">Your Slot is Secured!</h4>
-                            <p class="text-xs text-white/50 mt-1 max-w-sm mx-auto">Wizard booking completed successfully. Your token details are listed below.</p>
+                            <h4 class="text-2xl font-black text-white mt-3 tracking-tight">` + {{ _("Your Slot is Secured!") | tojson }} + `</h4>
+                            <p class="text-xs text-white/50 mt-1 max-w-sm mx-auto">` + {{ _("Wizard booking completed successfully. Your token details are listed below.") | tojson }} + `</p>
                             
                             <!-- Pass Details -->
                             <div class="mt-5 glass bg-white/5 border border-white/10 rounded-2xl overflow-hidden text-left shadow-2xl">
                                 <div class="p-4 bg-indigo-600/25 border-b border-white/5 flex items-center justify-between">
                                     <div>
-                                        <span class="text-[9px] font-black text-indigo-300 uppercase tracking-widest block">Specialist</span>
+                                        <span class="text-[9px] font-black text-indigo-300 uppercase tracking-widest block">` + {{ _("Specialist") | tojson }} + `</span>
                                         <h5 class="font-bold text-white text-sm leading-tight">${data.appointment.doctor_name}</h5>
                                     </div>
                                     <div class="text-right">
-                                        <span class="text-[9px] font-black text-indigo-300 uppercase tracking-widest block">Token ID</span>
+                                        <span class="text-[9px] font-black text-indigo-300 uppercase tracking-widest block">` + {{ _("Token ID") | tojson }} + `</span>
                                         <span class="font-black text-white text-base">#${data.appointment.token}</span>
                                     </div>
                                 </div>
                                 <div class="p-4 grid grid-cols-2 gap-y-3.5 gap-x-2 text-xs border-b border-white/5">
                                     <div>
-                                        <span class="text-[9px] text-white/40 uppercase font-black tracking-wider block">Specialty</span>
+                                        <span class="text-[9px] text-white/40 uppercase font-black tracking-wider block">` + {{ _("Specialty") | tojson }} + `</span>
                                         <span class="font-bold text-white/90">${data.appointment.specialization}</span>
                                     </div>
                                     <div>
-                                        <span class="text-[9px] text-white/40 uppercase font-black tracking-wider block">Mode</span>
+                                        <span class="text-[9px] text-white/40 uppercase font-black tracking-wider block">` + {{ _("Mode") | tojson }} + `</span>
                                         <span class="font-bold text-white/90 flex items-center gap-1">
                                             <i class="fas ${mode === 'Video' ? 'fa-video text-cyan-400' : 'fa-hospital text-indigo-400'} text-[10px]"></i>
                                             ${data.appointment.consultation_mode}
                                         </span>
                                     </div>
                                     <div class="col-span-2">
-                                        <span class="text-[9px] text-white/40 uppercase font-black tracking-wider block">Schedule Time</span>
-                                        <span class="font-bold text-white/90"><i class="far fa-calendar-alt mr-1"></i> ${formattedSuccessDate} at ${data.appointment.time}</span>
+                                        <span class="text-[9px] text-white/40 uppercase font-black tracking-wider block">` + {{ _("Schedule Time") | tojson }} + `</span>
+                                        <span class="font-bold text-white/90"><i class="far fa-calendar-alt mr-1"></i> ${formattedSuccessDate} ` + {{ _("at") | tojson }} + ` ${data.appointment.time}</span>
                                     </div>
                                 </div>
                                 <div class="p-4 bg-black/30 flex items-center justify-between text-xs">
                                     <div class="flex items-center gap-2">
                                         <div class="w-2.5 h-2.5 rounded-full bg-emerald-500 animate-ping"></div>
-                                        <span class="font-bold text-white/70">Estimated Wait</span>
+                                        <span class="font-bold text-white/70">` + {{ _("Estimated Wait") | tojson }} + `</span>
                                     </div>
-                                    <span class="font-black text-emerald-400 text-sm">~${data.appointment.eta_minutes} Minutes</span>
+                                    <span class="font-black text-emerald-400 text-sm">~${data.appointment.eta_minutes} ` + {{ _("Minutes") | tojson }} + `</span>
                                 </div>
                             </div>
 
                             <div class="mt-6 flex flex-col sm:flex-row gap-3 justify-center">
                                 <a href="/dashboard" class="px-5 py-3 btn-gradient text-[10px] font-black uppercase tracking-widest text-white rounded-xl shadow-lg flex items-center justify-center gap-1.5 select-none outline-none">
                                     <i class="fas fa-columns"></i>
-                                    Go to Dashboard
+                                    ` + {{ _("Go to Dashboard") | tojson }} + `
                                 </a>
                                 <a href="/calendar" class="px-5 py-3 bg-white/10 hover:bg-white/15 text-[10px] font-black uppercase tracking-widest text-white rounded-xl border border-white/10 transition-colors flex items-center justify-center gap-1.5 select-none outline-none">
                                     <i class="far fa-calendar-alt"></i>
-                                    View in Calendar
+                                    ` + {{ _("View in Calendar") | tojson }} + `
                                 </a>
                             </div>
                         </div>
                     `;
                 } else {
                     form.querySelectorAll("button, select, textarea, input").forEach(el => el.disabled = false);
-                    submitBtn.innerHTML = '<i class="fas fa-check-circle"></i> Secure Slot & Book Token';
-                    alert(data.error || "Failed to secure slot.");
+                    submitBtn.innerHTML = '<i class="fas fa-check-circle"></i> ' + {{ _("Secure Slot & Book Token") | tojson }};
+                    alert(data.error || {{ _("Failed to secure slot.") | tojson }});
                 }
             } catch (err) {
                 form.querySelectorAll("button, select, textarea, input").forEach(el => el.disabled = false);
-                submitBtn.innerHTML = '<i class="fas fa-check-circle"></i> Secure Slot & Book Token';
-                alert("Failed to submit booking.");
+                submitBtn.innerHTML = '<i class="fas fa-check-circle"></i> ' + {{ _("Secure Slot & Book Token") | tojson }};
+                alert({{ _("Failed to submit booking.") | tojson }});
             }
         };
 
