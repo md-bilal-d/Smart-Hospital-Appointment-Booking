@@ -238,3 +238,107 @@ def get_patient_records(patient_id):
         'prescriptions': prescriptions_list,
         'vitals': vitals_list
     })
+
+@doctor_bp.route('/doctor/<int:doctor_id>/manage-availability')
+@role_required(['doctor', 'super_admin'])
+def manage_availability(doctor_id):
+    if session.get('user_role') != 'super_admin' and session.get('doctor_id') != doctor_id:
+        flash('Unauthorized access.', 'error')
+        return redirect(url_for('auth.login'))
+        
+    doctor = Doctor.query.get_or_404(doctor_id)
+    return render_template('doctor/calendar_manage.html', doctor=doctor)
+
+@doctor_bp.route('/doctor/<int:doctor_id>/api/slots')
+@role_required(['doctor', 'super_admin'])
+def api_get_slots(doctor_id):
+    if session.get('user_role') != 'super_admin' and session.get('doctor_id') != doctor_id:
+        return jsonify({"error": "Unauthorized"}), 403
+        
+    start = request.args.get('start')
+    end = request.args.get('end')
+    
+    query = Slot.query.filter_by(doctor_id=doctor_id)
+    if start:
+        query = query.filter(Slot.date >= start.split('T')[0])
+    if end:
+        query = query.filter(Slot.date <= end.split('T')[0])
+        
+    slots = query.all()
+    events = []
+    
+    for s in slots:
+        try:
+            dt_str = f"{s.date} {s.time_label}"
+            dt_obj = datetime.strptime(dt_str, "%Y-%m-%d %I:%M %p")
+            
+            end_dt = dt_obj + timedelta(minutes=30)
+            
+            color = '#10b981'
+            title = 'Available'
+            if s.is_blocked:
+                color = '#ef4444'
+                title = 'Time Off'
+            elif s.booked_count >= s.max_capacity:
+                color = '#f59e0b'
+                title = 'Full'
+                
+            events.append({
+                'id': s.id,
+                'title': title,
+                'start': dt_obj.isoformat(),
+                'end': end_dt.isoformat(),
+                'color': color,
+                'extendedProps': {
+                    'is_blocked': s.is_blocked,
+                    'booked_count': s.booked_count,
+                    'max_capacity': s.max_capacity
+                }
+            })
+        except ValueError:
+            pass
+            
+    return jsonify(events)
+
+@doctor_bp.route('/doctor/<int:doctor_id>/api/block-slot', methods=['POST'])
+@role_required(['doctor', 'super_admin'])
+def api_block_slot(doctor_id):
+    if session.get('user_role') != 'super_admin' and session.get('doctor_id') != doctor_id:
+        return jsonify({"error": "Unauthorized"}), 403
+        
+    data = request.get_json()
+    slot_id = data.get('slot_id')
+    is_blocked = data.get('is_blocked', True)
+    
+    slot = Slot.query.filter_by(id=slot_id, doctor_id=doctor_id).first_or_404()
+    
+    if is_blocked and slot.booked_count > 0:
+        return jsonify({"success": False, "message": "Cannot block slot with existing appointments"}), 400
+        
+    slot.is_blocked = is_blocked
+    db.session.commit()
+    
+    return jsonify({"success": True})
+
+@doctor_bp.route('/doctor/<int:doctor_id>/api/block-day', methods=['POST'])
+@role_required(['doctor', 'super_admin'])
+def api_block_day(doctor_id):
+    if session.get('user_role') != 'super_admin' and session.get('doctor_id') != doctor_id:
+        return jsonify({"error": "Unauthorized"}), 403
+        
+    data = request.get_json()
+    date_str = data.get('date')
+    is_blocked = data.get('is_blocked', True)
+    
+    slots = Slot.query.filter_by(doctor_id=doctor_id, date=date_str).all()
+    
+    if is_blocked:
+        for s in slots:
+            if s.booked_count > 0:
+                return jsonify({"success": False, "message": "Cannot block day: Some slots have appointments"}), 400
+                
+    for s in slots:
+        s.is_blocked = is_blocked
+        
+    db.session.commit()
+    return jsonify({"success": True, "message": f"Day {'blocked' if is_blocked else 'unblocked'} successfully."})

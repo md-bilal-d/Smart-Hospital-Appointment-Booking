@@ -1,0 +1,149 @@
+{% extends "base.html" %}
+{% block title %}Manage Availability | MediSlot{% endblock %}
+
+{% block head %}
+<!-- FullCalendar CSS -->
+<link href='https://cdn.jsdelivr.net/npm/fullcalendar@5.11.3/main.min.css' rel='stylesheet' />
+<!-- FullCalendar JS -->
+<script src='https://cdn.jsdelivr.net/npm/fullcalendar@5.11.3/main.min.js'></script>
+<!-- SweetAlert for nice dialogs -->
+<script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+{% endblock %}
+
+{% block content %}
+<div class="max-w-6xl mx-auto px-4 py-10">
+    <div class="flex items-center justify-between mb-8">
+        <div>
+            <h1 class="text-3xl font-bold text-slate-900">Manage Availability</h1>
+            <p class="text-slate-500 font-medium">Block or unblock slots for your schedule.</p>
+        </div>
+        <a href="{{ url_for('doctor.doctor_dashboard', doctor_id=doctor.id) }}" class="px-6 py-2 bg-slate-100 hover:bg-slate-200 text-slate-600 rounded-xl font-bold transition-all flex items-center gap-2">
+            <i class="fas fa-arrow-left"></i> Back to Dashboard
+        </a>
+    </div>
+
+    <!-- Instructions / Legend -->
+    <div class="flex items-center gap-6 mb-6">
+        <div class="flex items-center gap-2">
+            <div class="w-4 h-4 rounded bg-emerald-500"></div>
+            <span class="text-sm font-medium text-slate-600">Available</span>
+        </div>
+        <div class="flex items-center gap-2">
+            <div class="w-4 h-4 rounded bg-amber-500"></div>
+            <span class="text-sm font-medium text-slate-600">Full</span>
+        </div>
+        <div class="flex items-center gap-2">
+            <div class="w-4 h-4 rounded bg-red-500"></div>
+            <span class="text-sm font-medium text-slate-600">Time Off / Blocked</span>
+        </div>
+    </div>
+
+    <div class="bg-white rounded-3xl shadow-sm border border-slate-100 p-6">
+        <div id='calendar'></div>
+    </div>
+</div>
+
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    var calendarEl = document.getElementById('calendar');
+
+    var calendar = new FullCalendar.Calendar(calendarEl, {
+        initialView: 'timeGridWeek',
+        headerToolbar: {
+            left: 'prev,next today',
+            center: 'title',
+            right: 'dayGridMonth,timeGridWeek,timeGridDay'
+        },
+        slotMinTime: '08:00:00',
+        slotMaxTime: '20:00:00',
+        allDaySlot: true,
+        selectable: true,
+        events: '/doctor/{{ doctor.id }}/api/slots',
+        
+        // Handle clicking on an existing slot event
+        eventClick: function(info) {
+            let event = info.event;
+            let isBlocked = event.extendedProps.is_blocked;
+            let bookedCount = event.extendedProps.booked_count;
+
+            if (bookedCount > 0 && !isBlocked) {
+                Swal.fire('Cannot Block', 'This slot already has appointments booked.', 'error');
+                return;
+            }
+
+            let actionText = isBlocked ? "Unblock" : "Block";
+            let confirmColor = isBlocked ? "#10b981" : "#ef4444";
+
+            Swal.fire({
+                title: `${actionText} this slot?`,
+                text: `Are you sure you want to ${actionText.toLowerCase()} this time slot?`,
+                icon: 'warning',
+                showCancelButton: true,
+                confirmButtonColor: confirmColor,
+                cancelButtonColor: '#64748b',
+                confirmButtonText: `Yes, ${actionText} it!`
+            }).then((result) => {
+                if (result.isConfirmed) {
+                    fetch(`/doctor/{{ doctor.id }}/api/block-slot`, {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({ slot_id: event.id, is_blocked: !isBlocked })
+                    })
+                    .then(response => response.json())
+                    .then(data => {
+                        if(data.success) {
+                            calendar.refetchEvents();
+                            Swal.fire('Success!', `Slot has been ${actionText.toLowerCase()}ed.`, 'success');
+                        } else {
+                            Swal.fire('Error', data.message || 'Something went wrong.', 'error');
+                        }
+                    });
+                }
+            });
+        },
+
+        // Handle clicking on a date to block the entire day
+        dateClick: function(info) {
+            Swal.fire({
+                title: 'Manage Entire Day',
+                text: `Do you want to block or unblock all slots on ${info.dateStr.split('T')[0]}?`,
+                icon: 'question',
+                showDenyButton: true,
+                showCancelButton: true,
+                confirmButtonText: 'Block Day',
+                denyButtonText: 'Unblock Day',
+                confirmButtonColor: '#ef4444',
+                denyButtonColor: '#10b981',
+                cancelButtonColor: '#64748b'
+            }).then((result) => {
+                let isBlocked = null;
+                if (result.isConfirmed) {
+                    isBlocked = true;
+                } else if (result.isDenied) {
+                    isBlocked = false;
+                }
+
+                if (isBlocked !== null) {
+                    fetch(`/doctor/{{ doctor.id }}/api/block-day`, {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({ date: info.dateStr.split('T')[0], is_blocked: isBlocked })
+                    })
+                    .then(response => response.json())
+                    .then(data => {
+                        if(data.success) {
+                            calendar.refetchEvents();
+                            Swal.fire('Success!', data.message, 'success');
+                        } else {
+                            Swal.fire('Error', data.message || 'Something went wrong.', 'error');
+                        }
+                    });
+                }
+            });
+        }
+    });
+
+    calendar.render();
+});
+</script>
+{% endblock %}
