@@ -1,5 +1,7 @@
 import os
-from flask import Blueprint, render_template, request, redirect, url_for, flash, session, current_app
+import io
+from fpdf import FPDF
+from flask import Blueprint, render_template, request, redirect, url_for, flash, session, current_app, send_file
 from flask_login import login_required, current_user
 from models import db, Doctor, Department, Slot, Appointment, QueueLog, Patient, Prescription, Review, MedicalRecord, VitalsReading
 from smart_scheduling import recommend_slot, recommend_alternative_doctor, assign_token
@@ -594,4 +596,97 @@ def log_vitals():
         
     return redirect(url_for('patient.health_tracker'))
 
+@patient_bp.route('/appointment/<int:appt_id>/download_pdf')
+@login_required
+def download_pdf(appt_id):
+    appt = Appointment.query.get_or_404(appt_id)
+    if appt.patient_id != current_user.id:
+        flash('Unauthorized.', 'error')
+        return redirect(url_for('patient.dashboard'))
+        
+    slot = appt.slot
+    doctor = slot.doctor
+    
+    pdf = FPDF()
+    pdf.add_page()
+    
+    # Hospital Branding
+    pdf.set_font("helvetica", "B", 24)
+    pdf.set_text_color(15, 23, 42) # slate-900
+    pdf.cell(0, 15, "MediSlot Hospital", ln=True, align='C')
+    pdf.set_font("helvetica", "I", 12)
+    pdf.set_text_color(100, 116, 139) # slate-500
+    pdf.cell(0, 10, "Smart Appointment Booking System", ln=True, align='C')
+    pdf.ln(10)
+    
+    # Title
+    pdf.set_font("helvetica", "B", 16)
+    pdf.set_text_color(0, 0, 0)
+    pdf.cell(0, 10, "Medical Summary & Prescription", ln=True, align='C')
+    pdf.line(10, pdf.get_y(), 200, pdf.get_y())
+    pdf.ln(10)
+    
+    # Details
+    pdf.set_font("helvetica", "", 12)
+    
+    def add_row(label, value):
+        pdf.set_font("helvetica", "B", 12)
+        pdf.cell(50, 10, f"{label}:")
+        pdf.set_font("helvetica", "", 12)
+        pdf.cell(0, 10, str(value), ln=True)
 
+    add_row("Patient Name", current_user.name)
+    add_row("Doctor Name", doctor.name)
+    add_row("Specialization", doctor.specialization)
+    add_row("Appointment Date", slot.date)
+    add_row("Time", slot.time_label)
+    add_row("Consultation Mode", appt.consultation_mode)
+    add_row("Status", appt.status.capitalize())
+    add_row("Token Number", f"#{appt.token_number}")
+    
+    pdf.ln(10)
+    pdf.set_font("helvetica", "B", 14)
+    pdf.cell(0, 10, "Doctor's Notes", ln=True)
+    pdf.line(10, pdf.get_y(), 200, pdf.get_y())
+    pdf.ln(5)
+    
+    pdf.set_font("helvetica", "", 12)
+    if appt.notes:
+        pdf.multi_cell(0, 10, appt.notes)
+    else:
+        pdf.set_font("helvetica", "I", 12)
+        pdf.cell(0, 10, "No notes provided for this appointment.", ln=True)
+        
+    pdf.ln(20)
+    
+    # Vitals if any recent
+    latest_vital = VitalsReading.query.filter_by(patient_id=current_user.id).order_by(VitalsReading.logged_at.desc()).first()
+    if latest_vital and (datetime.utcnow() - latest_vital.logged_at).days <= 7:
+        pdf.set_font("helvetica", "B", 14)
+        pdf.cell(0, 10, "Recent Vitals", ln=True)
+        pdf.line(10, pdf.get_y(), 200, pdf.get_y())
+        pdf.ln(5)
+        
+        pdf.set_font("helvetica", "", 12)
+        if latest_vital.blood_pressure_sys and latest_vital.blood_pressure_dia:
+            add_row("Blood Pressure", f"{latest_vital.blood_pressure_sys}/{latest_vital.blood_pressure_dia} mmHg")
+        if latest_vital.heart_rate:
+            add_row("Heart Rate", f"{latest_vital.heart_rate} bpm")
+        if latest_vital.blood_sugar:
+            add_row("Blood Sugar", f"{latest_vital.blood_sugar} mg/dL")
+            
+    pdf.ln(20)
+    pdf.set_font("helvetica", "I", 10)
+    pdf.set_text_color(150, 150, 150)
+    pdf.cell(0, 10, "This is a computer-generated document and requires no physical signature.", ln=True, align='C')
+    pdf.cell(0, 10, f"Generated on {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}", ln=True, align='C')
+
+    pdf_bytes = pdf.output()
+    buffer = io.BytesIO(pdf_bytes)
+    
+    return send_file(
+        buffer,
+        as_attachment=True,
+        download_name=f"MediSlot_Summary_{appt.id}.pdf",
+        mimetype='application/pdf'
+    )

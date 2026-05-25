@@ -9,3 +9,4 @@ flask-jwt-extended==4.7.1
 flask-limiter==3.10.1
 Flask-Mail==0.10.0
 eventlet==0.39.0
+fpdf2==2.8.2

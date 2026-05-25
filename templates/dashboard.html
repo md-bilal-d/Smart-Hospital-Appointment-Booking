@@ -221,7 +221,14 @@
                                     {{ _(appt.status) }}
                                 </span>
                             </td>
-                            <td class="px-8 py-5">
+                            <td class="px-8 py-5 flex items-center gap-2">
+                                {% if appt.status == 'seen' %}
+                                    <a href="/patient/appointment/{{ appt.id }}/download_pdf" 
+                                       class="px-4 py-2 bg-emerald-500/20 text-emerald-400 hover:bg-emerald-500/40 text-[10px] font-black uppercase tracking-widest rounded-lg transition-all"
+                                       title="{{ _('Download Medical Summary') }}">
+                                        <i class="fas fa-file-pdf"></i> PDF
+                                    </a>
+                                {% endif %}
                                 {% if appt.status == 'seen' and not appt.review %}
                                 <button onclick="openReviewModal({{ appt.id }}, '{{ appt.slot.doctor.name }}')" 
                                         class="px-4 py-2 bg-indigo-500/20 text-indigo-400 hover:bg-indigo-500/40 text-[10px] font-black uppercase tracking-widest rounded-lg transition-all">
