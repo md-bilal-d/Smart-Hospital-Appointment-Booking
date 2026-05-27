@@ -80,6 +80,42 @@
         .status-called { background: rgba(219, 234, 254, 0.15); color: #60a5fa; border: 1px solid rgba(96, 165, 250, 0.3); }
         .status-seen { background: rgba(209, 250, 229, 0.15); color: #34d399; border: 1px solid rgba(52, 211, 153, 0.3); }
         
+        /* Light Theme Variations */
+        body.light-theme {
+            background: linear-gradient(135deg, #fdfbfb 0%, #ebedee 100%);
+            color: #1f2937;
+        }
+        body.light-theme .glass {
+            background: rgba(255, 255, 255, 0.7);
+            border: 1px solid rgba(255, 255, 255, 0.5);
+            box-shadow: 0 8px 32px 0 rgba(31, 38, 135, 0.1);
+        }
+        body.light-theme .glass-input {
+            background: rgba(255, 255, 255, 0.9) !important;
+            border: 1px solid rgba(0, 0, 0, 0.1) !important;
+            color: #1f2937 !important;
+        }
+        body.light-theme .glass-input::placeholder { color: rgba(0, 0, 0, 0.5); }
+        body.light-theme select {
+            background: rgba(255, 255, 255, 0.9) !important;
+            color: #1f2937 !important;
+            border: 1px solid rgba(0, 0, 0, 0.1) !important;
+        }
+        body.light-theme select option {
+            background: #ffffff !important;
+            color: #1f2937 !important;
+        }
+        body.light-theme .text-white { color: #1f2937 !important; }
+        body.light-theme .text-white\/70 { color: #4b5563 !important; }
+        body.light-theme .text-indigo-300 { color: #4f46e5 !important; }
+        body.light-theme .text-indigo-200 { color: #6366f1 !important; }
+        body.light-theme .border-white\/10 { border-color: rgba(0,0,0,0.1) !important; }
+        body.light-theme .border-white\/5 { border-color: rgba(0,0,0,0.05) !important; }
+        body.light-theme .bg-white\/5 { background-color: rgba(0,0,0,0.05) !important; }
+        body.light-theme .bg-white\/10 { background-color: rgba(0,0,0,0.1) !important; }
+        body.light-theme .bg-black\/30 { background-color: rgba(255,255,255,0.7) !important; }
+        body.light-theme footer p.text-white\/40 { color: rgba(0,0,0,0.5) !important; }
+        
         /* Hide Scrollbar */
         ::-webkit-scrollbar { width: 8px; }
         ::-webkit-scrollbar-track { background: rgba(0,0,0,0.1); }
@@ -88,6 +124,11 @@
     </style>
 </head>
 <body class="font-sans min-h-screen flex flex-col">
+    <script>
+        if (localStorage.getItem('medislot_theme') === 'light') {
+            document.body.classList.add('light-theme');
+        }
+    </script>
     <!-- Flash Messages -->
     {% with messages = get_flashed_messages(with_categories=true) %}
         {% if messages %}
@@ -161,6 +202,11 @@
                             <option value="hi" {% if session.get('lang', 'en') == 'hi' %}selected{% endif %}>🇮🇳 HI</option>
                         </select>
                     </div>
+                    
+                    <!-- Theme Toggle -->
+                    <button id="theme-toggle" class="ml-4 w-9 h-9 rounded-full bg-white/10 border border-white/10 flex items-center justify-center hover:bg-white/20 transition-colors shadow-lg">
+                        <i id="theme-icon" class="fas fa-sun text-yellow-300"></i>
+                    </button>
                 </div>
                 <button onclick="document.getElementById('mobile-menu').classList.toggle('hidden')" class="md:hidden text-white p-2">
                     <i class="fas fa-bars"></i>
@@ -386,7 +432,30 @@
 
                 } catch (err) {
                     document.getElementById(loadingId).remove();
-                    appendMessage("${"{{ _(\"Sorry, I'm having trouble connecting to the server.\") }}"}", false);
+                    appendMessage("{{ _(\"Sorry, I'm having trouble connecting to the server.\") }}", false);
+                }
+            });
+        }
+        
+        // Theme Toggle Logic
+        const themeToggleBtn = document.getElementById('theme-toggle');
+        const themeIcon = document.getElementById('theme-icon');
+        
+        // Setup initial icon based on body class
+        if (document.body.classList.contains('light-theme') && themeIcon) {
+            themeIcon.className = 'fas fa-moon text-indigo-600';
+        }
+
+        if (themeToggleBtn) {
+            themeToggleBtn.addEventListener('click', () => {
+                document.body.classList.toggle('light-theme');
+                const isLight = document.body.classList.contains('light-theme');
+                localStorage.setItem('medislot_theme', isLight ? 'light' : 'dark');
+                
+                if (isLight) {
+                    themeIcon.className = 'fas fa-moon text-indigo-600';
+                } else {
+                    themeIcon.className = 'fas fa-sun text-yellow-300';
                 }
             });
         }
