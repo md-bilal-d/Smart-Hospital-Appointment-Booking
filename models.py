@@ -225,3 +225,16 @@ class VitalsReading(db.Model):
 
 
 
+class Invoice(db.Model):
+    __tablename__ = 'invoices'
+    id = db.Column(db.Integer, primary_key=True)
+    appointment_id = db.Column(db.Integer, db.ForeignKey('appointments.id'), nullable=False)
+    patient_id = db.Column(db.Integer, db.ForeignKey('patients.id'), nullable=False)
+    amount = db.Column(db.Float, nullable=False)
+    status = db.Column(db.String(20), default='unpaid')  # unpaid / paid
+    issued_at = db.Column(db.DateTime, default=datetime.utcnow)
+    paid_at = db.Column(db.DateTime, nullable=True)
+    description = db.Column(db.Text, default='')
+
+    appointment = db.relationship('Appointment', backref=db.backref('invoice', uselist=False))
+    patient = db.relationship('Patient', backref='invoices')

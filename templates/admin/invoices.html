@@ -1,0 +1,83 @@
+{% extends "base.html" %}
+{% block title %}Manage Invoices{% endblock %}
+
+{% block content %}
+<div class="max-w-7xl mx-auto px-4 py-8">
+    <div class="flex items-center justify-between mb-8">
+        <div>
+            <h1 class="text-3xl font-black text-white tracking-tight">Billing & Invoices</h1>
+            <p class="text-indigo-200 mt-2">Manage patient billing and track hospital revenue</p>
+        </div>
+        <div class="flex gap-4">
+            <div class="glass p-4 rounded-xl text-center">
+                <p class="text-xs text-white/70 uppercase tracking-widest font-bold">Total Revenue</p>
+                <p class="text-2xl font-black text-emerald-400 mt-1">${{ "%.2f"|format(total_revenue) }}</p>
+            </div>
+            <div class="glass p-4 rounded-xl text-center border-l-4 border-amber-500">
+                <p class="text-xs text-white/70 uppercase tracking-widest font-bold">Pending</p>
+                <p class="text-2xl font-black text-amber-400 mt-1">${{ "%.2f"|format(pending_revenue) }}</p>
+            </div>
+        </div>
+    </div>
+
+    <div class="glass p-6 rounded-2xl shadow-xl">
+        <h3 class="text-lg font-bold text-white mb-6 border-b border-white/10 pb-4">All Invoices</h3>
+        
+        <div class="overflow-x-auto">
+            <table class="w-full text-left border-collapse">
+                <thead>
+                    <tr class="text-xs text-white/50 uppercase tracking-widest border-b border-white/10">
+                        <th class="pb-4 font-semibold">Inv #</th>
+                        <th class="pb-4 font-semibold">Patient</th>
+                        <th class="pb-4 font-semibold">Amount</th>
+                        <th class="pb-4 font-semibold">Status</th>
+                        <th class="pb-4 font-semibold">Issued At</th>
+                        <th class="pb-4 font-semibold">Paid At</th>
+                        <th class="pb-4 font-semibold text-right">Actions</th>
+                    </tr>
+                </thead>
+                <tbody class="divide-y divide-white/5">
+                    {% for inv in invoices %}
+                    <tr class="hover:bg-white/5 transition-colors group">
+                        <td class="py-4 text-white font-mono text-sm">#{{ inv.id }}</td>
+                        <td class="py-4">
+                            <p class="text-white font-bold">{{ inv.patient.name }}</p>
+                            <p class="text-xs text-white/60">Appt #{{ inv.appointment.id }}</p>
+                        </td>
+                        <td class="py-4">
+                            <span class="text-emerald-400 font-bold">${{ "%.2f"|format(inv.amount) }}</span>
+                        </td>
+                        <td class="py-4">
+                            {% if inv.status == 'paid' %}
+                                <span class="px-3 py-1 bg-emerald-500/20 text-emerald-300 rounded-full text-xs font-bold uppercase tracking-wider border border-emerald-500/30">Paid</span>
+                            {% else %}
+                                <span class="px-3 py-1 bg-amber-500/20 text-amber-300 rounded-full text-xs font-bold uppercase tracking-wider border border-amber-500/30">Unpaid</span>
+                            {% endif %}
+                        </td>
+                        <td class="py-4 text-sm text-white/80">{{ inv.issued_at.strftime('%d %b %Y, %I:%M %p') }}</td>
+                        <td class="py-4 text-sm text-white/80">
+                            {% if inv.paid_at %}
+                                {{ inv.paid_at.strftime('%d %b %Y, %I:%M %p') }}
+                            {% else %}
+                                <span class="text-white/40">-</span>
+                            {% endif %}
+                        </td>
+                        <td class="py-4 text-right">
+                            <button onclick="alert('View details functionality not yet implemented in mock.')" class="text-indigo-300 hover:text-white transition-colors text-sm font-bold uppercase tracking-wider">
+                                View
+                            </button>
+                        </td>
+                    </tr>
+                    {% else %}
+                    <tr>
+                        <td colspan="7" class="py-8 text-center text-white/50">
+                            No invoices generated yet. Generate an invoice from the Appointment Management view.
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+{% endblock %}

@@ -3,7 +3,7 @@ import io
 from fpdf import FPDF
 from flask import Blueprint, render_template, request, redirect, url_for, flash, session, current_app, send_file
 from flask_login import login_required, current_user
-from models import db, Doctor, Department, Slot, Appointment, QueueLog, Patient, Prescription, Review, MedicalRecord, VitalsReading
+from models import db, Doctor, Department, Slot, Appointment, QueueLog, Patient, Prescription, Review, MedicalRecord, VitalsReading, Invoice
 from smart_scheduling import recommend_slot, recommend_alternative_doctor, assign_token
 from datetime import datetime, date, timedelta
 from extensions import socketio
@@ -690,3 +690,30 @@ def download_pdf(appt_id):
         download_name=f"MediSlot_Summary_{appt.id}.pdf",
         mimetype='application/pdf'
     )
+
+@patient_bp.route('/invoices')
+@login_required
+def invoices():
+    patient_invoices = Invoice.query.filter_by(patient_id=current_user.id).order_by(Invoice.issued_at.desc()).all()
+    return render_template('patient_invoices.html', invoices=patient_invoices)
+
+@patient_bp.route('/invoices/pay/<int:invoice_id>', methods=['POST'])
+@login_required
+def pay_invoice(invoice_id):
+    invoice = Invoice.query.get_or_404(invoice_id)
+    if invoice.patient_id != current_user.id:
+        flash('Unauthorized.', 'error')
+        return redirect(url_for('patient.invoices'))
+        
+    if invoice.status == 'paid':
+        flash('Invoice is already paid.', 'info')
+        return redirect(url_for('patient.invoices'))
+        
+    # Simulate payment processing
+    invoice.status = 'paid'
+    invoice.paid_at = datetime.utcnow()
+    db.session.commit()
+    
+    audit_logger.log_action('pay_invoice', f"Patient paid Invoice #{invoice.id} for {invoice.amount}")
+    flash('Payment successful! Thank you.', 'success')
+    return redirect(url_for('patient.invoices'))

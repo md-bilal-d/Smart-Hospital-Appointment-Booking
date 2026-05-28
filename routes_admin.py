@@ -1,7 +1,7 @@
 """Admin routes: dashboard, slot management, doctor management"""
 import csv, io
 from flask import Blueprint, render_template, request, redirect, url_for, flash, session, Response, jsonify
-from models import db, Doctor, Department, Slot, Appointment, QueueLog, Patient
+from models import db, Doctor, Department, Slot, Appointment, QueueLog, Patient, Invoice
 from smart_scheduling import get_wasted_slot_alerts
 from datetime import date, datetime
 from utils import audit_logger, generate_time_labels
@@ -169,4 +169,41 @@ def export_csv():
     output = si.getvalue()
     return Response(output, mimetype='text/csv',
                     headers={'Content-Disposition': f'attachment;filename=appointments_{today}.csv'})
+
+@admin_bp.route('/admin/invoices')
+@role_required(['receptionist', 'super_admin'])
+def invoices():
+    all_invoices = Invoice.query.order_by(Invoice.issued_at.desc()).all()
+    # stats
+    total_revenue = sum(inv.amount for inv in all_invoices if inv.status == 'paid')
+    pending_revenue = sum(inv.amount for inv in all_invoices if inv.status == 'unpaid')
+    return render_template('admin/invoices.html', invoices=all_invoices, total_revenue=total_revenue, pending_revenue=pending_revenue)
+
+@admin_bp.route('/admin/generate-invoice/<int:appt_id>', methods=['POST'])
+@role_required(['receptionist', 'super_admin'])
+def generate_invoice(appt_id):
+    appt = Appointment.query.get_or_404(appt_id)
+    if appt.status != 'seen':
+        flash('Can only generate invoice for completed (seen) appointments.', 'error')
+        return redirect(url_for('admin.dashboard'))
+        
+    existing = Invoice.query.filter_by(appointment_id=appt.id).first()
+    if existing:
+        flash('Invoice already exists for this appointment.', 'error')
+        return redirect(url_for('admin.dashboard'))
+        
+    amount = request.form.get('amount', type=float)
+    description = request.form.get('description', '')
+    
+    if not amount or amount <= 0:
+        flash('Invalid amount.', 'error')
+        return redirect(url_for('admin.dashboard'))
+        
+    invoice = Invoice(appointment_id=appt.id, patient_id=appt.patient_id, amount=amount, description=description)
+    db.session.add(invoice)
+    db.session.commit()
+    
+    audit_logger.log_action('generate_invoice', f"Generated invoice for Appt #{appt.id} Amount: {amount}")
+    flash(f'Invoice generated successfully for {amount}', 'success')
+    return redirect(url_for('admin.invoices'))
 

@@ -170,14 +170,16 @@
                         <a href="/book" class="text-white/70 hover:text-white transition-colors text-sm font-bold uppercase tracking-wider">{{ _('Book') }}</a>
                         <a href="/dashboard" class="text-white/70 hover:text-white transition-colors text-sm font-bold uppercase tracking-wider">{{ _('Dashboard') }}</a>
                         <a href="/health-tracker" class="text-indigo-300 hover:text-white transition-colors text-sm font-bold uppercase tracking-wider flex items-center gap-1.5"><i class="fas fa-heartbeat text-xs text-red-400 animate-pulse"></i> {{ _('Vitals') }}</a>
+                        <a href="/invoices" class="text-white/70 hover:text-white transition-colors text-sm font-bold uppercase tracking-wider">{{ _('Billing') }}</a>
                         <a href="/calendar" class="text-white/70 hover:text-white transition-colors text-sm font-bold uppercase tracking-wider">{{ _('Calendar') }}</a>
                         <div class="flex items-center gap-3 ml-4 pl-4 border-l border-white/10">
                             <div class="w-8 h-8 rounded-full btn-gradient flex items-center justify-center text-sm font-black shadow-lg">{{ session.get('patient_name','?')[0] }}</div>
                             <a href="/logout" class="ml-2 px-3 py-1.5 bg-red-500/20 hover:bg-red-500/40 text-red-300 rounded-lg text-xs font-bold transition-colors">{{ _('LOGOUT') }}</a>
                         </div>
-                    {% elif session.get('user_role') == 'super_admin' %}
+                    {% elif session.get('user_role') == 'super_admin' or session.get('user_role') == 'receptionist' %}
                         <a href="{{ url_for('superadmin.dashboard') }}" class="text-amber-400 hover:text-white transition-colors text-sm font-bold uppercase">{{ _('RBAC') }}</a>
                         <a href="/admin" class="text-white/70 hover:text-white transition-colors text-sm font-bold uppercase">{{ _('Admin') }}</a>
+                        <a href="/admin/invoices" class="text-white/70 hover:text-white transition-colors text-sm font-bold uppercase">{{ _('Invoices') }}</a>
                         <div class="flex items-center gap-3 ml-4 pl-4 border-l border-white/10">
                             <a href="/logout" class="px-3 py-1.5 bg-red-500/20 text-red-300 rounded-lg text-xs font-bold">{{ _('LOGOUT') }}</a>
                         </div>
