@@ -46,6 +46,14 @@ def dashboard():
     wasted = get_wasted_slot_alerts()
     departments = Department.query.all()
     
+    # Calculate Revenue Stats for today
+    today_start = datetime.utcnow().replace(hour=0, minute=0, second=0, microsecond=0)
+    invoices_today = Invoice.query.filter(Invoice.issued_at >= today_start).all()
+    revenue_stats = {
+        'today': sum(inv.amount for inv in invoices_today if inv.status == 'paid'),
+        'pending': sum(inv.amount for inv in invoices_today if inv.status == 'unpaid')
+    }
+    
     return render_template('admin/dashboard.html', 
                          stats=stats, 
                          doctors=doctors,
@@ -53,7 +61,8 @@ def dashboard():
                          grid=grid, 
                          today=today,
                          wasted_alerts=wasted, 
-                         departments=departments)
+                         departments=departments,
+                         revenue_stats=revenue_stats)
 
 @admin_bp.route('/admin/slot-patients/<int:slot_id>')
 @role_required(['receptionist', 'super_admin'])

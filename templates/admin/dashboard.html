@@ -40,6 +40,28 @@
         </div>
     </div>
 
+    <!-- Financial Overview Widget -->
+    <div class="grid grid-cols-1 md:grid-cols-2 gap-4 mb-8">
+        <div class="bg-emerald-50 rounded-2xl p-6 shadow-sm border border-emerald-100 flex items-center justify-between transition-transform hover:scale-[1.02]">
+            <div>
+                <p class="text-sm font-bold text-emerald-800 mb-1 uppercase tracking-wider">Today's Revenue</p>
+                <p class="text-4xl font-black text-emerald-600">${{ "%.2f"|format(revenue_stats.today) }}</p>
+            </div>
+            <div class="w-14 h-14 bg-emerald-200 rounded-full flex items-center justify-center text-emerald-700 text-2xl shadow-inner">
+                💰
+            </div>
+        </div>
+        <div class="bg-amber-50 rounded-2xl p-6 shadow-sm border border-amber-100 flex items-center justify-between transition-transform hover:scale-[1.02]">
+            <div>
+                <p class="text-sm font-bold text-amber-800 mb-1 uppercase tracking-wider">Pending Payments</p>
+                <p class="text-4xl font-black text-amber-600">${{ "%.2f"|format(revenue_stats.pending) }}</p>
+            </div>
+            <div class="w-14 h-14 bg-amber-200 rounded-full flex items-center justify-center text-amber-700 text-2xl shadow-inner">
+                ⏳
+            </div>
+        </div>
+    </div>
+
     <!-- Slot Grid -->
     <div class="bg-white rounded-2xl shadow-sm border border-gray-100 p-6 mb-8 overflow-x-auto">
         <div class="flex items-center justify-between mb-4">
