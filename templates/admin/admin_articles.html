@@ -1,0 +1,222 @@
+{% extends "base.html" %}
+{% block title %}Manage Articles | MediSlot{% endblock %}
+
+{% block content %}
+<div class="max-w-7xl mx-auto px-4 py-10">
+    <div class="flex flex-col md:flex-row items-start md:items-center justify-between mb-8 gap-4">
+        <div>
+            <h1 class="text-3xl font-black text-white">{{ _('Health Blog Manager') }}</h1>
+            <p class="text-white/50 font-medium">{{ _('Create and manage health articles, tips, and announcements.') }}</p>
+        </div>
+        <button onclick="document.getElementById('addArticleModal').classList.remove('hidden')" 
+            class="px-6 py-3 btn-gradient rounded-2xl font-black uppercase tracking-widest text-xs shadow-2xl flex items-center gap-2 hover:scale-105 transition-transform">
+            <i class="fas fa-plus"></i> {{ _('New Article') }}
+        </button>
+    </div>
+
+    <!-- Stats Row -->
+    <div class="grid grid-cols-1 sm:grid-cols-3 gap-6 mb-10">
+        <div class="glass p-6">
+            <p class="text-xs font-black text-white/40 uppercase tracking-widest mb-1">{{ _('Total Articles') }}</p>
+            <p class="text-3xl font-black text-white">{{ articles|length }}</p>
+        </div>
+        <div class="glass p-6 border-l-4 border-emerald-500/50">
+            <p class="text-xs font-black text-white/40 uppercase tracking-widest mb-1">{{ _('Published') }}</p>
+            <p class="text-3xl font-black text-emerald-400">{{ articles|selectattr('is_published')|list|length }}</p>
+        </div>
+        <div class="glass p-6 border-l-4 border-amber-500/50">
+            <p class="text-xs font-black text-white/40 uppercase tracking-widest mb-1">{{ _('Drafts') }}</p>
+            <p class="text-3xl font-black text-amber-400">{{ articles|rejectattr('is_published')|list|length }}</p>
+        </div>
+    </div>
+
+    <!-- Articles List -->
+    {% if articles %}
+    <div class="grid gap-6">
+        {% for article in articles %}
+        <div class="glass p-6 relative overflow-hidden group hover:border-white/30 transition-all">
+            <div class="absolute left-0 top-0 bottom-0 w-2 {% if article.is_published %}bg-emerald-500{% else %}bg-amber-500{% endif %}"></div>
+            
+            <div class="flex flex-col lg:flex-row justify-between gap-6 pl-4">
+                <div class="flex-1">
+                    <div class="flex flex-wrap items-center gap-3 mb-3">
+                        <span class="px-3 py-1 rounded-full text-[10px] font-black uppercase tracking-widest 
+                            {% if article.category == 'Health Tip' %}bg-emerald-500/20 text-emerald-400 border border-emerald-500/30
+                            {% elif article.category == 'Announcement' %}bg-blue-500/20 text-blue-400 border border-blue-500/30
+                            {% else %}bg-purple-500/20 text-purple-400 border border-purple-500/30{% endif %}">
+                            {{ _(article.category) }}
+                        </span>
+                        {% if article.is_published %}
+                        <span class="px-3 py-1 rounded-full text-[10px] font-black uppercase tracking-widest bg-emerald-500/20 text-emerald-400 border border-emerald-500/30">
+                            <i class="fas fa-check-circle mr-1"></i> {{ _('Published') }}
+                        </span>
+                        {% else %}
+                        <span class="px-3 py-1 rounded-full text-[10px] font-black uppercase tracking-widest bg-amber-500/20 text-amber-400 border border-amber-500/30">
+                            <i class="fas fa-pencil-alt mr-1"></i> {{ _('Draft') }}
+                        </span>
+                        {% endif %}
+                    </div>
+                    <h3 class="text-xl font-black text-white mb-2">{{ article.title }}</h3>
+                    <p class="text-white/50 text-sm font-medium line-clamp-2 mb-3">{{ article.content[:150] }}{% if article.content|length > 150 %}...{% endif %}</p>
+                    <p class="text-[10px] font-black text-white/30 uppercase tracking-widest">
+                        <i class="fas fa-user mr-1"></i> {{ article.author.name }} · 
+                        <i class="fas fa-clock ml-1 mr-1"></i> {{ article.created_at.strftime('%d %b %Y, %I:%M %p') }}
+                    </p>
+                </div>
+                
+                <div class="flex items-center gap-3 shrink-0">
+                    <button onclick="openEditModal({{ article.id }}, '{{ article.title|e }}', `{{ article.content|e }}`, '{{ article.category }}', {{ 'true' if article.is_published else 'false' }})" 
+                            class="px-5 py-2.5 bg-white/10 hover:bg-white/20 text-white text-[11px] font-black uppercase tracking-widest rounded-xl transition-all">
+                        <i class="fas fa-edit mr-1"></i> {{ _('Edit') }}
+                    </button>
+                    <form action="{{ url_for('superadmin.delete_article', article_id=article.id) }}" method="POST" 
+                          onsubmit="return confirm('{{ _('Delete this article permanently?') }}')">
+                        <button class="px-5 py-2.5 bg-red-500/10 hover:bg-red-500/20 text-red-400 text-[11px] font-black uppercase tracking-widest rounded-xl transition-all">
+                            <i class="fas fa-trash mr-1"></i> {{ _('Delete') }}
+                        </button>
+                    </form>
+                </div>
+            </div>
+        </div>
+        {% endfor %}
+    </div>
+    {% else %}
+    <div class="glass p-16 text-center">
+        <div class="text-6xl mb-6">📝</div>
+        <h3 class="text-2xl font-black text-white mb-2">{{ _('No Articles Yet') }}</h3>
+        <p class="text-white/50 mb-8">{{ _('Create your first health article to engage patients.') }}</p>
+        <button onclick="document.getElementById('addArticleModal').classList.remove('hidden')" 
+                class="inline-block px-8 py-4 btn-gradient rounded-2xl font-black tracking-widest text-sm shadow-2xl">
+            {{ _('CREATE FIRST ARTICLE') }}
+        </button>
+    </div>
+    {% endif %}
+</div>
+
+<!-- Add Article Modal -->
+<div id="addArticleModal" class="hidden fixed inset-0 z-[100] flex items-center justify-center p-4 bg-black/80 backdrop-blur-sm">
+    <div class="glass w-full max-w-2xl p-8 animate-card-entrance max-h-[90vh] overflow-y-auto">
+        <div class="flex items-center justify-between mb-8">
+            <h2 class="text-2xl font-black text-white">{{ _('New Article') }}</h2>
+            <button onclick="document.getElementById('addArticleModal').classList.add('hidden')" class="text-white/40 hover:text-white transition-colors text-2xl">&times;</button>
+        </div>
+        
+        <form action="{{ url_for('superadmin.add_article') }}" method="POST" class="space-y-6">
+            <div>
+                <label class="block text-[10px] font-black text-white/40 uppercase tracking-widest mb-2">{{ _('Title') }}</label>
+                <input type="text" name="title" required placeholder="{{ _('e.g., 5 Tips for Better Sleep') }}" 
+                       class="w-full glass-input px-4 py-3 text-sm">
+            </div>
+            
+            <div>
+                <label class="block text-[10px] font-black text-white/40 uppercase tracking-widest mb-2">{{ _('Content') }}</label>
+                <textarea name="content" required rows="8" placeholder="{{ _('Write your article content here...') }}" 
+                          class="w-full glass-input px-4 py-3 text-sm resize-y"></textarea>
+            </div>
+            
+            <div class="grid grid-cols-2 gap-6">
+                <div>
+                    <label class="block text-[10px] font-black text-white/40 uppercase tracking-widest mb-2">{{ _('Category') }}</label>
+                    <select name="category" class="w-full text-sm">
+                        <option value="Health Tip">{{ _('Health Tip') }}</option>
+                        <option value="Announcement">{{ _('Announcement') }}</option>
+                        <option value="News">{{ _('News') }}</option>
+                    </select>
+                </div>
+                <div class="flex items-end">
+                    <label class="flex items-center gap-3 cursor-pointer group">
+                        <input type="checkbox" name="is_published" checked class="w-5 h-5 rounded accent-emerald-500">
+                        <span class="text-sm font-bold text-white/70 group-hover:text-white transition-colors">{{ _('Publish Immediately') }}</span>
+                    </label>
+                </div>
+            </div>
+            
+            <div class="flex gap-4 pt-4">
+                <button type="button" onclick="document.getElementById('addArticleModal').classList.add('hidden')" 
+                        class="flex-1 px-6 py-3 glass hover:bg-white/10 text-white font-black uppercase tracking-widest text-xs rounded-xl">
+                    {{ _('Cancel') }}
+                </button>
+                <button type="submit" class="flex-1 px-6 py-3 btn-gradient rounded-xl font-black uppercase tracking-widest text-xs transition-all shadow-lg">
+                    {{ _('Publish Article') }}
+                </button>
+            </div>
+        </form>
+    </div>
+</div>
+
+<!-- Edit Article Modal -->
+<div id="editArticleModal" class="hidden fixed inset-0 z-[100] flex items-center justify-center p-4 bg-black/80 backdrop-blur-sm">
+    <div class="glass w-full max-w-2xl p-8 animate-card-entrance max-h-[90vh] overflow-y-auto">
+        <div class="flex items-center justify-between mb-8">
+            <h2 class="text-2xl font-black text-white">{{ _('Edit Article') }}</h2>
+            <button onclick="document.getElementById('editArticleModal').classList.add('hidden')" class="text-white/40 hover:text-white transition-colors text-2xl">&times;</button>
+        </div>
+        
+        <form id="editArticleForm" method="POST" class="space-y-6">
+            <div>
+                <label class="block text-[10px] font-black text-white/40 uppercase tracking-widest mb-2">{{ _('Title') }}</label>
+                <input type="text" name="title" id="editTitle" required class="w-full glass-input px-4 py-3 text-sm">
+            </div>
+            
+            <div>
+                <label class="block text-[10px] font-black text-white/40 uppercase tracking-widest mb-2">{{ _('Content') }}</label>
+                <textarea name="content" id="editContent" required rows="8" class="w-full glass-input px-4 py-3 text-sm resize-y"></textarea>
+            </div>
+            
+            <div class="grid grid-cols-2 gap-6">
+                <div>
+                    <label class="block text-[10px] font-black text-white/40 uppercase tracking-widest mb-2">{{ _('Category') }}</label>
+                    <select name="category" id="editCategory" class="w-full text-sm">
+                        <option value="Health Tip">{{ _('Health Tip') }}</option>
+                        <option value="Announcement">{{ _('Announcement') }}</option>
+                        <option value="News">{{ _('News') }}</option>
+                    </select>
+                </div>
+                <div class="flex items-end">
+                    <label class="flex items-center gap-3 cursor-pointer group">
+                        <input type="checkbox" name="is_published" id="editPublished" class="w-5 h-5 rounded accent-emerald-500">
+                        <span class="text-sm font-bold text-white/70 group-hover:text-white transition-colors">{{ _('Published') }}</span>
+                    </label>
+                </div>
+            </div>
+            
+            <div class="flex gap-4 pt-4">
+                <button type="button" onclick="document.getElementById('editArticleModal').classList.add('hidden')" 
+                        class="flex-1 px-6 py-3 glass hover:bg-white/10 text-white font-black uppercase tracking-widest text-xs rounded-xl">
+                    {{ _('Cancel') }}
+                </button>
+                <button type="submit" class="flex-1 px-6 py-3 btn-gradient rounded-xl font-black uppercase tracking-widest text-xs transition-all shadow-lg">
+                    {{ _('Save Changes') }}
+                </button>
+            </div>
+        </form>
+    </div>
+</div>
+
+<style>
+    @keyframes card-entrance {
+        from { opacity: 0; transform: scale(0.95) translateY(20px); }
+        to { opacity: 1; transform: scale(1) translateY(0); }
+    }
+    .animate-card-entrance { animation: card-entrance 0.4s cubic-bezier(0.34, 1.56, 0.64, 1) forwards; }
+    .line-clamp-2 {
+        display: -webkit-box;
+        -webkit-line-clamp: 2;
+        -webkit-box-orient: vertical;
+        overflow: hidden;
+    }
+</style>
+{% endblock %}
+
+{% block scripts %}
+<script>
+function openEditModal(id, title, content, category, isPublished) {
+    document.getElementById('editArticleForm').action = '/superadmin/articles/' + id + '/edit';
+    document.getElementById('editTitle').value = title;
+    document.getElementById('editContent').value = content;
+    document.getElementById('editCategory').value = category;
+    document.getElementById('editPublished').checked = isPublished;
+    document.getElementById('editArticleModal').classList.remove('hidden');
+}
+</script>
+{% endblock %}

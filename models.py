@@ -238,3 +238,16 @@ class Invoice(db.Model):
 
     appointment = db.relationship('Appointment', backref=db.backref('invoice', uselist=False))
     patient = db.relationship('Patient', backref='invoices')
+
+
+class Article(db.Model):
+    __tablename__ = 'articles'
+    id = db.Column(db.Integer, primary_key=True)
+    title = db.Column(db.String(200), nullable=False)
+    content = db.Column(db.Text, nullable=False)
+    category = db.Column(db.String(50), default='Health Tip') # Health Tip / Announcement / News
+    author_id = db.Column(db.Integer, db.ForeignKey('staff.id'), nullable=False)
+    is_published = db.Column(db.Boolean, default=True)
+    created_at = db.Column(db.DateTime, default=datetime.utcnow)
+
+    author = db.relationship('Staff', backref='articles')

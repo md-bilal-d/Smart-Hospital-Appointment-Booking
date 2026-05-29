@@ -1,6 +1,6 @@
 from flask import Blueprint, render_template, request, redirect, url_for, flash, jsonify
 from auth_utils import role_required
-from models import db, Staff, AuditLog, Appointment, Doctor, Department
+from models import db, Staff, AuditLog, Appointment, Doctor, Department, Article
 from audit_logger import log_action
 import bcrypt
 
@@ -65,3 +65,61 @@ def audit_log():
         
     logs = query.order_by(AuditLog.timestamp.desc()).paginate(page=page, per_page=20)
     return render_template('admin/audit_log.html', logs=logs)
+
+@superadmin_bp.route('/superadmin/articles')
+@role_required('super_admin')
+def manage_articles():
+    articles = Article.query.order_by(Article.created_at.desc()).all()
+    return render_template('admin/admin_articles.html', articles=articles)
+
+@superadmin_bp.route('/superadmin/articles/new', methods=['POST'])
+@role_required('super_admin')
+def add_article():
+    from flask import session
+    title = request.form.get('title')
+    content = request.form.get('content')
+    category = request.form.get('category', 'Health Tip')
+    is_published = request.form.get('is_published') == 'on'
+
+    staff_id = session.get('staff_id')
+    if not staff_id:
+        flash('Unauthorized', 'error')
+        return redirect(url_for('superadmin.manage_articles'))
+
+    article = Article(
+        title=title,
+        content=content,
+        category=category,
+        author_id=staff_id,
+        is_published=is_published
+    )
+    db.session.add(article)
+    db.session.commit()
+    log_action('Article Created', f'Created article: {title}', target_type='article', target_id=article.id)
+    flash('Article added successfully.', 'success')
+    return redirect(url_for('superadmin.manage_articles'))
+
+@superadmin_bp.route('/superadmin/articles/<int:article_id>/edit', methods=['POST'])
+@role_required('super_admin')
+def edit_article(article_id):
+    article = Article.query.get_or_404(article_id)
+    article.title = request.form.get('title')
+    article.content = request.form.get('content')
+    article.category = request.form.get('category')
+    article.is_published = request.form.get('is_published') == 'on'
+    
+    db.session.commit()
+    log_action('Article Edited', f'Edited article: {article.title}', target_type='article', target_id=article.id)
+    flash('Article updated successfully.', 'success')
+    return redirect(url_for('superadmin.manage_articles'))
+
+@superadmin_bp.route('/superadmin/articles/<int:article_id>/delete', methods=['POST'])
+@role_required('super_admin')
+def delete_article(article_id):
+    article = Article.query.get_or_404(article_id)
+    db.session.delete(article)
+    db.session.commit()
+    log_action('Article Deleted', f'Deleted article: {article.title}', target_type='article', target_id=article_id)
+    flash('Article deleted successfully.', 'success')
+    return redirect(url_for('superadmin.manage_articles'))
+

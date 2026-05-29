@@ -8,7 +8,7 @@ import os
 sys.path.insert(0, os.path.dirname(__file__))
 
 from app import create_app
-from models import db, Doctor, Department, Slot, Patient, Staff, Review, ReminderLog, ReminderPreference
+from models import db, Doctor, Department, Slot, Patient, Staff, Review, ReminderLog, ReminderPreference, Article
 from datetime import date, timedelta
 from utils import generate_time_labels
 import bcrypt
@@ -105,6 +105,49 @@ def seed():
         patient_pw = bcrypt.hashpw('patient123'.encode(), bcrypt.gensalt()).decode()
         demo = Patient(name='Demo Patient', phone='9876543210', email='patient@demo.com', password_hash=patient_pw, role='patient')
         db.session.add(demo)
+        db.session.flush()
+
+        # --- Health Articles ---
+        articles = [
+            Article(
+                title="5 Tips for a Healthy Heart",
+                content="Maintaining a healthy heart is essential for overall well-being. Here are 5 tips:\n\n1. Eat a balanced diet rich in fruits, vegetables, and whole grains. Limit saturated fats, sodium, and added sugars.\n\n2. Exercise regularly, aiming for at least 30 minutes of moderate-intensity activity most days of the week. Walking, swimming, or cycling are great options.\n\n3. Manage stress through relaxation techniques like meditation, deep breathing, or yoga. Chronic stress can raise blood pressure and damage arteries.\n\n4. Avoid smoking and excessive alcohol consumption. Smoking doubles the risk of heart disease, and heavy drinking can lead to high blood pressure.\n\n5. Get regular check-ups with your cardiologist. Early detection of risk factors like high cholesterol or hypertension can prevent serious complications.",
+                category="Health Tip",
+                author_id=super_admin.id
+            ),
+            Article(
+                title="MediSlot Now Offers Video Consultations",
+                content="We are excited to announce that MediSlot now supports video consultations! You can now book appointments with your preferred doctors from the comfort of your home.\n\nHow it works:\n- Select 'Video Call' as your consultation mode when booking an appointment.\n- At your scheduled time, click the 'Join Video Call' button on your dashboard.\n- A secure, private video session will connect you directly with your doctor.\n\nVideo consultations are available across all departments and are ideal for follow-up visits, prescription renewals, and non-emergency consultations.\n\nFor emergencies, please visit the hospital in person or call our emergency helpline.",
+                category="Announcement",
+                author_id=super_admin.id
+            ),
+            Article(
+                title="Understanding Blood Pressure: What Your Numbers Mean",
+                content="Blood pressure is measured in two numbers: systolic (top number) and diastolic (bottom number).\n\nNormal: Less than 120/80 mmHg\nElevated: 120-129 / less than 80 mmHg\nHigh (Stage 1): 130-139 / 80-89 mmHg\nHigh (Stage 2): 140+ / 90+ mmHg\nCrisis: 180+ / 120+ mmHg — seek immediate medical attention.\n\nRegular monitoring is crucial. You can track your blood pressure using MediSlot's built-in Health Tracker on your patient dashboard. Our AI-powered insights will alert you if your readings fall outside the healthy range and recommend the right specialist.\n\nLifestyle changes like reducing salt intake, exercising regularly, and maintaining a healthy weight can significantly improve your blood pressure.",
+                category="Health Tip",
+                author_id=super_admin.id
+            ),
+            Article(
+                title="New Department: Pediatrics Now Open!",
+                content="MediSlot Hospital is proud to announce the opening of our new Pediatrics department!\n\nLed by Dr. Nisarga, our pediatrics team specializes in comprehensive healthcare for infants, children, and adolescents. Services include:\n\n- Routine health check-ups and vaccinations\n- Developmental assessments\n- Treatment of childhood illnesses\n- Nutritional guidance for growing children\n- Adolescent health and counseling\n\nYou can now book pediatric appointments through MediSlot's online booking system or visit us at the hospital. Use our Symptom Checker feature to determine if your child needs to see a pediatrician.",
+                category="News",
+                author_id=super_admin.id
+            ),
+            Article(
+                title="The Importance of Mental Health in Daily Life",
+                content="Mental health is just as important as physical health, yet it is often overlooked. Here are some key points to remember:\n\n1. Recognize the signs: Persistent sadness, anxiety, changes in sleep or appetite, and difficulty concentrating can all be indicators of mental health concerns.\n\n2. Talk about it: Breaking the stigma around mental health starts with open conversations. Don't hesitate to share your feelings with trusted friends, family, or professionals.\n\n3. Practice self-care: Regular exercise, adequate sleep, healthy eating, and mindfulness practices can significantly improve your mental well-being.\n\n4. Seek professional help: If symptoms persist, consult a mental health professional. Therapy and counseling are effective treatments for many conditions.\n\n5. Stay connected: Social isolation can worsen mental health. Make time for social activities and maintain meaningful relationships.\n\nRemember, seeking help is a sign of strength, not weakness. Our General Medicine department can provide referrals to mental health specialists.",
+                category="Health Tip",
+                author_id=super_admin.id
+            ),
+            Article(
+                title="Flu Season Alert: How to Protect Yourself",
+                content="Flu season is here, and it's important to take precautions to protect yourself and your loved ones.\n\nPrevention tips:\n- Get vaccinated: The flu vaccine is the most effective way to prevent influenza.\n- Wash your hands frequently with soap and water for at least 20 seconds.\n- Avoid touching your face, especially your eyes, nose, and mouth.\n- Cover your coughs and sneezes with a tissue or your elbow.\n- Stay home if you feel unwell to prevent spreading the virus.\n\nSymptoms to watch for:\n- Sudden onset of fever, chills, and body aches\n- Sore throat, cough, and runny or stuffy nose\n- Fatigue and headaches\n\nIf you experience severe symptoms such as difficulty breathing, persistent chest pain, or confusion, seek immediate medical attention. Book an appointment with our General Medicine department through MediSlot for flu consultations.",
+                category="News",
+                author_id=super_admin.id
+            ),
+        ]
+        db.session.add_all(articles)
+
         db.session.commit()
 
         print("\nMediSlot database initialized successfully!")

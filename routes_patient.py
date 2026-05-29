@@ -3,7 +3,7 @@ import io
 from fpdf import FPDF
 from flask import Blueprint, render_template, request, redirect, url_for, flash, session, current_app, send_file
 from flask_login import login_required, current_user
-from models import db, Doctor, Department, Slot, Appointment, QueueLog, Patient, Prescription, Review, MedicalRecord, VitalsReading, Invoice
+from models import db, Doctor, Department, Slot, Appointment, QueueLog, Patient, Prescription, Review, MedicalRecord, VitalsReading, Invoice, Article
 from smart_scheduling import recommend_slot, recommend_alternative_doctor, assign_token
 from datetime import datetime, date, timedelta
 from extensions import socketio
@@ -717,3 +717,30 @@ def pay_invoice(invoice_id):
     audit_logger.log_action('pay_invoice', f"Patient paid Invoice #{invoice.id} for {invoice.amount}")
     flash('Payment successful! Thank you.', 'success')
     return redirect(url_for('patient.invoices'))
+
+@patient_bp.route('/articles')
+def articles():
+    """Public health blog page - accessible to everyone."""
+    category_filter = request.args.get('category')
+    query = Article.query.filter_by(is_published=True)
+    if category_filter:
+        query = query.filter_by(category=category_filter)
+    articles_list = query.order_by(Article.created_at.desc()).all()
+    categories = ['Health Tip', 'Announcement', 'News']
+    return render_template('articles.html', articles=articles_list, categories=categories, selected_category=category_filter)
+
+@patient_bp.route('/articles/<int:article_id>')
+def article_detail(article_id):
+    """Single article view."""
+    article = Article.query.get_or_404(article_id)
+    if not article.is_published:
+        flash('This article is not available.', 'error')
+        return redirect(url_for('patient.articles'))
+    # Get related articles (same category, excluding current)
+    related = Article.query.filter(
+        Article.category == article.category,
+        Article.id != article.id,
+        Article.is_published == True
+    ).order_by(Article.created_at.desc()).limit(3).all()
+    return render_template('article_detail.html', article=article, related=related)
+
