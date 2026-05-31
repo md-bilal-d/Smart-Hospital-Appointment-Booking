@@ -8,7 +8,7 @@ import os
 sys.path.insert(0, os.path.dirname(__file__))
 
 from app import create_app
-from models import db, Doctor, Department, Slot, Patient, Staff, Review, ReminderLog, ReminderPreference, Article
+from models import db, Doctor, Department, Slot, Patient, Staff, Review, ReminderLog, ReminderPreference, Article, Appointment
 from datetime import date, timedelta
 from utils import generate_time_labels
 import bcrypt
@@ -105,6 +105,95 @@ def seed():
         patient_pw = bcrypt.hashpw('patient123'.encode(), bcrypt.gensalt()).decode()
         demo = Patient(name='Demo Patient', phone='9876543210', email='patient@demo.com', password_hash=patient_pw, role='patient')
         db.session.add(demo)
+        
+        # Seed additional demo patients for rich reviews community
+        patients = [
+            Patient(name='Sarah Jenkins', phone='9876543211', email='sarah@demo.com', password_hash=patient_pw, role='patient'),
+            Patient(name='Michael Chang', phone='9876543212', email='michael@demo.com', password_hash=patient_pw, role='patient'),
+            Patient(name='Emily Rodriguez', phone='9876543213', email='emily@demo.com', password_hash=patient_pw, role='patient'),
+            Patient(name='David Kim', phone='9876543214', email='david@demo.com', password_hash=patient_pw, role='patient'),
+        ]
+        db.session.add_all(patients)
+        db.session.flush()
+
+        # Seed reviews and historical appointments
+        import random
+        feedback_options = {
+            1: [
+                "Doctor was extremely late and dismissive of my concerns.",
+                "Terrible experience. Felt rushed and the clinic was unorganized."
+            ],
+            2: [
+                "Long wait time and very brief consultation. Expected more care.",
+                "Hard to get in touch with. The doctor did not explain the prescription clearly."
+            ],
+            3: [
+                "Average consultation. The doctor was polite but very quick.",
+                "Decent service, but the waiting room was crowded and delayed."
+            ],
+            4: [
+                "Very professional doctor. Explained the diagnosis clearly and suggested a practical care plan.",
+                "Great experience. Dr. was caring and patient. Will recommend.",
+                "Detailed consultation and helpful advice. Very satisfied."
+            ],
+            5: [
+                "Absolutely stellar care! The doctor went above and beyond to make me feel comfortable and listened to.",
+                "Incredibly knowledgeable and compassionate specialist. Highly recommended!",
+                "Outstanding treatment. The best healthcare experience I have ever had.",
+                "Brilliant doctor. Understood my health history immediately and gave excellent guidance."
+            ]
+        }
+
+        # Create historical appointments (seen) and attach reviews
+        # Let's seed for each doctor 2-3 reviews
+        review_count = 0
+        all_patients = [demo] + patients
+        for doctor in doctors:
+            yesterday = (date.today() - timedelta(days=1)).isoformat()
+            for p_idx, patient in enumerate(all_patients[1:4]): # Use Sarah, Michael, Emily
+                time_lbl = time_labels[p_idx % len(time_labels)]
+                hist_slot = Slot(
+                    doctor_id=doctor.id,
+                    date=yesterday,
+                    time_label=time_lbl,
+                    max_capacity=3,
+                    is_blocked=False
+                )
+                db.session.add(hist_slot)
+                db.session.flush()
+
+                appt = Appointment(
+                    patient_id=patient.id,
+                    slot_id=hist_slot.id,
+                    token_number=p_idx + 1,
+                    status='seen',
+                    appointment_type='normal',
+                    notes='Routine health checkup',
+                    consultation_mode='In-Person'
+                )
+                db.session.add(appt)
+                db.session.flush()
+
+                # Customize ratings slightly based on doctor
+                if doctor.name == 'Dr. Daniya':
+                    rating = random.choice([5, 5, 4]) # super highly rated
+                elif doctor.name == 'Dr. Subiya':
+                    rating = random.choice([3, 4, 4, 5]) # average
+                else:
+                    rating = random.choice([4, 5, 5])
+                    
+                feedback = random.choice(feedback_options[rating])
+                
+                review = Review(
+                    appointment_id=appt.id,
+                    patient_id=patient.id,
+                    doctor_id=doctor.id,
+                    rating=rating,
+                    feedback=feedback
+                )
+                db.session.add(review)
+                review_count += 1
+
         db.session.flush()
 
         # --- Health Articles ---

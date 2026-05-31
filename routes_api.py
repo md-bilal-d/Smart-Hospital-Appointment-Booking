@@ -568,3 +568,43 @@ def wizard_analyze():
     })
 
 
+@api_bp.route('/api/doctor/<int:doctor_id>/reviews')
+def get_doctor_reviews(doctor_id):
+    from models import Review, Doctor
+    doctor = Doctor.query.get_or_404(doctor_id)
+    reviews = Review.query.filter_by(doctor_id=doctor_id).order_by(Review.created_at.desc()).all()
+    
+    # Calculate star counts distribution
+    distribution = {1: 0, 2: 0, 3: 0, 4: 0, 5: 0}
+    for r in reviews:
+        if r.rating in distribution:
+            distribution[r.rating] += 1
+            
+    total_reviews = len(reviews)
+    dist_pct = {}
+    for stars, count in distribution.items():
+        dist_pct[stars] = round((count / total_reviews * 100), 1) if total_reviews else 0
+        
+    reviews_list = []
+    for r in reviews:
+        # Mask patient name for professional medical privacy
+        name_parts = r.patient.name.split()
+        masked_name = name_parts[0] + ' ' + (name_parts[-1][0] + '.' if len(name_parts) > 1 else '')
+        
+        reviews_list.append({
+            'id': r.id,
+            'patient_name': masked_name,
+            'rating': r.rating,
+            'feedback': r.feedback or '',
+            'created_at': r.created_at.strftime('%d %b %Y')
+        })
+        
+    return jsonify({
+        'doctor_name': doctor.name,
+        'average_rating': doctor.average_rating,
+        'reviews_count': doctor.reviews_count,
+        'distribution_percentages': dist_pct,
+        'reviews': reviews_list
+    })
+
+

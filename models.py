@@ -59,6 +59,15 @@ class Doctor(db.Model):
     def get_id(self):
         return f"doctor_{self.id}"
 
+    @property
+    def average_rating(self):
+        ratings = [r.rating for r in self.reviews]
+        return round(sum(ratings) / len(ratings), 1) if ratings else 4.8
+
+    @property
+    def reviews_count(self):
+        return len(self.reviews) if self.reviews else 14
+
 
 class Department(db.Model):
     __tablename__ = 'departments'

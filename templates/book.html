@@ -121,9 +121,9 @@
                         <p class="text-[10px] font-black text-white/40 uppercase tracking-widest mb-1">Experience</p>
                         <p class="font-black text-white">{{ doc.experience_years }}<span class="text-[10px] ml-1">YRS</span></p>
                     </div>
-                    <div class="bg-amber-500/5 p-4 rounded-2xl border border-amber-500/10">
+                    <div class="bg-amber-500/5 p-4 rounded-2xl border border-amber-500/10 hover:border-amber-500/30 transition-all cursor-pointer" onclick="event.stopPropagation(); openDoctorReviewsModal({{ doc.id }}, '{{ doc.name }}')">
                         <p class="text-[10px] font-black text-amber-500/40 uppercase tracking-widest mb-1">Rating</p>
-                        <p class="font-black text-amber-500">⭐ 4.9</p>
+                        <p class="font-black text-amber-500 hover:text-amber-400 transition-colors">⭐ {{ doc.average_rating }} <span class="text-[9px] text-amber-500/50">({{ doc.reviews_count }})</span></p>
                     </div>
                 </div>
 
@@ -241,6 +241,62 @@
         </div>
     </div>
 </div>
+
+<!-- Doctor Reviews Modal -->
+<div id="doctorReviewsModal" class="hidden fixed inset-0 z-[120] flex items-center justify-center p-4 bg-black/80 backdrop-blur-sm">
+    <div class="glass w-full max-w-lg p-8 animate-card-entrance max-h-[85vh] flex flex-col border border-white/10 relative">
+        <button onclick="closeDoctorReviewsModal()" class="absolute top-6 right-6 text-white/40 hover:text-white transition-colors text-2xl">&times;</button>
+        
+        <div class="mb-6">
+            <h2 class="text-2xl font-black text-white" id="reviewsModalTitle">Doctor Reviews</h2>
+            <p class="text-indigo-400 font-black text-xs uppercase tracking-widest mt-1" id="reviewsModalSub">Patient Feedback Summary</p>
+        </div>
+        
+        <!-- Score and Breakdown -->
+        <div class="flex items-center gap-6 p-6 glass border-white/5 rounded-2xl mb-6 shrink-0 bg-white/5">
+            <div class="text-center bg-white/5 p-4 rounded-xl border border-white/5 min-w-[100px]">
+                <span class="text-4xl font-black text-white" id="summaryAvgRating">--</span>
+                <span class="text-[10px] font-black text-amber-400 block mt-1">★ ★ ★ ★ ★</span>
+            </div>
+            <div class="flex-1 space-y-2">
+                <div class="flex items-center gap-2">
+                    <span class="text-[9px] font-black text-white/40 w-12">5 Star</span>
+                    <div class="flex-1 h-2 bg-white/5 rounded-full overflow-hidden border border-white/5">
+                        <div class="h-full bg-emerald-500 rounded-full transition-all duration-500" id="bar5Star" style="width: 0%;"></div>
+                    </div>
+                    <span class="text-[9px] font-black text-white/40 w-8 text-right" id="val5Star">0%</span>
+                </div>
+                <div class="flex items-center gap-2">
+                    <span class="text-[9px] font-black text-white/40 w-12">4 Star</span>
+                    <div class="flex-1 h-2 bg-white/5 rounded-full overflow-hidden border border-white/5">
+                        <div class="h-full bg-indigo-500 rounded-full transition-all duration-500" id="bar4Star" style="width: 0%;"></div>
+                    </div>
+                    <span class="text-[9px] font-black text-white/40 w-8 text-right" id="val4Star">0%</span>
+                </div>
+                <div class="flex items-center gap-2">
+                    <span class="text-[9px] font-black text-white/40 w-12">3 Star</span>
+                    <div class="flex-1 h-2 bg-white/5 rounded-full overflow-hidden border border-white/5">
+                        <div class="h-full bg-yellow-500 rounded-full transition-all duration-500" id="bar3Star" style="width: 0%;"></div>
+                    </div>
+                    <span class="text-[9px] font-black text-white/40 w-8 text-right" id="val3Star">0%</span>
+                </div>
+            </div>
+        </div>
+
+        <div id="modalReviewsContainer" class="flex-1 overflow-y-auto space-y-4 pr-2 max-h-[350px] hide-scrollbar">
+            <!-- Reviews dynamically populated -->
+        </div>
+        
+        <div class="mt-6 pt-4 border-t border-white/5 shrink-0 flex gap-4">
+            <button onclick="closeDoctorReviewsModal()" class="w-full px-6 py-3.5 btn-gradient rounded-xl text-white font-black uppercase tracking-widest text-[10px] shadow-lg transition-all hover:scale-[1.02]">Close Reviews</button>
+        </div>
+    </div>
+</div>
+
+<style>
+    .hide-scrollbar::-webkit-scrollbar { display: none; }
+    .hide-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
+</style>
 
 {% endblock %}
 
@@ -368,6 +424,68 @@
             }
             container.appendChild(div);
         });
+    }
+
+    function openDoctorReviewsModal(doctorId, doctorName) {
+        const modal = document.getElementById('doctorReviewsModal');
+        const container = document.getElementById('modalReviewsContainer');
+        const avgRatingEl = document.getElementById('summaryAvgRating');
+        
+        document.getElementById('reviewsModalTitle').textContent = doctorName;
+        avgRatingEl.textContent = '...';
+        container.innerHTML = '<p class="text-center text-white/40 py-10 animate-pulse uppercase tracking-widest text-[9px] font-black">Loading patient logs...</p>';
+        
+        modal.classList.remove('hidden');
+        
+        fetch(`/api/doctor/${doctorId}/reviews`)
+        .then(r => r.json())
+        .then(data => {
+            avgRatingEl.textContent = data.average_rating;
+            
+            // Set distribution bars
+            const dist = data.distribution_percentages || {};
+            const stars = [5, 4, 3];
+            stars.forEach(s => {
+                const bar = document.getElementById(`bar${s}Star`);
+                const val = document.getElementById(`val${s}Star`);
+                const pct = dist[s] || 0;
+                if (bar) bar.style.width = pct + '%';
+                if (val) val.textContent = pct + '%';
+            });
+            
+            container.innerHTML = '';
+            if (!data.reviews || data.reviews.length === 0) {
+                container.innerHTML = '<p class="text-center text-white/30 py-8 font-black uppercase tracking-widest text-xs">No reviews recorded yet.</p>';
+                return;
+            }
+            
+            data.reviews.forEach(rev => {
+                const item = document.createElement('div');
+                item.className = 'glass p-4 rounded-xl border border-white/5 relative overflow-hidden bg-white/5';
+                
+                let starsStr = '';
+                for (let i = 0; i < 5; i++) {
+                    starsStr += i < rev.rating ? '★' : '☆';
+                }
+                
+                item.innerHTML = `
+                    <div class="flex justify-between items-center mb-2">
+                        <span class="text-xs font-black text-white/80">${rev.patient_name}</span>
+                        <span class="text-yellow-400 text-xs drop-shadow-[0_0_10px_rgba(250,204,21,0.4)] font-bold">${starsStr}</span>
+                    </div>
+                    <p class="text-[10px] font-medium text-white/60 italic leading-relaxed">"${rev.feedback || 'No comments provided.'}"</p>
+                    <span class="absolute bottom-2 right-4 text-[8px] font-black text-white/20 uppercase tracking-wider">${rev.created_at}</span>
+                `;
+                container.appendChild(item);
+            });
+        })
+        .catch(err => {
+            container.innerHTML = '<p class="text-center text-red-400 py-8 font-black uppercase tracking-widest text-xs">Error loading reviews.</p>';
+        });
+    }
+
+    function closeDoctorReviewsModal() {
+        document.getElementById('doctorReviewsModal').classList.add('hidden');
     }
 
     socket.on('slot_update', (data) => {
