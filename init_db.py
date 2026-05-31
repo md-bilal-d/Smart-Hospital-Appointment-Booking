@@ -8,7 +8,7 @@ import os
 sys.path.insert(0, os.path.dirname(__file__))
 
 from app import create_app
-from models import db, Doctor, Department, Slot, Patient, Staff, Review, ReminderLog, ReminderPreference, Article, Appointment
+from models import db, Doctor, Department, Slot, Patient, Staff, Review, ReminderLog, ReminderPreference, Article, Appointment, Ward, Bed
 from datetime import date, timedelta
 from utils import generate_time_labels
 import bcrypt
@@ -236,6 +236,61 @@ def seed():
             ),
         ]
         db.session.add_all(articles)
+
+        # --- Wards & Beds Seeding ---
+        wards = [
+            Ward(name='Intensive Care Unit (ICU)', type='icu', total_beds=6, cost_per_day=1200.0),
+            Ward(name='General Medicine Ward', type='general', total_beds=10, cost_per_day=300.0),
+            Ward(name='Pediatrics Ward', type='pediatric', total_beds=8, cost_per_day=450.0),
+            Ward(name='Premium Deluxe Suite', type='deluxe', total_beds=8, cost_per_day=950.0),
+        ]
+        db.session.add_all(wards)
+        db.session.flush()
+
+        # Generate beds for each ward
+        bed_count = 0
+        from datetime import datetime as dt_class
+        
+        # Occupancy details
+        occupancy_map = {
+            'Intensive Care Unit (ICU)': {1: (patients[0].id, dt_class.utcnow() - timedelta(days=2))},
+            'General Medicine Ward': {3: (patients[1].id, dt_class.utcnow() - timedelta(days=4))},
+            'Premium Deluxe Suite': {2: (patients[2].id, dt_class.utcnow() - timedelta(days=1))},
+        }
+
+        for ward in wards:
+            prefix = 'ICU' if ward.type == 'icu' else 'GEN' if ward.type == 'general' else 'PED' if ward.type == 'pediatric' else 'DLX'
+            for b_num in range(1, ward.total_beds + 1):
+                bed_num_str = f"{prefix}-{b_num:02d}"
+                status = 'available'
+                patient_id = None
+                admitted_at = None
+                expected_discharge = None
+                
+                if ward.name in occupancy_map and b_num in occupancy_map[ward.name]:
+                    p_id, adm_date = occupancy_map[ward.name][b_num]
+                    status = 'occupied'
+                    patient_id = p_id
+                    admitted_at = adm_date
+                    expected_discharge = adm_date + timedelta(days=5)
+                elif ward.type == 'icu' and b_num == 4:
+                    status = 'maintenance'
+                elif ward.type == 'general' and b_num == 8:
+                    status = 'maintenance'
+                    
+                bed = Bed(
+                    ward_id=ward.id,
+                    bed_number=bed_num_str,
+                    status=status,
+                    patient_id=patient_id,
+                    admitted_at=admitted_at,
+                    expected_discharge=expected_discharge
+                )
+                db.session.add(bed)
+                bed_count += 1
+                
+        db.session.flush()
+        print(f"Seeded {len(wards)} wards and {bed_count} beds successfully.")
 
         db.session.commit()
 

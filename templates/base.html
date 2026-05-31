@@ -171,6 +171,7 @@
                         <a href="/dashboard" class="text-white/70 hover:text-white transition-colors text-sm font-bold uppercase tracking-wider">{{ _('Dashboard') }}</a>
                         <a href="/health-tracker" class="text-indigo-300 hover:text-white transition-colors text-sm font-bold uppercase tracking-wider flex items-center gap-1.5"><i class="fas fa-heartbeat text-xs text-red-400 animate-pulse"></i> {{ _('Vitals') }}</a>
                         <a href="/invoices" class="text-white/70 hover:text-white transition-colors text-sm font-bold uppercase tracking-wider">{{ _('Billing') }}</a>
+                        <a href="/ward-booking" class="text-white/70 hover:text-white transition-colors text-sm font-bold uppercase tracking-wider"><i class="fas fa-bed text-indigo-400 mr-1"></i> {{ _('Beds') }}</a>
                         <a href="/articles" class="text-white/70 hover:text-white transition-colors text-sm font-bold uppercase tracking-wider">{{ _('Blog') }}</a>
                         <a href="/calendar" class="text-white/70 hover:text-white transition-colors text-sm font-bold uppercase tracking-wider">{{ _('Calendar') }}</a>
                         <div class="flex items-center gap-3 ml-4 pl-4 border-l border-white/10">
@@ -180,6 +181,7 @@
                     {% elif session.get('user_role') == 'super_admin' or session.get('user_role') == 'receptionist' %}
                         <a href="{{ url_for('superadmin.dashboard') }}" class="text-amber-400 hover:text-white transition-colors text-sm font-bold uppercase">{{ _('RBAC') }}</a>
                         <a href="/admin" class="text-white/70 hover:text-white transition-colors text-sm font-bold uppercase">{{ _('Admin') }}</a>
+                        <a href="/admin/beds" class="text-white/70 hover:text-white transition-colors text-sm font-bold uppercase">{{ _('Beds') }}</a>
                         <a href="/admin/invoices" class="text-white/70 hover:text-white transition-colors text-sm font-bold uppercase">{{ _('Invoices') }}</a>
                         <a href="{{ url_for('superadmin.manage_articles') }}" class="text-white/70 hover:text-white transition-colors text-sm font-bold uppercase">{{ _('Blog') }}</a>
                         <div class="flex items-center gap-3 ml-4 pl-4 border-l border-white/10">

@@ -216,3 +216,172 @@ def generate_invoice(appt_id):
     flash(f'Invoice generated successfully for {amount}', 'success')
     return redirect(url_for('admin.invoices'))
 
+
+@admin_bp.route('/admin/beds')
+@role_required(['receptionist', 'super_admin'])
+def beds_dashboard():
+    from models import Ward, Bed, Patient
+    wards = Ward.query.all()
+    beds = Bed.query.all()
+    
+    # Calculate stats
+    total_beds = len(beds)
+    occupied_beds = sum(1 for b in beds if b.status == 'occupied')
+    available_beds = sum(1 for b in beds if b.status == 'available')
+    maintenance_beds = sum(1 for b in beds if b.status == 'maintenance')
+    
+    stats = {
+        'total': total_beds,
+        'occupied': occupied_beds,
+        'available': available_beds,
+        'maintenance': maintenance_beds
+    }
+    
+    # Get patients who are NOT currently admitted
+    admitted_patient_ids = [b.patient_id for b in beds if b.patient_id is not None]
+    if admitted_patient_ids:
+        available_patients = Patient.query.filter(Patient.id.notin_(admitted_patient_ids)).all()
+    else:
+        available_patients = Patient.query.all()
+        
+    return render_template('admin/beds_dashboard.html', 
+                           wards=wards, 
+                           beds=beds, 
+                           stats=stats, 
+                           available_patients=available_patients)
+
+
+@admin_bp.route('/admin/beds/admit/<int:bed_id>', methods=['POST'])
+@role_required(['receptionist', 'super_admin'])
+def admit_patient(bed_id):
+    from models import Bed, Patient
+    from datetime import timedelta
+    
+    bed = Bed.query.get_or_404(bed_id)
+    if bed.status != 'available':
+        flash('Bed is not available for admission.', 'error')
+        return redirect(url_for('admin.beds_dashboard'))
+        
+    patient_id = request.form.get('patient_id', type=int)
+    duration_days = request.form.get('duration_days', default=3, type=int)
+    
+    patient = Patient.query.get_or_404(patient_id)
+    
+    try:
+        bed.patient_id = patient.id
+        bed.status = 'occupied'
+        bed.admitted_at = datetime.utcnow()
+        bed.expected_discharge = datetime.utcnow() + timedelta(days=duration_days)
+        
+        db.session.commit()
+        
+        # Emit WebSocket
+        socketio.emit('bed_update', {
+            'bed_id': bed.id,
+            'ward_id': bed.ward_id,
+            'status': 'occupied',
+            'bed_number': bed.bed_number,
+            'patient_name': patient.name
+        })
+        
+        audit_logger.log_action('Bed Admitted', f"Patient {patient.name} admitted to Bed {bed.bed_number}")
+        flash(f'Patient {patient.name} admitted successfully to Bed {bed.bed_number}!', 'success')
+    except Exception as e:
+        db.session.rollback()
+        flash(f'Error occurred during admission: {str(e)}', 'error')
+        print(f"Admit Error: {e}")
+        
+    return redirect(url_for('admin.beds_dashboard'))
+
+
+@admin_bp.route('/admin/beds/discharge/<int:bed_id>', methods=['POST'])
+@role_required(['receptionist', 'super_admin'])
+def discharge_patient(bed_id):
+    from models import Bed, Invoice, Appointment
+    
+    bed = Bed.query.get_or_404(bed_id)
+    if bed.status != 'occupied':
+        flash('Bed is not occupied.', 'error')
+        return redirect(url_for('admin.beds_dashboard'))
+        
+    try:
+        patient_name = bed.patient.name
+        patient_id = bed.patient_id
+        
+        # Calculate daily billing cost
+        days_admitted = max(1, (datetime.utcnow() - bed.admitted_at).days)
+        total_cost = days_admitted * bed.ward.cost_per_day
+        
+        # Find latest patient appointment to link invoice
+        appt = Appointment.query.filter_by(patient_id=patient_id).order_by(Appointment.booked_at.desc()).first()
+        appt_id = appt.id if appt else 1
+        
+        # Issue hospitalisation invoice
+        invoice = Invoice(
+            appointment_id=appt_id, 
+            patient_id=patient_id, 
+            amount=total_cost, 
+            description=f"Hospitalization: Bed {bed.bed_number} in {bed.ward.name} ({days_admitted} days at ${bed.ward.cost_per_day}/day)"
+        )
+        db.session.add(invoice)
+        
+        # Reset Bed status
+        bed.patient_id = None
+        bed.status = 'available'
+        bed.admitted_at = None
+        bed.expected_discharge = None
+        
+        db.session.commit()
+        
+        # Emit WebSocket
+        socketio.emit('bed_update', {
+            'bed_id': bed.id,
+            'ward_id': bed.ward_id,
+            'status': 'available',
+            'bed_number': bed.bed_number,
+            'patient_name': ''
+        })
+        
+        audit_logger.log_action('Bed Discharged', f"Patient {patient_name} discharged from Bed {bed.bed_number}. Invoice of ${total_cost} created.")
+        flash(f'Patient {patient_name} discharged successfully! Billing Invoice of ${total_cost:.2f} generated.', 'success')
+    except Exception as e:
+        db.session.rollback()
+        flash(f'Error occurred during discharge: {str(e)}', 'error')
+        print(f"Discharge Error: {e}")
+        
+    return redirect(url_for('admin.beds_dashboard'))
+
+
+@admin_bp.route('/admin/beds/toggle-maintenance/<int:bed_id>', methods=['POST'])
+@role_required(['receptionist', 'super_admin'])
+def toggle_maintenance(bed_id):
+    from models import Bed
+    
+    bed = Bed.query.get_or_404(bed_id)
+    if bed.status == 'occupied':
+        flash('Cannot toggle maintenance on an occupied bed.', 'error')
+        return redirect(url_for('admin.beds_dashboard'))
+        
+    try:
+        new_status = 'maintenance' if bed.status == 'available' else 'available'
+        bed.status = new_status
+        db.session.commit()
+        
+        # Emit WebSocket
+        socketio.emit('bed_update', {
+            'bed_id': bed.id,
+            'ward_id': bed.ward_id,
+            'status': new_status,
+            'bed_number': bed.bed_number,
+            'patient_name': ''
+        })
+        
+        audit_logger.log_action('Bed Maintenance Toggled', f"Bed {bed.bed_number} status set to {new_status}")
+        flash(f'Bed {bed.bed_number} is now in {new_status} status.', 'info')
+    except Exception as e:
+        db.session.rollback()
+        flash(f'Error occurred: {str(e)}', 'error')
+        print(f"Maintenance Toggle Error: {e}")
+        
+    return redirect(url_for('admin.beds_dashboard'))
+

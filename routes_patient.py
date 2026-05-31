@@ -744,3 +744,69 @@ def article_detail(article_id):
     ).order_by(Article.created_at.desc()).limit(3).all()
     return render_template('article_detail.html', article=article, related=related)
 
+
+@patient_bp.route('/ward-booking')
+@login_required
+def ward_booking():
+    from models import Ward, Bed
+    wards = Ward.query.all()
+    
+    # Check if patient is currently admitted
+    bed_admission = Bed.query.filter_by(patient_id=current_user.id).first()
+    days_admitted = 0
+    accumulated_cost = 0.0
+    if bed_admission and bed_admission.admitted_at:
+        days_admitted = max(1, (datetime.utcnow() - bed_admission.admitted_at).days)
+        accumulated_cost = days_admitted * bed_admission.ward.cost_per_day
+        
+    return render_template('ward_booking.html', 
+                           wards=wards, 
+                           bed_admission=bed_admission, 
+                           days_admitted=days_admitted, 
+                           accumulated_cost=accumulated_cost)
+
+
+@patient_bp.route('/ward-booking/request/<int:ward_id>', methods=['POST'])
+@login_required
+def request_bed(ward_id):
+    from models import Ward, Bed
+    
+    # Check if already admitted
+    existing = Bed.query.filter_by(patient_id=current_user.id).first()
+    if existing:
+        flash('You already have an active bed booking.', 'error')
+        return redirect(url_for('patient.ward_booking'))
+        
+    ward = Ward.query.get_or_404(ward_id)
+    available_bed = Bed.query.filter_by(ward_id=ward_id, status='available').first()
+    
+    if not available_bed:
+        flash('No available beds in this ward currently.', 'error')
+        return redirect(url_for('patient.ward_booking'))
+        
+    try:
+        available_bed.status = 'occupied'
+        available_bed.patient_id = current_user.id
+        available_bed.admitted_at = datetime.utcnow()
+        available_bed.expected_discharge = datetime.utcnow() + timedelta(days=3)
+        
+        db.session.commit()
+        
+        # Emit WebSocket event
+        socketio.emit('bed_update', {
+            'bed_id': available_bed.id,
+            'ward_id': ward_id,
+            'status': 'occupied',
+            'bed_number': available_bed.bed_number,
+            'patient_name': current_user.name
+        })
+        
+        audit_logger.log_action('Bed Booked', f"Patient {current_user.name} reserved Bed {available_bed.bed_number} in {ward.name}")
+        flash(f'Bed {available_bed.bed_number} in {ward.name} reserved successfully!', 'success')
+    except Exception as e:
+        db.session.rollback()
+        flash(f'Database error occurred while reserving: {str(e)}', 'error')
+        print(f"Bed Reserve Error: {e}")
+        
+    return redirect(url_for('patient.ward_booking'))
+

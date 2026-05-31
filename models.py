@@ -260,3 +260,27 @@ class Article(db.Model):
     created_at = db.Column(db.DateTime, default=datetime.utcnow)
 
     author = db.relationship('Staff', backref='articles')
+
+
+class Ward(db.Model):
+    __tablename__ = 'wards'
+    id = db.Column(db.Integer, primary_key=True)
+    name = db.Column(db.String(100), nullable=False, unique=True) # e.g. "Intensive Care Unit (ICU)"
+    type = db.Column(db.String(20), nullable=False) # icu / general / pediatric / deluxe
+    total_beds = db.Column(db.Integer, nullable=False, default=8)
+    cost_per_day = db.Column(db.Float, nullable=False, default=500.0)
+
+    beds = db.relationship('Bed', backref='ward', lazy=True, cascade="all, delete-orphan")
+
+
+class Bed(db.Model):
+    __tablename__ = 'beds'
+    id = db.Column(db.Integer, primary_key=True)
+    ward_id = db.Column(db.Integer, db.ForeignKey('wards.id'), nullable=False)
+    bed_number = db.Column(db.String(20), nullable=False) # e.g. "ICU-01", "DELUXE-05"
+    status = db.Column(db.String(20), nullable=False, default='available') # available / occupied / maintenance
+    patient_id = db.Column(db.Integer, db.ForeignKey('patients.id'), nullable=True, unique=True)
+    admitted_at = db.Column(db.DateTime, nullable=True)
+    expected_discharge = db.Column(db.DateTime, nullable=True)
+
+    patient = db.relationship('Patient', backref=db.backref('bed', uselist=False))

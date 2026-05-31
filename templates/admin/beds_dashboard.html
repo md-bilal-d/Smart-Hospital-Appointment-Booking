@@ -1,0 +1,250 @@
+{% extends 'base.html' %}
+{% block title %}{{ _('Ward & Bed Management Control Panel') }}{% endblock %}
+{% block content %}
+<div class="max-w-[1600px] mx-auto px-4 py-12 relative" id="admin-beds-app">
+    <!-- Ambient Blur Background Blobs -->
+    <div class="absolute top-10 left-10 w-96 h-96 bg-indigo-600/10 rounded-full blur-3xl pointer-events-none"></div>
+    <div class="absolute bottom-10 right-10 w-[500px] h-[500px] bg-purple-600/10 rounded-full blur-3xl pointer-events-none"></div>
+
+    <!-- Header Control Panel -->
+    <div class="flex flex-col md:flex-row md:items-center justify-between gap-6 mb-12 relative z-10">
+        <div>
+            <h1 class="text-4xl font-black tracking-tight text-white mb-2 uppercase">{{ _('Ward Bed Control Panel') }}</h1>
+            <p class="text-white/60 font-medium">{{ _('Manage hospital admissions, discharges, and ward maintenance status.') }}</p>
+        </div>
+        <div class="flex items-center gap-4">
+            <div class="glass px-6 py-3 flex items-center gap-3">
+                <span class="relative flex h-3 w-3">
+                    <span class="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75"></span>
+                    <span class="relative inline-flex rounded-full h-3 w-3 bg-emerald-500"></span>
+                </span>
+                <span class="text-sm font-bold tracking-widest text-emerald-400 uppercase">{{ _('Live Occupancy Feed') }}</span>
+            </div>
+        </div>
+    </div>
+
+    <!-- Live Occupancy Metrics Row -->
+    <div class="grid grid-cols-1 sm:grid-cols-4 gap-6 mb-12 relative z-10">
+        <div class="glass p-6 border-white/5">
+            <p class="text-xs font-black text-white/40 uppercase tracking-widest mb-1">{{ _('Total Beds') }}</p>
+            <p class="text-4xl font-black text-white" id="stat-total">{{ stats.total }}</p>
+        </div>
+        <div class="glass p-6 border-l-4 border-red-500/50 bg-red-950/5">
+            <p class="text-xs font-black text-red-400/60 uppercase tracking-widest mb-1">{{ _('Occupied / Admitted') }}</p>
+            <p class="text-4xl font-black text-red-400" id="stat-occupied">{{ stats.occupied }}</p>
+        </div>
+        <div class="glass p-6 border-l-4 border-emerald-500/50 bg-emerald-950/5">
+            <p class="text-xs font-black text-emerald-400/60 uppercase tracking-widest mb-1">{{ _('Available Beds') }}</p>
+            <p class="text-4xl font-black text-emerald-400" id="stat-available">{{ stats.available }}</p>
+        </div>
+        <div class="glass p-6 border-l-4 border-amber-500/50 bg-amber-950/5">
+            <p class="text-xs font-black text-amber-400/60 uppercase tracking-widest mb-1">{{ _('Under Maintenance') }}</p>
+            <p class="text-4xl font-black text-amber-400" id="stat-maintenance">{{ stats.maintenance }}</p>
+        </div>
+    </div>
+
+    <!-- Filter Ward Category Tabs -->
+    <div class="flex flex-wrap gap-3 mb-10 relative z-10">
+        <button onclick="filterWard('all')" class="ward-tab-btn px-6 py-3 rounded-xl text-xs font-black uppercase tracking-widest transition-all bg-indigo-500/25 border border-indigo-500/40 text-white shadow-[0_0_15px_rgba(99,102,241,0.2)]">
+            {{ _('All Wards') }}
+        </button>
+        {% for ward in wards %}
+            <button onclick="filterWard({{ ward.id }})" class="ward-tab-btn px-6 py-3 rounded-xl text-xs font-black uppercase tracking-widest transition-all bg-white/5 border border-white/10 text-white/50 hover:bg-white/10 hover:text-white">
+                {{ ward.name }}
+            </button>
+        {% endfor %}
+    </div>
+
+    <!-- Ward & Bed Layout Grid -->
+    <div class="space-y-12 relative z-10">
+        {% for ward in wards %}
+        <div class="ward-section-card glass p-8 border-white/5" id="ward-section-{{ ward.id }}">
+            <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-b border-white/5 pb-6 mb-8">
+                <div>
+                    <h3 class="text-2xl font-black text-white mb-1">{{ ward.name }}</h3>
+                    <p class="text-[10px] font-black text-indigo-400 uppercase tracking-widest">
+                        Type: {{ ward.type }} · Rate: ${{ "%.2f"|format(ward.cost_per_day) }}/day
+                    </p>
+                </div>
+                
+                {% set occupied = ward.beds|selectattr('status', 'equalto', 'occupied')|list|length %}
+                {% set occupancy_pct = (occupied / ward.total_beds * 100)|round|int if ward.total_beds > 0 else 0 %}
+                
+                <div class="flex items-center gap-4 min-w-[200px]">
+                    <div class="flex-1 space-y-1">
+                        <div class="flex justify-between text-[9px] font-black text-white/40 uppercase tracking-widest">
+                            <span>Occupancy</span>
+                            <span id="ward-pct-val-{{ ward.id }}">{{ occupancy_pct }}%</span>
+                        </div>
+                        <div class="w-full h-1.5 bg-white/5 rounded-full overflow-hidden">
+                            <div class="h-full bg-gradient-to-r from-indigo-500 to-purple-500 rounded-full" id="ward-pct-bar-{{ ward.id }}" style="width: {{ occupancy_pct }}%;"></div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Individual Bed Layout -->
+            <div class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-6">
+                {% for bed in ward.beds %}
+                <div class="bed-card glass p-6 border-2 transition-all flex flex-col justify-between" 
+                     id="bed-card-{{ bed.id }}" 
+                     data-bed-number="{{ bed.bed_number }}"
+                     style="min-height: 200px; 
+                            {% if bed.status == 'available' %}
+                                border-color: rgba(16, 185, 129, 0.2); background: rgba(16, 185, 129, 0.02);
+                            {% elif bed.status == 'occupied' %}
+                                border-color: rgba(239, 68, 68, 0.2); background: rgba(239, 68, 68, 0.02);
+                            {% else %}
+                                border-color: rgba(245, 158, 11, 0.2); background: rgba(245, 158, 11, 0.02);
+                            {% endif %}">
+                    
+                    <div class="space-y-4">
+                        <div class="flex justify-between items-start">
+                            <span class="w-10 h-10 rounded-xl bg-white/5 border border-white/10 flex items-center justify-center text-white text-sm font-black shadow-md">
+                                <i class="fas fa-bed"></i>
+                            </span>
+                            <span class="px-2 py-0.5 rounded text-[8px] font-black uppercase tracking-wider text-white bg-white/10" id="bed-status-badge-{{ bed.id }}">
+                                {{ bed.status }}
+                            </span>
+                        </div>
+
+                        <div>
+                            <h4 class="text-base font-black text-white" id="bed-num-label-{{ bed.id }}">{{ bed.bed_number }}</h4>
+                            <div class="mt-2 text-[10px] font-bold text-white/60" id="bed-patient-info-{{ bed.id }}">
+                                {% if bed.status == 'occupied' %}
+                                    <p class="font-black text-white truncate"><i class="far fa-user mr-1 text-red-400"></i> {{ bed.patient.name }}</p>
+                                    <p class="text-[9px] text-white/40 uppercase mt-0.5">{{ _('In') }}: {{ bed.admitted_at.strftime('%d %b') }}</p>
+                                {% elif bed.status == 'maintenance' %}
+                                    <p class="text-amber-400/80 italic"><i class="fas fa-tools mr-1 animate-pulse"></i> {{ _('Out of Order') }}</p>
+                                {% else %}
+                                    <p class="text-emerald-400/80 font-bold"><i class="far fa-check-circle mr-1"></i> {{ _('Ready for Admit') }}</p>
+                                {% endif %}
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Action Controls -->
+                    <div class="mt-6 flex gap-2" id="bed-actions-{{ bed.id }}">
+                        {% if bed.status == 'available' %}
+                            <button onclick="openAdmitModal({{ bed.id }}, '{{ bed.bed_number }}')" class="flex-1 py-2.5 bg-emerald-500 hover:bg-emerald-600 text-white text-[9px] font-black uppercase tracking-widest rounded-lg shadow-lg shadow-emerald-500/10 transition-all outline-none select-none">
+                                {{ _('Admit') }}
+                            </button>
+                            <form method="POST" action="{{ url_for('admin.toggle_maintenance', bed_id=bed.id) }}" class="shrink-0">
+                                <button type="submit" class="w-9 h-9 glass hover:bg-white/10 text-white/50 hover:text-white rounded-lg flex items-center justify-center transition-colors outline-none" title="{{ _('Toggle Maintenance') }}">
+                                    <i class="fas fa-cog"></i>
+                                </button>
+                            </form>
+                        {% elif bed.status == 'occupied' %}
+                            <form method="POST" action="{{ url_for('admin.discharge_patient', bed_id=bed.id) }}" class="flex-1">
+                                <button type="submit" class="w-full py-2.5 bg-red-500/10 hover:bg-red-500/20 text-red-400 text-[9px] font-black uppercase tracking-widest rounded-lg border border-red-500/25 transition-all outline-none select-none">
+                                    {{ _('Discharge') }}
+                                </button>
+                            </form>
+                        {% else %}
+                            <form method="POST" action="{{ url_for('admin.toggle_maintenance', bed_id=bed.id) }}" class="flex-1">
+                                <button type="submit" class="w-full py-2.5 bg-amber-500/10 hover:bg-amber-500/20 text-amber-400 text-[9px] font-black uppercase tracking-widest rounded-lg border border-amber-500/25 transition-all outline-none select-none">
+                                    {{ _('End Service') }}
+                                </button>
+                            </form>
+                        {% endif %}
+                    </div>
+                </div>
+                {% endfor %}
+            </div>
+        </div>
+        {% endfor %}
+    </div>
+</div>
+
+<!-- ADMISSION MODAL -->
+<div id="admitModal" class="hidden fixed inset-0 z-[100] flex items-center justify-center p-4 bg-black/80 backdrop-blur-sm animate-fadeIn">
+    <div class="glass w-full max-w-md p-8 animate-card-entrance border-white/10 relative">
+        <button onclick="closeAdmitModal()" class="absolute top-6 right-6 text-white/40 hover:text-white transition-colors text-2xl outline-none">&times;</button>
+        
+        <div class="mb-8">
+            <h2 class="text-2xl font-black text-white uppercase">{{ _('Patient Admission') }}</h2>
+            <p class="text-indigo-400 font-black text-xs uppercase tracking-widest mt-1">{{ _('Allocating Bed') }}: <span id="admitBedNum" class="text-white">--</span></p>
+        </div>
+
+        <form id="admitForm" action="" method="POST" class="space-y-6">
+            <div>
+                <label class="block text-[10px] font-black text-white/40 uppercase tracking-widest mb-3">{{ _('Select Patient') }}</label>
+                <div class="relative">
+                    <select name="patient_id" required class="w-full glass-input px-5 py-4 focus:ring-0 outline-none appearance-none cursor-pointer font-bold text-white bg-black/60 scrollbar-thin">
+                        <option value="" disabled selected>{{ _('-- Choose Active Patient --') }}</option>
+                        {% for pat in available_patients %}
+                            <option value="{{ pat.id }}">{{ pat.name }} ({{ pat.phone }})</option>
+                        {% endfor %}
+                    </select>
+                </div>
+                {% if not available_patients %}
+                    <p class="text-[10px] text-red-400/80 font-bold uppercase tracking-wider mt-2"><i class="fas fa-info-circle mr-1"></i> {{ _('All patients are currently admitted.') }}</p>
+                {% endif %}
+            </div>
+
+            <div>
+                <label class="block text-[10px] font-black text-white/40 uppercase tracking-widest mb-3">{{ _('Admission Duration (Days)') }}</label>
+                <input type="number" name="duration_days" min="1" max="60" value="3" required class="w-full glass-input px-5 py-4 text-white placeholder-white/20">
+            </div>
+
+            <div class="flex gap-4 pt-4">
+                <button type="button" onclick="closeAdmitModal()" class="flex-1 px-6 py-3.5 glass hover:bg-white/10 text-white font-black uppercase tracking-widest text-[10px] transition-colors outline-none">{{ _('Cancel') }}</button>
+                <button type="submit" {% if not available_patients %}disabled class="flex-1 px-6 py-3.5 btn-gradient opacity-35 cursor-not-allowed text-white font-black uppercase tracking-widest text-[10px] outline-none"{% else %}class="flex-1 px-6 py-3.5 btn-gradient text-white font-black uppercase tracking-widest text-[10px] transition-transform hover:scale-[1.02] outline-none"{% endif %}>
+                    {{ _('Admit Patient') }}
+                </button>
+            </div>
+        </form>
+    </div>
+</div>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/socket.io/4.0.1/socket.io.js"></script>
+<script>
+    function filterWard(wardId) {
+        // Toggle Active Tab Classes
+        const tabs = document.querySelectorAll(".ward-tab-btn");
+        const eventBtn = event ? event.target : null;
+        
+        if (eventBtn) {
+            tabs.forEach(t => {
+                t.className = "ward-tab-btn px-6 py-3 rounded-xl text-xs font-black uppercase tracking-widest transition-all bg-white/5 border border-white/10 text-white/50 hover:bg-white/10 hover:text-white";
+            });
+            eventBtn.className = "ward-tab-btn px-6 py-3 rounded-xl text-xs font-black uppercase tracking-widest transition-all bg-indigo-500/25 border border-indigo-500/40 text-white shadow-[0_0_15px_rgba(99,102,241,0.2)]";
+        }
+        
+        // Show/Hide sections
+        const cards = document.querySelectorAll(".ward-section-card");
+        cards.forEach(c => {
+            if (wardId === 'all' || c.id === 'ward-section-' + wardId) {
+                c.classList.remove("hidden");
+            } else {
+                c.classList.add("hidden");
+            }
+        });
+    }
+
+    function openAdmitModal(bedId, bedNum) {
+        document.getElementById("admitForm").action = "/admin/beds/admit/" + bedId;
+        document.getElementById("admitBedNum").textContent = bedNum;
+        document.getElementById("admitModal").classList.remove("hidden");
+    }
+
+    function closeAdmitModal() {
+        document.getElementById("admitModal").classList.add("hidden");
+    }
+
+    // Socket real-time updates for bed layout state synchronization
+    const socket = io();
+    socket.on('bed_update', (data) => {
+        console.log("WebSocket Bed update received:", data);
+        
+        // Dynamic reloading of dashboard counts and visual styles is highly effective. 
+        // For simplicity and 100% correct data mapping, let's refresh the current admin dashboard window 
+        // to cleanly compute bed statistics totals, dropdown exclusions and progress bars inside Flask.
+        // We will delay it slightly (500ms) to let socket logs clear, providing frictionless real-time updates.
+        setTimeout(() => {
+            window.location.reload();
+        }, 500);
+    });
+</script>
+
+{% endblock %}

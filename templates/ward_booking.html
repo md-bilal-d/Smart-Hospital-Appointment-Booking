@@ -1,0 +1,172 @@
+{% extends 'base.html' %}
+{% block title %}{{ _('Hospital Bed Allocation & Ward Bookings') }}{% endblock %}
+{% block content %}
+<div class="max-w-6xl mx-auto px-4 py-12 relative">
+    <!-- Ambient Blur Background Blobs -->
+    <div class="absolute top-10 left-10 w-72 h-72 bg-indigo-600/10 rounded-full blur-3xl pointer-events-none"></div>
+    <div class="absolute bottom-10 right-10 w-96 h-96 bg-purple-600/10 rounded-full blur-3xl pointer-events-none"></div>
+
+    <div class="text-center mb-12">
+        <span class="px-4 py-1.5 bg-indigo-500/10 text-indigo-300 border border-indigo-500/20 rounded-full text-xs font-bold tracking-widest uppercase">
+            🏨 {{ _('Inpatient Accommodations') }}
+        </span>
+        <h1 class="text-4xl sm:text-5xl font-black text-white mt-4 tracking-tighter uppercase">
+            {{ _('MediSlot Bed Booking Hub') }}
+        </h1>
+        <p class="text-white/60 mt-3 text-base sm:text-lg max-w-2xl mx-auto">
+            {{ _('View real-time room occupancy, check active admission details, or book premium deluxe private suites instantly.') }}
+        </p>
+    </div>
+
+    <!-- ACTIVE ADMISSION STATUS (If patient is admitted) -->
+    {% if bed_admission %}
+    <div class="mb-16 glass border-l-8 border-indigo-500 p-8 md:p-10 relative overflow-hidden group max-w-4xl mx-auto shadow-2xl">
+        <div class="absolute right-0 top-0 bottom-0 w-32 bg-indigo-500/5 -skew-x-12 group-hover:scale-110 transition-transform duration-500"></div>
+        <div class="absolute -right-16 -top-16 w-36 h-36 bg-indigo-500/10 rounded-full blur-2xl"></div>
+
+        <div class="flex flex-col md:flex-row justify-between items-start md:items-center gap-8 relative z-10">
+            <div class="space-y-4">
+                <div class="flex items-center gap-3">
+                    <span class="px-3 py-1 bg-emerald-500/20 text-emerald-400 border border-emerald-500/30 rounded-full text-[10px] font-black uppercase tracking-widest animate-pulse">
+                        ● {{ _('Active Hospitalization') }}
+                    </span>
+                    <span class="text-white/40 font-bold text-xs uppercase tracking-widest">ID: #{{ bed_admission.id }}</span>
+                </div>
+                <div>
+                    <h3 class="text-3xl font-black text-white mb-1">{{ bed_admission.ward.name }}</h3>
+                    <p class="text-indigo-400 font-black text-sm uppercase tracking-widest flex items-center gap-2">
+                        <i class="fas fa-bed"></i> {{ _('Bed Allocation') }}: <span class="text-white bg-indigo-500/30 px-3 py-0.5 rounded-lg border border-indigo-500/20 font-bold text-xs ml-1">{{ bed_admission.bed_number }}</span>
+                    </p>
+                </div>
+                
+                <div class="grid grid-cols-2 md:grid-cols-3 gap-6 pt-4 border-t border-white/5">
+                    <div>
+                        <span class="text-[9px] font-black text-white/40 uppercase tracking-widest block">{{ _('Admitted On') }}</span>
+                        <span class="text-white text-sm font-bold">{{ bed_admission.admitted_at.strftime('%d %b %Y, %I:%M %p') }}</span>
+                    </div>
+                    <div>
+                        <span class="text-[9px] font-black text-white/40 uppercase tracking-widest block">{{ _('Exp. Discharge') }}</span>
+                        <span class="text-white text-sm font-bold">{{ bed_admission.expected_discharge.strftime('%d %b %Y') if bed_admission.expected_discharge else '--' }}</span>
+                    </div>
+                    <div>
+                        <span class="text-[9px] font-black text-white/40 uppercase tracking-widest block">{{ _('Hospitalization Duration') }}</span>
+                        <span class="text-indigo-300 text-sm font-black">{{ days_admitted }} {{ _('Days') }}</span>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Financial Accumulation Card -->
+            <div class="glass p-6 text-center border-indigo-500/20 bg-indigo-950/20 w-full md:w-56 shrink-0 relative overflow-hidden">
+                <span class="text-[9px] font-black text-indigo-400 uppercase tracking-widest block mb-2">{{ _('Billing Cumulative') }}</span>
+                <span class="text-4xl font-black text-white drop-shadow-[0_0_15px_rgba(255,255,255,0.2)]">${{ "%.2f"|format(accumulated_cost) }}</span>
+                <span class="text-[10px] text-white/40 block mt-2 font-bold uppercase tracking-wider">
+                    ${{ "%.2f"|format(bed_admission.ward.cost_per_day) }} / {{ _('day rate') }}
+                </span>
+                
+                <div class="mt-4 pt-3 border-t border-white/5 flex items-center justify-center gap-1.5 text-[9px] font-black text-emerald-400 uppercase tracking-widest">
+                    <span class="w-1.5 h-1.5 bg-emerald-500 rounded-full animate-ping"></span> {{ _('Auto-Generating Invoice') }}
+                </div>
+            </div>
+        </div>
+    </div>
+    {% endif %}
+
+    <!-- ROOM TYPES GRID -->
+    <div>
+        <h2 class="text-2xl font-black text-white mb-8 flex items-center gap-3 uppercase tracking-tight">
+            <span class="p-2.5 bg-indigo-500/20 rounded-xl text-lg">🏨</span>
+            {{ _('Room Classes & Availability') }}
+        </h2>
+
+        <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+            {% set icons = {
+                'icu': '🫁', 'general': '🌡️', 'pediatric': '🍼', 'deluxe': '💎'
+            } %}
+            {% set colors = {
+                'icu': 'border-red-500/30 hover:border-red-500/50',
+                'general': 'border-emerald-500/30 hover:border-emerald-500/50',
+                'pediatric': 'border-amber-500/30 hover:border-amber-500/50',
+                'deluxe': 'border-indigo-500/30 hover:border-indigo-500/50'
+            } %}
+            {% set text_colors = {
+                'icu': 'text-red-400 bg-red-500/10 border-red-500/20',
+                'general': 'text-emerald-400 bg-emerald-500/10 border-emerald-500/20',
+                'pediatric': 'text-amber-400 bg-amber-500/10 border-amber-500/20',
+                'deluxe': 'text-indigo-400 bg-indigo-500/10 border-indigo-500/20'
+            } %}
+            
+            {% for ward in wards %}
+                {% set occupied = ward.beds|selectattr('status', 'equalto', 'occupied')|list|length %}
+                {% set available = ward.beds|selectattr('status', 'equalto', 'available')|list|length %}
+                {% set maintenance = ward.beds|selectattr('status', 'equalto', 'maintenance')|list|length %}
+                {% set occupancy_pct = (occupied / ward.total_beds * 100)|round|int if ward.total_beds > 0 else 0 %}
+                
+                <div class="glass p-6 relative overflow-hidden group hover:scale-[1.02] transition-all flex flex-col justify-between {{ colors.get(ward.type, 'border-white/10') }}" style="min-height: 380px;">
+                    <div>
+                        <!-- Header Icon & Badge -->
+                        <div class="flex justify-between items-start mb-6">
+                            <span class="text-4xl group-hover:scale-125 transition-transform duration-300">{{ icons.get(ward.type, '⚕️') }}</span>
+                            <span class="px-2.5 py-1 rounded-full text-[9px] font-black uppercase tracking-widest {{ text_colors.get(ward.type, 'text-white/60 bg-white/5') }}">
+                                {{ ward.type }}
+                            </span>
+                        </div>
+
+                        <h3 class="text-lg font-black text-white leading-tight mb-2 group-hover:text-indigo-300 transition-colors">{{ ward.name }}</h3>
+                        <p class="text-white/40 text-[11px] font-semibold uppercase tracking-widest mb-6">
+                            ${{ "%.2f"|format(ward.cost_per_day) }} / {{ _('Day rate') }}
+                        </p>
+                        
+                        <div class="space-y-4">
+                            <!-- Progress occupancy meter -->
+                            <div class="space-y-1.5">
+                                <div class="flex justify-between text-[9px] font-black text-white/40 uppercase tracking-wider">
+                                    <span>{{ _('Occupancy') }}</span>
+                                    <span>{{ occupancy_pct }}%</span>
+                                </div>
+                                <div class="w-full h-2 bg-white/5 rounded-full overflow-hidden border border-white/5">
+                                    <div class="h-full bg-gradient-to-r from-indigo-500 to-purple-500 transition-all duration-500" style="width: {{ occupancy_pct }}%;"></div>
+                                </div>
+                            </div>
+                            
+                            <!-- Bed statistics details -->
+                            <div class="grid grid-cols-3 gap-2 text-center pt-2 border-t border-white/5">
+                                <div class="bg-emerald-500/5 p-2 rounded-lg border border-emerald-500/10">
+                                    <span class="text-[9px] font-black text-emerald-400/60 uppercase block">{{ _('Free') }}</span>
+                                    <span class="text-xs font-black text-white">{{ available }}</span>
+                                </div>
+                                <div class="bg-red-500/5 p-2 rounded-lg border border-red-500/10">
+                                    <span class="text-[9px] font-black text-red-400/60 uppercase block">{{ _('Full') }}</span>
+                                    <span class="text-xs font-black text-white">{{ occupied }}</span>
+                                </div>
+                                <div class="bg-amber-500/5 p-2 rounded-lg border border-amber-500/10">
+                                    <span class="text-[9px] font-black text-amber-400/60 uppercase block">{{ _('Maint') }}</span>
+                                    <span class="text-xs font-black text-white">{{ maintenance }}</span>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Book Trigger Form -->
+                    <div class="mt-8">
+                        {% if bed_admission %}
+                            <button disabled class="w-full py-3.5 glass bg-white/5 border border-white/5 text-white/30 text-[10px] font-black uppercase tracking-widest rounded-xl cursor-not-allowed select-none outline-none">
+                                {{ _('Already Admitted') }}
+                            </button>
+                        {% elif available == 0 %}
+                            <button disabled class="w-full py-3.5 bg-red-500/10 border border-red-500/20 text-red-400/60 text-[10px] font-black uppercase tracking-widest rounded-xl cursor-not-allowed select-none outline-none">
+                                {{ _('Ward is Full') }}
+                            </button>
+                        {% else %}
+                            <form method="POST" action="{{ url_for('patient.request_bed', ward_id=ward.id) }}">
+                                <button type="submit" class="w-full py-3.5 btn-gradient text-white text-[10px] font-black uppercase tracking-widest rounded-xl shadow-lg transition-transform hover:scale-[1.02] outline-none select-none">
+                                    {{ _('Request Reservation') }}
+                                </button>
+                            </form>
+                        {% endif %}
+                    </div>
+                </div>
+            {% endfor %}
+        </div>
+    </div>
+</div>
+{% endblock %}
