@@ -810,3 +810,12 @@ def request_bed(ward_id):
         
     return redirect(url_for('patient.ward_booking'))
 
+
+@patient_bp.route('/hospital-map')
+@login_required
+def hospital_map():
+    departments = Department.query.all()
+    doctors = Doctor.query.filter_by(is_available=True).all()
+    return render_template('hospital_map.html', departments=departments, doctors=doctors)
+
+

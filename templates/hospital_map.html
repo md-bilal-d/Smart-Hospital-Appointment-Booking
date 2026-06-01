@@ -1,0 +1,1041 @@
+{% extends "base.html" %}
+
+{% block title %}{{ _('Interactive Wayfinding Map') }}{% endblock %}
+
+{% block content %}
+<style>
+    /* Premium Glassmorphic Layouts */
+    .map-container {
+        position: relative;
+        background: rgba(255, 255, 255, 0.05);
+        backdrop-filter: blur(20px);
+        -webkit-backdrop-filter: blur(20px);
+        border: 1px solid rgba(255, 255, 255, 0.1);
+        border-radius: 24px;
+        overflow: hidden;
+    }
+    
+    .sidebar-panel {
+        background: rgba(255, 255, 255, 0.04);
+        backdrop-filter: blur(15px);
+        -webkit-backdrop-filter: blur(15px);
+        border: 1px solid rgba(255, 255, 255, 0.1);
+        border-radius: 20px;
+    }
+
+    /* SVG Map Stylings */
+    .map-svg {
+        width: 100%;
+        height: auto;
+        max-height: 520px;
+    }
+
+    .map-grid-line {
+        stroke: rgba(255, 255, 255, 0.05);
+        stroke-width: 1;
+        stroke-dasharray: 5, 5;
+    }
+
+    .map-corridor {
+        stroke: rgba(255, 255, 255, 0.08);
+        stroke-width: 24;
+        stroke-linecap: round;
+        stroke-linejoin: round;
+        fill: none;
+        transition: stroke 0.3s ease;
+    }
+
+    .room-group {
+        cursor: pointer;
+        transition: all 0.3s ease;
+    }
+
+    .room-rect {
+        fill: rgba(255, 255, 255, 0.03);
+        stroke: rgba(255, 255, 255, 0.15);
+        stroke-width: 1.5;
+        rx: 12px;
+        transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    }
+
+    .room-group:hover .room-rect {
+        fill: rgba(99, 102, 241, 0.08);
+        stroke: rgba(129, 140, 248, 0.6);
+        filter: drop-shadow(0 0 12px rgba(99, 102, 241, 0.35));
+    }
+
+    .room-group.active-room .room-rect {
+        fill: rgba(99, 102, 241, 0.15);
+        stroke: rgba(129, 140, 248, 0.9);
+        stroke-width: 2.5;
+        filter: drop-shadow(0 0 16px rgba(99, 102, 241, 0.5));
+    }
+
+    .room-group.search-match .room-rect {
+        stroke: #fbbf24 !important;
+        stroke-width: 2.5 !important;
+        fill: rgba(251, 191, 36, 0.1) !important;
+        filter: drop-shadow(0 0 16px rgba(251, 191, 36, 0.5)) !important;
+    }
+
+    .room-label {
+        fill: rgba(255, 255, 255, 0.85);
+        font-size: 11px;
+        font-weight: 700;
+        text-anchor: middle;
+        letter-spacing: 0.5px;
+        pointer-events: none;
+        transition: fill 0.3s ease;
+    }
+
+    .room-group:hover .room-label {
+        fill: #ffffff;
+    }
+
+    .room-icon {
+        font-family: "Font Awesome 6 Free";
+        font-weight: 900;
+        fill: rgba(129, 140, 248, 0.8);
+        font-size: 20px;
+        text-anchor: middle;
+        pointer-events: none;
+        transition: all 0.3s ease;
+    }
+
+    .room-group:hover .room-icon {
+        fill: #a5b4fc;
+        transform: scale(1.1);
+    }
+
+    .elevator-node {
+        fill: rgba(255, 255, 255, 0.05);
+        stroke: rgba(255, 255, 255, 0.2);
+        stroke-width: 1.5;
+        rx: 8px;
+    }
+
+    /* Route Path Animation */
+    .route-path {
+        fill: none;
+        stroke: #6366f1;
+        stroke-width: 5;
+        stroke-linecap: round;
+        stroke-linejoin: round;
+        stroke-dasharray: 10, 8;
+        animation: routeFlow 25s linear infinite;
+        filter: drop-shadow(0 0 8px rgba(99, 102, 241, 0.8));
+    }
+
+    @keyframes routeFlow {
+        to {
+            stroke-dashoffset: -1000;
+        }
+    }
+
+    /* Pulse Markers */
+    .pulse-marker-start {
+        fill: #10b981;
+        filter: drop-shadow(0 0 6px rgba(16, 185, 129, 0.8));
+        animation: pulseStart 2s infinite;
+    }
+
+    .pulse-marker-end {
+        fill: #ef4444;
+        filter: drop-shadow(0 0 6px rgba(239, 68, 68, 0.8));
+        animation: pulseEnd 2s infinite;
+    }
+
+    @keyframes pulseStart {
+        0% { r: 5px; opacity: 1; }
+        50% { r: 9px; opacity: 0.7; }
+        100% { r: 5px; opacity: 1; }
+    }
+
+    @keyframes pulseEnd {
+        0% { r: 6px; opacity: 1; filter: drop-shadow(0 0 4px rgba(239, 68, 68, 0.8)); }
+        50% { r: 10px; opacity: 0.6; filter: drop-shadow(0 0 12px rgba(239, 68, 68, 1)); }
+        100% { r: 6px; opacity: 1; filter: drop-shadow(0 0 4px rgba(239, 68, 68, 0.8)); }
+    }
+
+    /* Light Theme Integration */
+    body.light-theme .map-container,
+    body.light-theme .sidebar-panel {
+        background: rgba(0, 0, 0, 0.02);
+        border-color: rgba(0, 0, 0, 0.08);
+        box-shadow: 0 10px 30px rgba(0, 0, 0, 0.05);
+    }
+
+    body.light-theme .map-corridor {
+        stroke: rgba(0, 0, 0, 0.05);
+    }
+
+    body.light-theme .room-rect {
+        fill: rgba(0, 0, 0, 0.02);
+        stroke: rgba(0, 0, 0, 0.1);
+    }
+
+    body.light-theme .room-label {
+        fill: #374151;
+    }
+
+    body.light-theme .room-icon {
+        fill: #4f46e5;
+    }
+
+    body.light-theme .room-group:hover .room-rect {
+        fill: rgba(79, 70, 229, 0.05);
+        stroke: rgba(79, 70, 229, 0.4);
+    }
+
+    body.light-theme .room-group.active-room .room-rect {
+        fill: rgba(79, 70, 229, 0.1);
+        stroke: rgba(79, 70, 229, 0.8);
+    }
+
+    body.light-theme .elevator-node {
+        fill: rgba(0, 0, 0, 0.03);
+        stroke: rgba(0, 0, 0, 0.15);
+    }
+
+    body.light-theme .map-grid-line {
+        stroke: rgba(0, 0, 0, 0.03);
+    }
+</style>
+
+<div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+    <!-- Header Summary -->
+    <div class="text-center mb-8 animate-fadeIn">
+        <h1 class="text-4xl font-extrabold tracking-tight bg-gradient-to-r from-white to-indigo-300 bg-clip-text text-transparent drop-shadow-md">
+            {{ _('Interactive Hospital Map') }}
+        </h1>
+        <p class="mt-2 text-sm text-white/60 max-w-2xl mx-auto font-medium">
+            {{ _('Navigate MediSlot medical complexes instantly. Select floors, search for specific clinics or doctors, and map walking directions in real time.') }}
+        </p>
+    </div>
+
+    <!-- Main Grid -->
+    <div class="grid grid-cols-1 lg:grid-cols-12 gap-8 items-start">
+        
+        <!-- Sidebar Navigation Dashboard -->
+        <div class="lg:col-span-4 space-y-6">
+            
+            <!-- Floor Selector Widget -->
+            <div class="sidebar-panel p-5 animate-fadeIn" style="animation-delay: 0.1s;">
+                <h3 class="text-xs font-bold text-indigo-300 uppercase tracking-widest mb-4"><i class="fas fa-layer-group mr-2"></i>{{ _('Floor Selector') }}</h3>
+                <div class="grid grid-cols-4 gap-2.5">
+                    {% for f in range(4) %}
+                    <button onclick="switchFloor({{ f }})" id="floor-btn-{{ f }}" class="floor-btn flex flex-col items-center justify-center py-3.5 px-2 rounded-xl transition-all duration-300 border border-white/5 bg-white/5 hover:bg-white/10">
+                        <span class="text-lg font-black tracking-tighter">F{{ f }}</span>
+                        <span class="text-[9px] uppercase tracking-wider font-bold mt-1 opacity-70">
+                            {% if f == 0 %}{{ _('Ground') }}{% elif f == 1 %}{{ _('First') }}{% elif f == 2 %}{{ _('Second') }}{% else %}{{ _('Third') }}{% endif %}
+                        </span>
+                    </button>
+                    {% endfor %}
+                </div>
+            </div>
+
+            <!-- Search and Filter Panel -->
+            <div class="sidebar-panel p-5 animate-fadeIn" style="animation-delay: 0.2s;">
+                <h3 class="text-xs font-bold text-indigo-300 uppercase tracking-widest mb-3.5"><i class="fas fa-search mr-2"></i>{{ _('Search Directory') }}</h3>
+                <div class="relative">
+                    <input type="text" id="map-search" oninput="handleSearch(this.value)" placeholder="{{ _('Search Clinic, Doctor, or Room...') }}" class="w-full glass-input px-4 py-3 text-sm focus:outline-none focus:ring-1 focus:ring-indigo-400">
+                    <span class="absolute right-4 top-3.5 text-white/30"><i class="fas fa-search"></i></span>
+                </div>
+                <div id="search-results-list" class="hidden mt-3 max-h-40 overflow-y-auto space-y-1.5 pr-1 text-xs">
+                    <!-- Dynamic search suggestions go here -->
+                </div>
+            </div>
+
+            <!-- Wayfinding Pathfinder Dashboard -->
+            <div class="sidebar-panel p-5 animate-fadeIn" style="animation-delay: 0.3s;">
+                <h3 class="text-xs font-bold text-indigo-300 uppercase tracking-widest mb-4"><i class="fas fa-route mr-2"></i>{{ _('Smart Wayfinder') }}</h3>
+                
+                <div class="space-y-3.5">
+                    <div>
+                        <label class="block text-[10px] font-bold text-white/50 uppercase tracking-wider mb-1.5">{{ _('Starting Location') }}</label>
+                        <select id="start-node" class="w-full text-xs font-semibold py-2 px-3 focus:outline-none" onchange="calculateRoute()">
+                            <option value="entrance">{{ _('Main Hospital Entrance') }}</option>
+                            <option value="elevator">{{ _('Elevator & Stairs Lobby') }}</option>
+                            <option value="room_tl">{{ _('Top-Left Wing') }}</option>
+                            <option value="room_tr">{{ _('Top-Right Wing') }}</option>
+                            <option value="room_ml">{{ _('Middle-Left Wing') }}</option>
+                            <option value="room_mr">{{ _('Middle-Right Wing') }}</option>
+                        </select>
+                    </div>
+
+                    <div>
+                        <label class="block text-[10px] font-bold text-white/50 uppercase tracking-wider mb-1.5">{{ _('Target Destination') }}</label>
+                        <select id="end-node" class="w-full text-xs font-semibold py-2 px-3 focus:outline-none" onchange="calculateRoute()">
+                            <option value="" disabled selected>{{ _('Select Destination...') }}</option>
+                            <optgroup label="{{ _('Floor 0 - Ground Floor') }}">
+                                <option value="0:room_tl">{{ _('Emergency Ward (ER)') }}</option>
+                                <option value="0:room_tr">{{ _('General Medicine Clinic') }}</option>
+                                <option value="0:room_ml">{{ _('Reception & Check-in') }}</option>
+                                <option value="0:room_mr">{{ _('Pharmacy & Refills') }}</option>
+                            </optgroup>
+                            <optgroup label="{{ _('Floor 1 - First Floor') }}">
+                                <option value="1:room_tl">{{ _('Cardiology Department') }}</option>
+                                <option value="1:room_tr">{{ _('ENT Clinic') }}</option>
+                                <option value="1:room_ml">{{ _('Diagnostics & Labs') }}</option>
+                                <option value="1:room_mr">{{ _('Cafeteria & Rest Lounge') }}</option>
+                            </optgroup>
+                            <optgroup label="{{ _('Floor 2 - Second Floor') }}">
+                                <option value="2:room_tl">{{ _('Pediatrics Department') }}</option>
+                                <option value="2:room_tr">{{ _('Gynecology Clinic') }}</option>
+                                <option value="2:room_ml">{{ _('Dermatology Department') }}</option>
+                                <option value="2:room_mr">{{ _('General & Deluxe Wards') }}</option>
+                            </optgroup>
+                            <optgroup label="{{ _('Floor 3 - Third Floor') }}">
+                                <option value="3:room_tl">{{ _('Neurology Department') }}</option>
+                                <option value="3:room_tr">{{ _('Orthopedics Clinic') }}</option>
+                                <option value="3:room_ml">{{ _('Intensive Care Unit (ICU)') }}</option>
+                                <option value="3:room_mr">{{ _('Operation Theatre (OT)') }}</option>
+                            </optgroup>
+                        </select>
+                    </div>
+                </div>
+
+                <!-- Navigation Summary Panel -->
+                <div id="route-directions-box" class="hidden mt-4 pt-4 border-t border-white/10 space-y-3">
+                    <div class="flex items-center justify-between text-xs font-bold">
+                        <span class="text-indigo-300"><i class="fas fa-walking mr-1.5"></i>{{ _('Navigation Script') }}</span>
+                        <span class="text-white/40 text-[10px] uppercase font-semibold" id="route-distance-text">-- m</span>
+                    </div>
+                    <div class="bg-black/25 rounded-xl p-3 border border-white/5 max-h-48 overflow-y-auto text-xs space-y-2" id="route-steps-container">
+                        <!-- Navigation scripts are loaded dynamically -->
+                    </div>
+                    <button onclick="clearRoute()" class="w-full py-2 bg-white/5 hover:bg-white/10 border border-white/10 text-[10px] font-bold tracking-widest text-white/60 hover:text-white rounded-lg transition-colors uppercase">
+                        {{ _('Clear Route') }}
+                    </button>
+                </div>
+            </div>
+        </div>
+
+        <!-- Main Map Display and Room Details -->
+        <div class="lg:col-span-8 space-y-6">
+            
+            <!-- Map Card -->
+            <div class="map-container p-6 animate-fadeIn" style="animation-delay: 0.1s;">
+                
+                <!-- Floating Info Header -->
+                <div class="flex justify-between items-center border-b border-white/10 pb-4 mb-6">
+                    <div>
+                        <span class="text-[10px] font-black text-indigo-300 uppercase tracking-widest" id="active-floor-label">FLOOR 0</span>
+                        <h2 class="text-xl font-bold tracking-tight text-white mt-0.5" id="active-floor-title">Ground Level Layout</h2>
+                    </div>
+                    <div class="flex items-center gap-1.5 px-3 py-1 bg-emerald-500/10 border border-emerald-500/20 text-emerald-400 rounded-full text-[10px] font-bold uppercase tracking-wider">
+                        <span class="w-1.5 h-1.5 bg-emerald-400 rounded-full animate-pulse"></span>
+                        {{ _('Live Compass') }}
+                    </div>
+                </div>
+
+                <!-- SVG Graphics Area -->
+                <div class="relative w-full overflow-hidden rounded-xl bg-black/20 p-2 flex items-center justify-center border border-white/5 min-h-[380px]">
+                    <svg viewBox="0 0 700 480" class="map-svg" id="hospital-svg">
+                        <defs>
+                            <!-- Linear glowing gradients -->
+                            <linearGradient id="hallway-grad" x1="0%" y1="0%" x2="100%" y2="100%">
+                                <stop offset="0%" stop-color="rgba(255,255,255,0.02)"/>
+                                <stop offset="100%" stop-color="rgba(255,255,255,0.06)"/>
+                            </linearGradient>
+                        </defs>
+
+                        <!-- Grid background structure -->
+                        <g class="map-grid">
+                            {% for grid in range(20, 480, 40) %}
+                                <line x1="0" y1="{{ grid }}" x2="700" y2="{{ grid }}" class="map-grid-line" />
+                            {% endfor %}
+                            {% for grid in range(20, 700, 40) %}
+                                <line x1="{{ grid }}" y1="0" x2="{{ grid }}" y2="480" class="map-grid-line" />
+                            {% endfor %}
+                        </g>
+
+                        <!-- Hospital Corridor Grid (Common for all floors) -->
+                        <g id="map-hallways">
+                            <line x1="350" y1="60" x2="350" y2="360" class="map-corridor" />
+                            <line x1="150" y1="100" x2="550" y2="100" class="map-corridor" />
+                            <line x1="150" y1="220" x2="550" y2="220" class="map-corridor" />
+                        </g>
+
+                        <!-- Dynamic Room elements rendered via JS -->
+                        <g id="map-rooms-layer"></g>
+
+                        <!-- Elevator & Stairs Graphics -->
+                        <g transform="translate(325, 20)" class="room-group" onclick="selectElevator()">
+                            <rect width="50" height="40" class="elevator-node" />
+                            <text x="25" y="25" class="room-icon" style="font-size: 16px;">📶</text>
+                            <text x="25" y="55" class="room-label" style="font-size: 9px; opacity: 0.6;">Elevator & Stairs</text>
+                        </g>
+
+                        <!-- Walkway Path Overlay Layer -->
+                        <path id="route-overlay" class="route-path" d="" style="display: none;" />
+                        <circle id="start-marker" class="pulse-marker-start" cx="0" cy="0" r="6" style="display: none;" />
+                        <circle id="end-marker" class="pulse-marker-end" cx="0" cy="0" r="7" style="display: none;" />
+                    </svg>
+                </div>
+            </div>
+
+            <!-- Dynamic Room Details Card -->
+            <div id="room-details-card" class="sidebar-panel p-6 animate-fadeIn transition-all duration-300 hidden">
+                <div class="flex items-start justify-between">
+                    <div class="flex items-center gap-4">
+                        <div class="w-12 h-12 rounded-xl flex items-center justify-center text-2xl" id="room-detail-icon-bg">
+                            <span id="room-detail-icon">🏥</span>
+                        </div>
+                        <div>
+                            <span class="text-[9px] font-black text-indigo-300 uppercase tracking-widest" id="room-detail-floor">FLOOR --</span>
+                            <h3 class="text-xl font-bold tracking-tight text-white mt-0.5" id="room-detail-name">Select a Room</h3>
+                        </div>
+                    </div>
+                    <button onclick="closeDetailsCard()" class="text-white/40 hover:text-white transition-colors">
+                        <i class="fas fa-times"></i>
+                    </button>
+                </div>
+                
+                <p class="mt-4 text-xs text-white/70 leading-relaxed font-semibold" id="room-detail-desc">
+                    Click on any room in the interactive layout to inspect clinic profiles, specialties, and schedule immediate bookings.
+                </p>
+
+                <!-- Doctors in Department Section -->
+                <div id="room-detail-doctors-section" class="mt-6 pt-5 border-t border-white/10 hidden">
+                    <h4 class="text-xs font-bold text-white/50 uppercase tracking-wider mb-3"><i class="fas fa-user-md mr-1.5"></i>{{ _('Assigned Specialists') }}</h4>
+                    <div class="space-y-3" id="room-detail-doctors-list">
+                        <!-- Dynamic Doctor items load here -->
+                    </div>
+                </div>
+
+                <!-- Footer Quick Booking Button -->
+                <div class="mt-6 flex gap-3" id="room-detail-actions">
+                    <a href="#" id="room-detail-book-btn" class="flex-1 py-3 bg-gradient-to-r from-indigo-500 to-purple-600 hover:from-indigo-600 hover:to-purple-700 text-white font-bold text-xs uppercase tracking-widest text-center rounded-xl shadow-lg hover:scale-[1.01] transition-all duration-300">
+                        {{ _('Book Slot Instantly') }}
+                    </a>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+    // Database Specialists data populated dynamically from python models
+    const databaseDoctors = [
+        {% for doc in doctors %}
+        {
+            id: {{ doc.id }},
+            name: "{{ doc.name }}",
+            specialization: "{{ doc.specialization }}",
+            experience: {{ doc.experience_years }},
+            rating: {{ doc.average_rating }},
+            reviews: {{ doc.reviews_count }},
+            deptId: {{ doc.department_id or 'null' }}
+        },
+        {% endfor %}
+    ];
+
+    // Static layouts for floors
+    const roomLayouts = {
+        0: {
+            'room_tl': { id: 'er', name: "{{ _('Emergency Ward (ER)') }}", icon: 'fa-ambulance', colorClass: 'text-red-400', desc: "{{ _('Critical emergency care, acute medicine support, and 24/7 immediate clinical response rooms.') }}", docs: [] },
+            'room_tr': { id: 'genmed', name: "{{ _('General Medicine Clinic') }}", icon: 'fa-user-md', colorClass: 'text-indigo-300', desc: "{{ _('Routine consultations, full physical health checks, and chronic wellness checkups with primary care doctors.') }}", deptId: 5 },
+            'room_ml': { id: 'reception', name: "{{ _('Reception & Check-in') }}", icon: 'fa-info-circle', colorClass: 'text-blue-300', desc: "{{ _('Master helpdesk for registration, appointment check-ins, visitor passes, and operational queries.') }}", docs: [] },
+            'room_mr': { id: 'pharmacy', name: "{{ _('Pharmacy & Refills') }}", icon: 'fa-pills', colorClass: 'text-emerald-300', desc: "{{ _('Seeded clinical pharmacy. Secure your prescribed medication, automatic refills, and health check supplements.') }}", docs: [] }
+        },
+        1: {
+            'room_tl': { id: 'cardio', name: "{{ _('Cardiology Department') }}", icon: 'fa-heart', colorClass: 'text-red-400', desc: "{{ _('Premium clinical cardiac care. Specialized screening for high-blood pressure, arrhythmias, and cardiovascular therapies.') }}", deptId: 1 },
+            'room_tr': { id: 'ent', name: "{{ _('ENT Clinic') }}", icon: 'fa-ear-hearing', colorClass: 'text-amber-300', desc: "{{ _('Advanced treatment for Ear, Nose, Throat, hearing loss, sinus concerns, and clinical allergy diagnostics.') }}", deptId: 6 },
+            'room_ml': { id: 'pathology', name: "{{ _('Diagnostics & Pathology Lab') }}", icon: 'fa-microscope', colorClass: 'text-indigo-300', desc: "{{ _('High-performance diagnostic services including clinical pathology labs, advanced blood analysis, and secure diagnostic checkups.') }}", docs: [] },
+            'room_mr': { id: 'cafeteria', name: "{{ _('Cafeteria & Rest Lounge') }}", icon: 'fa-coffee', colorClass: 'text-yellow-300', desc: "{{ _('Relaxing lounge with fine organic food, hydration selections, and comfortable rest spaces for patient caretakers.') }}", docs: [] }
+        },
+        2: {
+            'room_tl': { id: 'pediatrics', name: "{{ _('Pediatrics Department') }}", icon: 'fa-child', colorClass: 'text-cyan-300', desc: "{{ _('Comprehensive medical care for infants, kids, and adolescents including routine checkups, immunization, and growth monitoring.') }}", deptId: 8 },
+            'room_tr': { id: 'gynecology', name: "{{ _('Gynecology Clinic') }}", icon: 'fa-female', colorClass: 'text-pink-300', desc: "{{ _('Women health services including pregnancy follow-ups, prenatal support sessions, and general clinical gynecological evaluations.') }}", deptId: 7 },
+            'room_ml': { id: 'dermatology', name: "{{ _('Dermatology Department') }}", icon: 'fa-hand-holding-medical', colorClass: 'text-purple-300', desc: "{{ _('Clinical skincare, therapeutic acne control, hair and scalp treatments, and professional dermatology diagnostic checks.') }}", deptId: 3 },
+            'room_mr': { id: 'wards', name: "{{ _('General & Deluxe Wards') }}", icon: 'fa-procedures', colorClass: 'text-blue-300', desc: "{{ _('Hospital bed management block. Integrated live bed occupancy monitors, ward recovery sheets, and responsive nurse assistance.') }}", docs: [] }
+        },
+        3: {
+            'room_tl': { id: 'neurology', name: "{{ _('Neurology Department') }}", icon: 'fa-brain', colorClass: 'text-indigo-300', desc: "{{ _('Neurological clinical examinations. Specialized checks for acute migraines, seizure disorders, and brain health mapping.') }}", deptId: 4 },
+            'room_tr': { id: 'orthopedics', name: "{{ _('Orthopedics Clinic') }}", icon: 'fa-bone', colorClass: 'text-orange-300', desc: "{{ _('Advanced bone care. Specialized consults for joint pain, bone injuries, sprains, and personalized physical rehabilitation therapies.') }}", deptId: 2 },
+            'room_ml': { id: 'icu', name: "{{ _('Intensive Care Unit (ICU)') }}", icon: 'fa-heart-circle-bolt', colorClass: 'text-red-400', desc: "{{ _('Critical recovery care. 24/7 continuous cardiac monitoring, professional life support setups, and clinical high-dependency wards.') }}", docs: [] },
+            'room_mr': { id: 'ot', name: "{{ _('Operation Theatre (OT)') }}", icon: 'fa-syringe', colorClass: 'text-teal-300', desc: "{{ _('State-of-the-art sterile surgical suites designed for multi-specialty orthopedic, cardiac, and micro-neurological procedures.') }}", docs: [] }
+        }
+    };
+
+    // Node locations for Route Pathfinder (X, Y)
+    const nodeCoords = {
+        'elevator': { x: 350, y: 40 },
+        'hallway_top': { x: 350, y: 100 },
+        'hallway_mid': { x: 350, y: 220 },
+        'hallway_bottom': { x: 350, y: 360 },
+        'entrance': { x: 350, y: 420 },
+        // Rooms doors and center nodes
+        'room_tl_door': { x: 280, y: 100 },
+        'room_tl': { x: 200, y: 100 },
+        'room_tr_door': { x: 420, y: 100 },
+        'room_tr': { x: 500, y: 100 },
+        'room_ml_door': { x: 280, y: 220 },
+        'room_ml': { x: 200, y: 220 },
+        'room_mr_door': { x: 420, y: 220 },
+        'room_mr': { x: 500, y: 220 }
+    };
+
+    let activeFloor = 0;
+    let selectedRoomKey = null;
+
+    // Initialize Floor and SVG Render on page load
+    document.addEventListener("DOMContentLoaded", () => {
+        switchFloor(0);
+    });
+
+    function switchFloor(floorNum) {
+        activeFloor = floorNum;
+        
+        // Update Selector UI buttons
+        document.querySelectorAll('.floor-btn').forEach(btn => {
+            btn.classList.remove('border-indigo-500', 'bg-indigo-600/20', 'text-indigo-200');
+            btn.classList.add('border-white/5', 'bg-white/5');
+        });
+        
+        const activeBtn = document.getElementById(`floor-btn-${floorNum}`);
+        if(activeBtn) {
+            activeBtn.classList.remove('border-white/5', 'bg-white/5');
+            activeBtn.classList.add('border-indigo-500', 'bg-indigo-600/20', 'text-indigo-200');
+        }
+
+        // Update titles
+        const floorLabels = ["{{ _('FLOOR 0 - GROUND LEVEL') }}", "{{ _('FLOOR 1 - FIRST LEVEL') }}", "{{ _('FLOOR 2 - SECOND LEVEL') }}", "{{ _('FLOOR 3 - THIRD LEVEL') }}"];
+        const floorTitles = ["{{ _('Reception, ER, Pharmacy & Clinics') }}", "{{ _('Cardiology, Diagnostics, ENT & Cafeteria') }}", "{{ _('Pediatrics, Gynecology, Dermatology & Wards') }}", "{{ _('Neurology, Orthopedics, ICU & OT') }}"];
+        
+        document.getElementById('active-floor-label').textContent = floorLabels[floorNum];
+        document.getElementById('active-floor-title').textContent = floorTitles[floorNum];
+
+        // Draw the floor plan rooms
+        renderFloorMap(floorNum);
+        
+        // Refresh routing highlights if a route is currently active
+        calculateRoute(false);
+    }
+
+    // Dynamic rendering of rooms in SVGs
+    function renderFloorMap(floorNum) {
+        const roomsContainer = document.getElementById('map-rooms-layer');
+        if(!roomsContainer) return;
+        
+        roomsContainer.innerHTML = '';
+        const layout = roomLayouts[floorNum];
+
+        // Configure room shapes
+        const roomShapes = {
+            'room_tl': { x: 100, y: 50, w: 180, h: 100, labelX: 190, labelY: 122, iconX: 190, iconY: 90 },
+            'room_tr': { x: 420, y: 50, w: 180, h: 100, labelX: 510, labelY: 122, iconX: 510, iconY: 90 },
+            'room_ml': { x: 100, y: 170, w: 180, h: 100, labelX: 190, labelY: 242, iconX: 190, iconY: 210 },
+            'room_mr': { x: 420, y: 170, w: 180, h: 100, labelX: 510, labelY: 242, iconX: 510, iconY: 210 }
+        };
+
+        // Floor 0 unique entrance lobby
+        if (floorNum === 0) {
+            roomsContainer.innerHTML += `
+                <g class="room-group" onclick="selectRoom('entrance')">
+                    <rect x="260" y="380" width="180" height="70" class="room-rect" />
+                    <text x="350" y="415" class="room-icon">🚪</text>
+                    <text x="350" y="438" class="room-label">{{ _('Main Lobby & Entrance') }}</text>
+                </g>
+            `;
+        }
+
+        // Loop and create standard rooms
+        for (let [key, val] of Object.entries(layout)) {
+            const sh = roomShapes[key];
+            let activeClass = (selectedRoomKey === key) ? 'active-room' : '';
+            
+            // Map icon code points from fontawesome
+            let iconText = '🏢';
+            if (val.icon === 'fa-ambulance') iconText = '🚨';
+            else if (val.icon === 'fa-user-md') iconText = '🩺';
+            else if (val.icon === 'fa-info-circle') iconText = '🛎️';
+            else if (val.icon === 'fa-pills') iconText = '💊';
+            else if (val.icon === 'fa-heart') iconText = '❤️';
+            else if (val.icon === 'fa-ear-hearing') iconText = '👂';
+            else if (val.icon === 'fa-microscope') iconText = '🔬';
+            else if (val.icon === 'fa-coffee') iconText = '☕';
+            else if (val.icon === 'fa-child') iconText = '👶';
+            else if (val.icon === 'fa-female') iconText = '🤰';
+            else if (val.icon === 'fa-hand-holding-medical') iconText = '🧴';
+            else if (val.icon === 'fa-procedures') iconText = '🛌';
+            else if (val.icon === 'fa-brain') iconText = '🧠';
+            else if (val.icon === 'fa-bone') iconText = '🦴';
+            else if (val.icon === 'fa-heart-circle-bolt') iconText = '⚡';
+            else if (val.icon === 'fa-syringe') iconText = '😷';
+
+            roomsContainer.innerHTML += `
+                <g class="room-group ${activeClass}" id="map-room-${key}" onclick="selectRoom('${key}')">
+                    <rect x="${sh.x}" y="${sh.y}" width="${sh.w}" height="${sh.h}" class="room-rect" />
+                    <text x="${sh.iconX}" y="${sh.iconY}" class="room-icon">${iconText}</text>
+                    <text x="${sh.labelX}" y="${sh.labelY}" class="room-label">${val.name}</text>
+                </g>
+            `;
+        }
+    }
+
+    // Handles selecting a room
+    function selectRoom(roomKey) {
+        selectedRoomKey = roomKey;
+        
+        // Remove active highlights
+        document.querySelectorAll('.room-group').forEach(el => el.classList.remove('active-room'));
+        
+        if (roomKey === 'entrance') {
+            openEntranceDetails();
+            return;
+        }
+        
+        const element = document.getElementById(`map-room-${roomKey}`);
+        if(element) element.classList.add('active-room');
+
+        const roomInfo = roomLayouts[activeFloor][roomKey];
+        if(!roomInfo) return;
+
+        // Populate details card
+        document.getElementById('room-detail-floor').textContent = `FLOOR ${activeFloor}`;
+        document.getElementById('room-detail-name').textContent = roomInfo.name;
+        document.getElementById('room-detail-desc').textContent = roomInfo.desc;
+        
+        // Setup icon
+        const iconEl = document.getElementById('room-detail-icon');
+        const bgEl = document.getElementById('room-detail-icon-bg');
+        iconEl.innerHTML = '';
+        bgEl.className = 'w-12 h-12 rounded-xl flex items-center justify-center text-2xl bg-indigo-500/10 text-indigo-400 border border-indigo-500/20';
+
+        // Load correct icon
+        const mapRoomG = document.getElementById(`map-room-${roomKey}`);
+        if (mapRoomG) {
+            iconEl.textContent = mapRoomG.querySelector('.room-icon').textContent;
+        }
+
+        // Fetch dynamic doctors attached to this department
+        const doctorsListEl = document.getElementById('room-detail-doctors-list');
+        const docSection = document.getElementById('room-detail-doctors-section');
+        doctorsListEl.innerHTML = '';
+
+        if(roomInfo.deptId) {
+            const matchedDocs = databaseDoctors.filter(d => d.deptId === roomInfo.deptId);
+            
+            if(matchedDocs.length > 0) {
+                docSection.classList.remove('hidden');
+                matchedDocs.forEach(d => {
+                    doctorsListEl.innerHTML += `
+                        <div class="flex items-center justify-between p-3 rounded-xl bg-white/5 border border-white/5 hover:bg-white/10 transition-colors">
+                            <div class="flex items-center gap-3">
+                                <div class="w-8 h-8 rounded-full bg-gradient-to-r from-indigo-500 to-purple-600 flex items-center justify-center font-black text-xs text-white">
+                                    ${d.name.replace('Dr. ', '')[0]}
+                                </div>
+                                <div>
+                                    <h5 class="text-xs font-bold text-white">${d.name}</h5>
+                                    <p class="text-[10px] text-white/50">${d.specialization} · ${d.experience} {{ _('Yrs Exp') }}</p>
+                                </div>
+                            </div>
+                            <div class="flex items-center gap-1 text-[10px] font-bold text-amber-400 bg-amber-400/10 px-2 py-0.5 rounded-full border border-amber-400/20">
+                                🌟 ${d.rating}
+                            </div>
+                        </div>
+                    `;
+                });
+            } else {
+                docSection.classList.add('hidden');
+            }
+            
+            // Set Book button
+            const bookBtn = document.getElementById('room-detail-book-btn');
+            bookBtn.href = `/book?department=${roomInfo.deptId}`;
+            bookBtn.classList.remove('hidden');
+        } else {
+            docSection.classList.add('hidden');
+            document.getElementById('room-detail-book-btn').classList.add('hidden');
+        }
+
+        // Display card
+        const card = document.getElementById('room-details-card');
+        card.classList.remove('hidden');
+        card.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+    }
+
+    function selectElevator() {
+        selectedRoomKey = 'elevator';
+        document.querySelectorAll('.room-group').forEach(el => el.classList.remove('active-room'));
+        
+        document.getElementById('room-detail-floor').textContent = `ALL FLOORS`;
+        document.getElementById('room-detail-name').textContent = "{{ _('Elevator & Stairs Lobby') }}";
+        document.getElementById('room-detail-desc').textContent = "{{ _('Hospital vertical transport terminal. High-speed emergency lifts and standard walkways connecting Floor 0 to Floor 3.') }}";
+        document.getElementById('room-detail-icon').textContent = '📶';
+        document.getElementById('room-detail-doctors-section').classList.add('hidden');
+        document.getElementById('room-detail-book-btn').classList.add('hidden');
+        document.getElementById('room-details-card').classList.remove('hidden');
+    }
+
+    function openEntranceDetails() {
+        document.getElementById('room-detail-floor').textContent = `FLOOR 0`;
+        document.getElementById('room-detail-name').textContent = "{{ _('Main Lobby & Entrance') }}";
+        document.getElementById('room-detail-desc').textContent = "{{ _('MediSlot secure patient entry lobby. Equipped with check-in desks, digital queue monitors, and patient emergency response.') }}";
+        document.getElementById('room-detail-icon').textContent = '🚪';
+        document.getElementById('room-detail-doctors-section').classList.add('hidden');
+        document.getElementById('room-detail-book-btn').classList.add('hidden');
+        document.getElementById('room-details-card').classList.remove('hidden');
+    }
+
+    function closeDetailsCard() {
+        document.getElementById('room-details-card').classList.add('hidden');
+        document.querySelectorAll('.room-group').forEach(el => el.classList.remove('active-room'));
+        selectedRoomKey = null;
+    }
+
+    // Handles Search Logic
+    function handleSearch(query) {
+        query = query.trim().toLowerCase();
+        const resultsEl = document.getElementById('search-results-list');
+        resultsEl.innerHTML = '';
+        
+        // Remove previous search matching styles
+        document.querySelectorAll('.room-group').forEach(el => el.classList.remove('search-match'));
+
+        if (!query) {
+            resultsEl.classList.add('hidden');
+            return;
+        }
+
+        let matches = [];
+
+        // Match rooms across all floors
+        for (let floor = 0; floor <= 3; floor++) {
+            const layout = roomLayouts[floor];
+            for (let [roomKey, val] of Object.entries(layout)) {
+                let matchType = '';
+                if(val.name.toLowerCase().includes(query)) {
+                    matchType = 'room';
+                } else if(val.desc.toLowerCase().includes(query)) {
+                    matchType = 'description';
+                }
+                
+                // Try matching doctor details in this room
+                let docMatch = [];
+                if(val.deptId) {
+                    const roomDocs = databaseDoctors.filter(d => d.deptId === val.deptId);
+                    docMatch = roomDocs.filter(d => d.name.toLowerCase().includes(query) || d.specialization.toLowerCase().includes(query));
+                }
+
+                if (matchType || docMatch.length > 0) {
+                    matches.push({
+                        floor: floor,
+                        roomKey: roomKey,
+                        name: val.name,
+                        detail: docMatch.length > 0 ? `Doctor: ${docMatch[0].name}` : 'Clinic Room'
+                    });
+
+                    // If it matches active floor, highlight the room directly
+                    if (floor === activeFloor) {
+                        const roomEl = document.getElementById(`map-room-${roomKey}`);
+                        if(roomEl) roomEl.classList.add('search-match');
+                    }
+                }
+            }
+        }
+
+        // Render search results dropdown
+        if (matches.length > 0) {
+            resultsEl.classList.remove('hidden');
+            matches.forEach(m => {
+                resultsEl.innerHTML += `
+                    <div onclick="selectSearchResult(${m.floor}, '${m.roomKey}')" class="p-2 bg-white/5 border border-white/5 hover:bg-indigo-600/30 hover:border-indigo-500/50 rounded-lg cursor-pointer transition-colors flex justify-between items-center text-xs font-semibold">
+                        <div>
+                            <span class="text-white">${m.name}</span>
+                            <p class="text-[9px] text-white/40 mt-0.5">${m.detail}</p>
+                        </div>
+                        <span class="text-[9px] bg-indigo-500/20 text-indigo-300 px-2 py-0.5 rounded border border-indigo-500/30 uppercase tracking-widest font-black">Floor ${m.floor}</span>
+                    </div>
+                `;
+            });
+        } else {
+            resultsEl.innerHTML = `<div class="p-2 text-white/40 italic text-center">{{ _('No matches found in directory') }}</div>`;
+            resultsEl.classList.remove('hidden');
+        }
+    }
+
+    function selectSearchResult(floorNum, roomKey) {
+        document.getElementById('map-search').value = '';
+        document.getElementById('search-results-list').classList.add('hidden');
+        
+        if (activeFloor !== floorNum) {
+            switchFloor(floorNum);
+        }
+        
+        selectRoom(roomKey);
+    }
+
+    // Dynamic Wayfinding Dijkstra/Pathfinding Script
+    function calculateRoute(animate=true) {
+        const startInput = document.getElementById('start-node').value;
+        const endInput = document.getElementById('end-node').value;
+        
+        const pathOverlay = document.getElementById('route-overlay');
+        const startMarker = document.getElementById('start-marker');
+        const endMarker = document.getElementById('end-marker');
+        const directionsBox = document.getElementById('route-directions-box');
+        
+        if (!endInput) return;
+
+        // Extract Floor and Node details from End selection (format: "floorNum:nodeName")
+        const endParts = endInput.split(':');
+        const endFloor = parseInt(endParts[0]);
+        const endRoomKey = endParts[1];
+
+        // Start Node calculations
+        let startFloor = activeFloor;
+        let startRoomKey = startInput;
+
+        // If start position is Entrance, we force Floor 0
+        if (startInput === 'entrance') {
+            startFloor = 0;
+        }
+
+        // Hide overlay lines if active floor does not match either of selected route floors
+        if (activeFloor !== startFloor && activeFloor !== endFloor) {
+            pathOverlay.style.display = 'none';
+            startMarker.style.display = 'none';
+            endMarker.style.display = 'none';
+            directionsBox.classList.remove('hidden');
+            renderDirections(startFloor, startRoomKey, endFloor, endRoomKey);
+            return;
+        }
+
+        // Configure Nodes for the pathfinder
+        let pathString = "";
+        let pathNodes = [];
+
+        // Build path arrays based on floor connectivity
+        if (startFloor === endFloor) {
+            // SINGLE FLOOR WAYFINDING
+            pathNodes = getSingleFloorPath(startRoomKey, endRoomKey);
+            
+            // Generate standard SVG path commands
+            if (pathNodes.length > 0) {
+                pathString = drawPathString(pathNodes);
+            }
+        } else {
+            // MULTI FLOOR WAYFINDING
+            if (activeFloor === startFloor) {
+                // Route to Elevator on starting floor
+                pathNodes = getSingleFloorPath(startRoomKey, 'elevator');
+            } else if (activeFloor === endFloor) {
+                // Route from Elevator to destination on end floor
+                pathNodes = getSingleFloorPath('elevator', endRoomKey);
+            }
+            
+            if (pathNodes.length > 0) {
+                pathString = drawPathString(pathNodes);
+            }
+        }
+
+        // Update SVG path overlay
+        if (pathString) {
+            pathOverlay.setAttribute('d', pathString);
+            pathOverlay.style.display = 'block';
+
+            // Show pulsing start/end pins
+            const firstNode = nodeCoords[pathNodes[0]];
+            const lastNode = nodeCoords[pathNodes[pathNodes.length - 1]];
+
+            if (firstNode) {
+                startMarker.setAttribute('cx', firstNode.x);
+                startMarker.setAttribute('cy', firstNode.y);
+                startMarker.style.display = 'block';
+            }
+            if (lastNode) {
+                endMarker.setAttribute('cx', lastNode.x);
+                endMarker.setAttribute('cy', lastNode.y);
+                endMarker.style.display = 'block';
+            }
+            
+            // Animation transition glow
+            if (animate) {
+                pathOverlay.style.animation = 'none';
+                pathOverlay.offsetHeight; // Trigger reflow
+                pathOverlay.style.animation = 'routeFlow 25s linear infinite';
+            }
+        } else {
+            pathOverlay.style.display = 'none';
+            startMarker.style.display = 'none';
+            endMarker.style.display = 'none';
+        }
+
+        // Render direction notes in the panel
+        directionsBox.classList.remove('hidden');
+        renderDirections(startFloor, startRoomKey, endFloor, endRoomKey);
+    }
+
+    // Helper: Build single floor orthogonal routing nodes
+    function getSingleFloorPath(startKey, endKey) {
+        if (startKey === endKey) return [startKey];
+        
+        // Define simple nodes sequence
+        let path = [startKey];
+        
+        // Helper mapping
+        const doorKeys = {
+            'room_tl': 'room_tl_door',
+            'room_tr': 'room_tr_door',
+            'room_ml': 'room_ml_door',
+            'room_mr': 'room_mr_door'
+        };
+
+        // Resolve doors if start/end are clinics
+        let fromNode = doorKeys[startKey] || startKey;
+        let toNode = doorKeys[endKey] || endKey;
+
+        // Path configurations from doors/nodes to central corridors
+        let segments = [];
+        
+        if (fromNode === 'entrance') {
+            segments.push('entrance');
+            segments.push('hallway_bottom');
+            segments.push('hallway_mid');
+            fromNode = 'hallway_mid';
+        }
+
+        // Setup transitions
+        if (fromNode.includes('room_tl') || fromNode.includes('room_tr')) {
+            segments.push(fromNode);
+            segments.push('hallway_top');
+            fromNode = 'hallway_top';
+        } else if (fromNode.includes('room_ml') || fromNode.includes('room_mr')) {
+            segments.push(fromNode);
+            segments.push('hallway_mid');
+            fromNode = 'hallway_mid';
+        } else if (fromNode === 'elevator') {
+            segments.push('elevator');
+            segments.push('hallway_top');
+            fromNode = 'hallway_top';
+        }
+
+        // Bridge top and middle hallways
+        if (fromNode !== toNode) {
+            if (fromNode === 'hallway_top' && (toNode.includes('room_ml') || toNode.includes('room_mr') || toNode === 'entrance' || toNode === 'hallway_bottom' || toNode === 'hallway_mid')) {
+                segments.push('hallway_mid');
+                fromNode = 'hallway_mid';
+            } else if (fromNode === 'hallway_mid' && (toNode.includes('room_tl') || toNode.includes('room_tr') || toNode === 'elevator' || toNode === 'hallway_top')) {
+                segments.push('hallway_top');
+                fromNode = 'hallway_top';
+            }
+        }
+
+        // Append final destination parts
+        if (toNode === 'entrance') {
+            if (fromNode === 'hallway_mid') segments.push('hallway_bottom');
+            segments.push('entrance');
+        } else if (toNode === 'elevator') {
+            if (fromNode === 'hallway_mid') segments.push('hallway_top');
+            segments.push('elevator');
+        } else {
+            segments.push(toNode);
+        }
+
+        // Map centers for clinic rooms as endpoints
+        if (startKey !== fromNode) path = [startKey].concat(segments);
+        else path = segments;
+
+        if (endKey !== toNode) path.push(endKey);
+
+        return path;
+    }
+
+    // Helper: Converts routing array into SVG linear command path
+    function drawPathString(nodes) {
+        let cmd = "";
+        nodes.forEach((n, idx) => {
+            const coord = nodeCoords[n];
+            if (coord) {
+                cmd += (idx === 0 ? "M " : "L ") + `${coord.x} ${coord.y} `;
+            }
+        });
+        return cmd.trim();
+    }
+
+    // Generate dynamic instruction labels
+    function renderDirections(startFloor, startRoomKey, endFloor, endRoomKey) {
+        const container = document.getElementById('route-steps-container');
+        const distanceEl = document.getElementById('route-distance-text');
+        container.innerHTML = '';
+
+        const roomLabels = {
+            'entrance': "{{ _('Main Entrance') }}",
+            'elevator': "{{ _('Elevator & Stairs') }}",
+            'room_tl': "{{ _('Top-Left Room') }}",
+            'room_tr': "{{ _('Top-Right Room') }}",
+            'room_ml': "{{ _('Middle-Left Room') }}",
+            'room_mr': "{{ _('Middle-Right Room') }}"
+        };
+
+        const getRealName = (floor, key) => {
+            if (key === 'entrance') return "{{ _('Main Entrance Lobby') }}";
+            if (key === 'elevator') return "{{ _('Elevator & Stairs terminal') }}";
+            const floorLayout = roomLayouts[floor];
+            return floorLayout[key] ? floorLayout[key].name : roomLabels[key] || key;
+        };
+
+        const startName = getRealName(startFloor, startRoomKey);
+        const endName = getRealName(endFloor, endRoomKey);
+
+        let steps = [];
+        let estDistance = 0;
+
+        if (startFloor === endFloor) {
+            // Same Floor Walkway
+            steps.push(`1. {{ _('Start at') }} <strong>${startName}</strong>.`);
+            
+            if (startRoomKey !== 'elevator' && endRoomKey !== 'elevator') {
+                steps.push(`2. {{ _('Exit the clinic room and step into the central hallway.') }}`);
+                steps.push(`3. {{ _('Follow directions along the hallway past the elevator hub.') }}`);
+                steps.push(`4. {{ _('Your destination') }} <strong>${endName}</strong> {{ _('will be straight ahead.') }}`);
+            } else {
+                steps.push(`2. {{ _('Proceed along the central corridor directly.') }}`);
+                steps.push(`3. {{ _('Arrive at') }} <strong>${endName}</strong>.`);
+            }
+            estDistance = Math.abs(startRoomKey.charCodeAt(0) - endRoomKey.charCodeAt(0)) * 6 + 15;
+        } else {
+            // Multi Floor Walkway
+            steps.push(`1. {{ _('Start at') }} <strong>${startName}</strong> (Floor ${startFloor}).`);
+            
+            if (startRoomKey !== 'elevator') {
+                steps.push(`2. {{ _('Exit room, walk along corridor to the elevator & stairs lobby.') }}`);
+            }
+            
+            const direction = endFloor > startFloor ? "{{ _('UP') }}" : "{{ _('DOWN') }}";
+            steps.push(`3. <span class="text-indigo-300 font-bold"><i class="fas fa-arrow-up-95 mr-1"></i>{{ _('Take elevator') }} ${direction} {{ _('to Floor') }} ${endFloor}.</span>`);
+            
+            if (activeFloor !== endFloor) {
+                steps.push(`4. <span class="opacity-50 italic">({{ _('Switch to Floor') }} ${endFloor} {{ _('using top panel to preview layout') }}).</span>`);
+            } else {
+                steps.push(`4. {{ _('Exit elevator lobby, proceed along Floor') }} ${endFloor} {{ _('hallway.') }}`);
+                steps.push(`5. {{ _('Turn to the designated wing. Your destination') }} <strong>${endName}</strong> {{ _('is directly ahead.') }}`);
+            }
+            estDistance = Math.abs(startFloor - endFloor) * 35 + 25;
+        }
+
+        // Render to sidebar
+        steps.forEach(s => {
+            container.innerHTML += `
+                <div class="flex items-start gap-2.5 leading-relaxed text-white/90">
+                    <span class="text-indigo-400 mt-0.5"><i class="fas fa-circle-chevron-right text-[10px]"></i></span>
+                    <p class="flex-1">${s}</p>
+                </div>
+            `;
+        });
+
+        distanceEl.textContent = `${estDistance} m`;
+    }
+
+    function clearRoute() {
+        document.getElementById('end-node').value = "";
+        document.getElementById('route-overlay').style.display = 'none';
+        document.getElementById('start-marker').style.display = 'none';
+        document.getElementById('end-marker').style.display = 'none';
+        document.getElementById('route-directions-box').classList.add('hidden');
+    }
+</script>
+{% endblock %}

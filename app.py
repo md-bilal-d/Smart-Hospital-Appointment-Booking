@@ -205,7 +205,7 @@ def create_app():
             db.session.commit()
 
     scheduler = BackgroundScheduler()
-    scheduler.add_job(func=check_reminders, trigger='interval', seconds=60)
+    scheduler.add_job(func=check_reminders, trigger='interval', seconds=300)
     scheduler.start()
     atexit.register(lambda: scheduler.shutdown())
 
@@ -213,5 +213,7 @@ def create_app():
 
 if __name__ == '__main__':
     app = create_app()
-    socketio.run(app, debug=True, port=5000, use_reloader=True)
+    socketio.run(app, debug=True, port=5000, use_reloader=False)
+
+
 

@@ -72,7 +72,7 @@ def login():
             elif staff.role == 'doctor':
                 session['doctor_id'] = staff.doctor_id
                 session['doctor_name'] = staff.name
-                return redirect(url_for('doctor.dashboard', doctor_id=staff.doctor_id))
+                return redirect(url_for('doctor.doctor_dashboard', doctor_id=staff.doctor_id))
             else: # receptionist
                 return redirect(url_for('admin.dashboard'))
 
