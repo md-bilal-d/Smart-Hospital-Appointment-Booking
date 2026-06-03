@@ -115,7 +115,7 @@ class Appointment(db.Model):
     slot_id = db.Column(db.Integer, db.ForeignKey('slots.id'), nullable=False)
     token_number = db.Column(db.Integer, nullable=False)
     status = db.Column(db.String(20), default='waiting')  # waiting/called/seen/cancelled/no_show
-    appointment_type = db.Column(db.String(20), default='normal')  # normal/urgent/follow-up
+    appointment_type = db.Column(db.String(20), default='normal')  # normal/urgent/follow-up/walk_in
     booked_at = db.Column(db.DateTime, default=datetime.utcnow)
     notes = db.Column(db.Text, default='')
     reminder_sent = db.Column(db.Boolean, default=False)
@@ -284,3 +284,31 @@ class Bed(db.Model):
     expected_discharge = db.Column(db.DateTime, nullable=True)
 
     patient = db.relationship('Patient', backref=db.backref('bed', uselist=False))
+
+
+class WaitlistEntry(db.Model):
+    """Tracks patients waiting for a fully-booked doctor slot.
+    Status lifecycle: waiting → promoted / expired / cancelled
+    When a slot opens (cancellation/no-show), the first 'waiting' entry
+    for that doctor+date is auto-promoted to an appointment.
+    """
+    __tablename__ = 'waitlist_entries'
+    id = db.Column(db.Integer, primary_key=True)
+    patient_id = db.Column(db.Integer, db.ForeignKey('patients.id'), nullable=False)
+    doctor_id = db.Column(db.Integer, db.ForeignKey('doctors.id'), nullable=False)
+    department_id = db.Column(db.Integer, db.ForeignKey('departments.id'), nullable=False)
+    requested_date = db.Column(db.String(10), nullable=False)  # YYYY-MM-DD
+    preferred_time = db.Column(db.String(20), nullable=True)  # e.g. "09:00 AM" or None for any
+    priority = db.Column(db.String(20), default='normal')  # normal / urgent
+    status = db.Column(db.String(20), default='waiting')  # waiting / promoted / expired / cancelled
+    notes = db.Column(db.Text, default='')
+    position = db.Column(db.Integer, nullable=False)  # queue position within doctor+date
+    created_at = db.Column(db.DateTime, default=datetime.utcnow)
+    promoted_at = db.Column(db.DateTime, nullable=True)
+    appointment_id = db.Column(db.Integer, db.ForeignKey('appointments.id'), nullable=True)
+
+    patient = db.relationship('Patient', backref='waitlist_entries')
+    doctor = db.relationship('Doctor', backref='waitlist_entries')
+    department = db.relationship('Department', backref='waitlist_entries')
+    appointment = db.relationship('Appointment', backref=db.backref('waitlist_entry', uselist=False))
+

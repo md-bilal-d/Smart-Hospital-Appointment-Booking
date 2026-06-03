@@ -3,7 +3,7 @@ import io
 from fpdf import FPDF
 from flask import Blueprint, render_template, request, redirect, url_for, flash, session, current_app, send_file
 from flask_login import login_required, current_user
-from models import db, Doctor, Department, Slot, Appointment, QueueLog, Patient, Prescription, Review, MedicalRecord, VitalsReading, Invoice, Article
+from models import db, Doctor, Department, Slot, Appointment, QueueLog, Patient, Prescription, Review, MedicalRecord, VitalsReading, Invoice, Article, WaitlistEntry
 from smart_scheduling import recommend_slot, recommend_alternative_doctor, assign_token
 from datetime import datetime, date, timedelta
 from extensions import socketio
@@ -165,8 +165,15 @@ def dashboard():
     seen_count = Appointment.query.filter_by(patient_id=current_user.id, status='seen').count()
     waiting_count = len(active)
 
+    # Waitlist entries for this patient
+    waitlist_entries = WaitlistEntry.query.filter_by(
+        patient_id=current_user.id,
+        status='waiting'
+    ).order_by(WaitlistEntry.created_at).all()
+
     return render_template('dashboard.html', active=active, past=past, positions=positions, etas=etas, prescriptions=prescriptions,
-                           total_count=total_count, seen_count=seen_count, waiting_count=waiting_count)
+                           total_count=total_count, seen_count=seen_count, waiting_count=waiting_count,
+                           waitlist_entries=waitlist_entries)
 
 @patient_bp.route('/cancel/<int:appt_id>', methods=['POST'])
 @login_required
@@ -214,7 +221,19 @@ def cancel(appt_id):
     except Exception as e:
         print(f"Cancel Error (SocketIO): {e}")
     
-    flash('Appointment cancelled.', 'info')
+    # Auto-promote from waitlist if someone is waiting for this doctor+date
+    try:
+        from routes_walkin import try_promote_waitlist
+        slot = Slot.query.get(appt.slot_id)
+        promoted = try_promote_waitlist(slot.doctor_id, slot.date, freed_slot=slot)
+        if promoted:
+            flash(f'Appointment cancelled. A waitlisted patient has been promoted.', 'info')
+        else:
+            flash('Appointment cancelled.', 'info')
+    except Exception as e:
+        print(f"Cancel Error (Waitlist Promotion): {e}")
+        flash('Appointment cancelled.', 'info')
+    
     return redirect(url_for('patient.dashboard'))
 
 @patient_bp.route('/profile', methods=['GET','POST'])
@@ -818,4 +837,91 @@ def hospital_map():
     doctors = Doctor.query.filter_by(is_available=True).all()
     return render_template('hospital_map.html', departments=departments, doctors=doctors)
 
+
+# ─── Patient Waitlist Routes ──────────────────────────────────────────────────
+@patient_bp.route('/waitlist/join', methods=['POST'])
+@login_required
+def join_waitlist():
+    """Patient joins waitlist for a fully-booked doctor+date."""
+    doctor_id = request.form.get('doctor_id', type=int)
+    requested_date = request.form.get('requested_date', date.today().isoformat())
+    preferred_time = request.form.get('preferred_time', '')
+    notes = request.form.get('notes', '')
+
+    if not doctor_id:
+        flash('Please select a doctor.', 'error')
+        return redirect(url_for('patient.book'))
+
+    doctor = Doctor.query.get_or_404(doctor_id)
+
+    # Check if already on waitlist
+    existing = WaitlistEntry.query.filter_by(
+        patient_id=current_user.id,
+        doctor_id=doctor_id,
+        requested_date=requested_date,
+        status='waiting'
+    ).first()
+    if existing:
+        flash('You are already on the waitlist for this doctor and date.', 'warning')
+        return redirect(url_for('patient.book'))
+
+    # Calculate position
+    last_position = db.session.query(db.func.max(WaitlistEntry.position)).filter_by(
+        doctor_id=doctor_id,
+        requested_date=requested_date,
+        status='waiting'
+    ).scalar() or 0
+
+    entry = WaitlistEntry(
+        patient_id=current_user.id,
+        doctor_id=doctor_id,
+        department_id=doctor.department_id or 1,
+        requested_date=requested_date,
+        preferred_time=preferred_time or None,
+        priority='normal',
+        notes=notes,
+        position=last_position + 1
+    )
+    db.session.add(entry)
+    db.session.commit()
+
+    audit_logger.log_action('Waitlist Joined', f'Patient joined waitlist for Dr. {doctor.name} on {requested_date} (Position #{entry.position})')
+
+    socketio.emit('waitlist_update', {
+        'doctor_id': doctor_id,
+        'date': requested_date,
+        'action': 'added',
+        'entry_id': entry.id
+    })
+
+    flash(f'Added to waitlist for Dr. {doctor.name}! You are at position #{entry.position}. We will notify you when a slot opens.', 'success')
+    return redirect(url_for('patient.dashboard'))
+
+
+@patient_bp.route('/waitlist/cancel/<int:entry_id>', methods=['POST'])
+@login_required
+def cancel_waitlist(entry_id):
+    """Patient cancels their own waitlist entry."""
+    entry = WaitlistEntry.query.get_or_404(entry_id)
+    if entry.patient_id != current_user.id:
+        flash('Unauthorized.', 'error')
+        return redirect(url_for('patient.dashboard'))
+    if entry.status != 'waiting':
+        flash('This waitlist entry has already been processed.', 'warning')
+        return redirect(url_for('patient.dashboard'))
+
+    entry.status = 'cancelled'
+    db.session.commit()
+
+    audit_logger.log_action('Waitlist Cancelled', f'Patient cancelled waitlist for Dr. {entry.doctor.name}')
+
+    socketio.emit('waitlist_update', {
+        'doctor_id': entry.doctor_id,
+        'date': entry.requested_date,
+        'action': 'removed',
+        'entry_id': entry.id
+    })
+
+    flash('Removed from waitlist.', 'info')
+    return redirect(url_for('patient.dashboard'))
 

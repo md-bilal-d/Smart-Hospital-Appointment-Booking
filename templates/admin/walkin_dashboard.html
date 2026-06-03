@@ -1,0 +1,672 @@
+{% extends 'base.html' %}
+{% block title %}{{ _('Walk-in Management') }}{% endblock %}
+{% block content %}
+<div class="max-w-[1600px] mx-auto px-4 py-12 relative" id="walkin-app">
+    <!-- Ambient Blur Background Blobs -->
+    <div class="absolute top-10 left-10 w-96 h-96 bg-indigo-600/10 rounded-full blur-3xl pointer-events-none"></div>
+    <div class="absolute bottom-20 right-10 w-[500px] h-[500px] bg-purple-600/10 rounded-full blur-3xl pointer-events-none"></div>
+
+    <!-- Header -->
+    <div class="flex flex-col md:flex-row md:items-center justify-between gap-6 mb-12 relative z-10">
+        <div>
+            <h1 class="text-4xl font-black tracking-tight text-white mb-2 uppercase">{{ _('Walk-in Management') }}</h1>
+            <p class="text-white/60 font-medium">{{ _('Register walk-in patients, manage queues, and track the waitlist in real-time.') }}</p>
+        </div>
+        <div class="flex items-center gap-4">
+            <div class="glass px-6 py-3 flex items-center gap-3">
+                <span class="relative flex h-3 w-3">
+                    <span class="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75"></span>
+                    <span class="relative inline-flex rounded-full h-3 w-3 bg-emerald-500"></span>
+                </span>
+                <span class="text-sm font-bold tracking-widest text-emerald-400 uppercase">{{ _('Live Queue') }}</span>
+            </div>
+        </div>
+    </div>
+
+    <!-- ============================================================ -->
+    <!-- 1. STATS BAR                                                 -->
+    <!-- ============================================================ -->
+    <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-6 mb-12 relative z-10">
+        <!-- Total Walk-ins -->
+        <div class="glass p-6 border-l-4 border-indigo-500/50 hover:scale-[1.02] transition-transform">
+            <div class="flex items-center justify-between mb-3">
+                <span class="w-10 h-10 rounded-xl bg-indigo-500/20 flex items-center justify-center">
+                    <i class="fas fa-walking text-indigo-400"></i>
+                </span>
+            </div>
+            <p class="text-4xl font-black text-white counter" data-target="{{ stats.total_walkins }}">0</p>
+            <p class="text-xs font-black text-white/40 uppercase tracking-widest mt-1">{{ _('Total Walk-ins Today') }}</p>
+        </div>
+        <!-- Currently Waiting -->
+        <div class="glass p-6 border-l-4 border-yellow-500/50 hover:scale-[1.02] transition-transform">
+            <div class="flex items-center justify-between mb-3">
+                <span class="w-10 h-10 rounded-xl bg-yellow-500/20 flex items-center justify-center">
+                    <i class="fas fa-hourglass-half text-yellow-400 animate-pulse"></i>
+                </span>
+            </div>
+            <p class="text-4xl font-black text-yellow-400 counter" data-target="{{ stats.currently_waiting }}">0</p>
+            <p class="text-xs font-black text-white/40 uppercase tracking-widest mt-1">{{ _('Currently Waiting') }}</p>
+        </div>
+        <!-- Being Served -->
+        <div class="glass p-6 border-l-4 border-blue-500/50 hover:scale-[1.02] transition-transform">
+            <div class="flex items-center justify-between mb-3">
+                <span class="w-10 h-10 rounded-xl bg-blue-500/20 flex items-center justify-center">
+                    <i class="fas fa-user-md text-blue-400"></i>
+                </span>
+            </div>
+            <p class="text-4xl font-black text-blue-400 counter" data-target="{{ stats.currently_called }}">0</p>
+            <p class="text-xs font-black text-white/40 uppercase tracking-widest mt-1">{{ _('Being Served') }}</p>
+        </div>
+        <!-- Avg Wait Time -->
+        <div class="glass p-6 border-l-4 border-emerald-500/50 hover:scale-[1.02] transition-transform">
+            <div class="flex items-center justify-between mb-3">
+                <span class="w-10 h-10 rounded-xl bg-emerald-500/20 flex items-center justify-center">
+                    <i class="fas fa-clock text-emerald-400"></i>
+                </span>
+            </div>
+            <p class="text-4xl font-black text-emerald-400"><span class="counter" data-target="{{ stats.avg_wait_minutes }}">0</span><span class="text-lg text-emerald-400/60 ml-1">{{ _('min') }}</span></p>
+            <p class="text-xs font-black text-white/40 uppercase tracking-widest mt-1">{{ _('Avg Wait Time') }}</p>
+        </div>
+        <!-- Waitlist Pending -->
+        <div class="glass p-6 border-l-4 border-purple-500/50 hover:scale-[1.02] transition-transform">
+            <div class="flex items-center justify-between mb-3">
+                <span class="w-10 h-10 rounded-xl bg-purple-500/20 flex items-center justify-center">
+                    <i class="fas fa-clipboard-list text-purple-400"></i>
+                </span>
+            </div>
+            <p class="text-4xl font-black text-purple-400 counter" data-target="{{ stats.waitlist_count }}">0</p>
+            <p class="text-xs font-black text-white/40 uppercase tracking-widest mt-1">{{ _('Waitlist Pending') }}</p>
+        </div>
+    </div>
+
+    <!-- ============================================================ -->
+    <!-- 2. QUICK REGISTER WALK-IN                                    -->
+    <!-- ============================================================ -->
+    <div class="glass p-8 mb-12 relative z-10">
+        <div class="flex items-center gap-3 border-b border-white/5 pb-6 mb-8">
+            <span class="w-12 h-12 rounded-xl btn-gradient flex items-center justify-center text-xl shadow-lg">
+                <i class="fas fa-user-plus"></i>
+            </span>
+            <div>
+                <h2 class="text-2xl font-black text-white uppercase">{{ _('Quick Register Walk-in') }}</h2>
+                <p class="text-[10px] font-black text-indigo-400 uppercase tracking-widest mt-0.5">{{ _('Register a new walk-in patient instantly') }}</p>
+            </div>
+        </div>
+
+        <!-- Patient Mode Toggle -->
+        <div class="flex items-center gap-4 mb-8">
+            <button type="button" id="mode-existing" onclick="setPatientMode('existing')" class="px-6 py-3 rounded-xl text-xs font-black uppercase tracking-widest transition-all bg-indigo-500/25 border border-indigo-500/40 text-white shadow-[0_0_15px_rgba(99,102,241,0.2)]">
+                <i class="fas fa-search mr-2"></i>{{ _('Existing Patient') }}
+            </button>
+            <button type="button" id="mode-new" onclick="setPatientMode('new')" class="px-6 py-3 rounded-xl text-xs font-black uppercase tracking-widest transition-all bg-white/5 border border-white/10 text-white/50 hover:bg-white/10 hover:text-white">
+                <i class="fas fa-user-plus mr-2"></i>{{ _('New Patient') }}
+            </button>
+        </div>
+
+        <!-- Existing Patient Form -->
+        <form id="form-existing" method="POST" action="/walk-in/register">
+            <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                <!-- Patient Search -->
+                <div class="relative lg:col-span-1">
+                    <label class="block text-[10px] font-black text-white/40 uppercase tracking-widest mb-3">{{ _('Search Patient') }}</label>
+                    <div class="relative">
+                        <i class="fas fa-search absolute left-4 top-1/2 -translate-y-1/2 text-white/30"></i>
+                        <input type="text" id="patient-search" placeholder="{{ _('Type name or phone...') }}" autocomplete="off"
+                               class="w-full glass-input pl-12 pr-5 py-4 focus:ring-0 outline-none font-bold">
+                        <input type="hidden" name="patient_id" id="patient-id-field" required>
+                    </div>
+                    <!-- Autocomplete Dropdown -->
+                    <div id="autocomplete-dropdown" class="hidden absolute left-0 right-0 top-full mt-1 z-50 glass border border-white/20 rounded-xl max-h-60 overflow-y-auto shadow-2xl">
+                    </div>
+                    <p id="selected-patient-badge" class="hidden mt-2 text-xs font-bold text-emerald-400">
+                        <i class="fas fa-check-circle mr-1"></i><span id="selected-patient-name"></span>
+                    </p>
+                </div>
+
+                <!-- Department -->
+                <div>
+                    <label class="block text-[10px] font-black text-white/40 uppercase tracking-widest mb-3">{{ _('Department') }}</label>
+                    <select id="dept-select" onchange="filterDoctors()" class="w-full glass-input px-5 py-4 focus:ring-0 outline-none appearance-none cursor-pointer font-bold">
+                        <option value="">{{ _('-- All Departments --') }}</option>
+                        {% for dept in departments %}
+                        <option value="{{ dept.id }}">{{ dept.name }}</option>
+                        {% endfor %}
+                    </select>
+                </div>
+
+                <!-- Doctor -->
+                <div>
+                    <label class="block text-[10px] font-black text-white/40 uppercase tracking-widest mb-3">{{ _('Doctor') }}</label>
+                    <select name="doctor_id" id="doctor-select" required class="w-full glass-input px-5 py-4 focus:ring-0 outline-none appearance-none cursor-pointer font-bold">
+                        <option value="">{{ _('-- Select Doctor --') }}</option>
+                        {% for doc in doctors %}
+                        <option value="{{ doc.id }}" data-dept="{{ doc.department.id if doc.department else '' }}" data-spec="{{ doc.specialization }}" data-avail="{{ doc.is_available }}">
+                            {{ doc.name }} — {{ doc.specialization }}{% if not doc.is_available %} ({{ _('Unavailable') }}){% endif %}
+                        </option>
+                        {% endfor %}
+                    </select>
+                </div>
+
+                <!-- Priority -->
+                <div>
+                    <label class="block text-[10px] font-black text-white/40 uppercase tracking-widest mb-3">{{ _('Priority') }}</label>
+                    <select name="priority" class="w-full glass-input px-5 py-4 focus:ring-0 outline-none appearance-none cursor-pointer font-bold">
+                        <option value="normal">{{ _('Normal') }}</option>
+                        <option value="urgent">{{ _('Urgent') }}</option>
+                    </select>
+                </div>
+
+                <!-- Notes -->
+                <div class="lg:col-span-2">
+                    <label class="block text-[10px] font-black text-white/40 uppercase tracking-widest mb-3">{{ _('Notes') }}</label>
+                    <textarea name="notes" rows="2" placeholder="{{ _('Optional notes about the visit...') }}"
+                              class="w-full glass-input px-5 py-4 focus:ring-0 outline-none font-medium resize-none"></textarea>
+                </div>
+            </div>
+            <div class="mt-8 flex justify-end">
+                <button type="submit" class="px-10 py-4 btn-gradient rounded-xl text-sm font-black uppercase tracking-widest shadow-lg shadow-indigo-500/20 hover:shadow-indigo-500/40 transition-all">
+                    <i class="fas fa-ticket-alt mr-2"></i>{{ _('Register Walk-in') }}
+                </button>
+            </div>
+        </form>
+
+        <!-- New Patient Form (hidden by default) -->
+        <form id="form-new" method="POST" action="/walk-in/quick-register" class="hidden">
+            <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                <!-- Name -->
+                <div>
+                    <label class="block text-[10px] font-black text-white/40 uppercase tracking-widest mb-3">{{ _('Patient Name') }}</label>
+                    <div class="relative">
+                        <i class="fas fa-user absolute left-4 top-1/2 -translate-y-1/2 text-white/30"></i>
+                        <input type="text" name="name" required placeholder="{{ _('Full Name') }}"
+                               class="w-full glass-input pl-12 pr-5 py-4 focus:ring-0 outline-none font-bold">
+                    </div>
+                </div>
+
+                <!-- Phone -->
+                <div>
+                    <label class="block text-[10px] font-black text-white/40 uppercase tracking-widest mb-3">{{ _('Phone Number') }}</label>
+                    <div class="relative">
+                        <i class="fas fa-phone absolute left-4 top-1/2 -translate-y-1/2 text-white/30"></i>
+                        <input type="tel" name="phone" required placeholder="{{ _('Phone Number') }}"
+                               class="w-full glass-input pl-12 pr-5 py-4 focus:ring-0 outline-none font-bold">
+                    </div>
+                </div>
+
+                <!-- Email -->
+                <div>
+                    <label class="block text-[10px] font-black text-white/40 uppercase tracking-widest mb-3">{{ _('Email') }}</label>
+                    <div class="relative">
+                        <i class="fas fa-envelope absolute left-4 top-1/2 -translate-y-1/2 text-white/30"></i>
+                        <input type="email" name="email" placeholder="{{ _('Email (optional)') }}"
+                               class="w-full glass-input pl-12 pr-5 py-4 focus:ring-0 outline-none font-bold">
+                    </div>
+                </div>
+
+                <!-- Department (new) -->
+                <div>
+                    <label class="block text-[10px] font-black text-white/40 uppercase tracking-widest mb-3">{{ _('Department') }}</label>
+                    <select id="dept-select-new" onchange="filterDoctorsNew()" class="w-full glass-input px-5 py-4 focus:ring-0 outline-none appearance-none cursor-pointer font-bold">
+                        <option value="">{{ _('-- All Departments --') }}</option>
+                        {% for dept in departments %}
+                        <option value="{{ dept.id }}">{{ dept.name }}</option>
+                        {% endfor %}
+                    </select>
+                </div>
+
+                <!-- Doctor (new) -->
+                <div>
+                    <label class="block text-[10px] font-black text-white/40 uppercase tracking-widest mb-3">{{ _('Doctor') }}</label>
+                    <select name="doctor_id" id="doctor-select-new" required class="w-full glass-input px-5 py-4 focus:ring-0 outline-none appearance-none cursor-pointer font-bold">
+                        <option value="">{{ _('-- Select Doctor --') }}</option>
+                        {% for doc in doctors %}
+                        <option value="{{ doc.id }}" data-dept="{{ doc.department.id if doc.department else '' }}" data-spec="{{ doc.specialization }}" data-avail="{{ doc.is_available }}">
+                            {{ doc.name }} — {{ doc.specialization }}{% if not doc.is_available %} ({{ _('Unavailable') }}){% endif %}
+                        </option>
+                        {% endfor %}
+                    </select>
+                </div>
+
+                <!-- Priority (new) -->
+                <div>
+                    <label class="block text-[10px] font-black text-white/40 uppercase tracking-widest mb-3">{{ _('Priority') }}</label>
+                    <select name="priority" class="w-full glass-input px-5 py-4 focus:ring-0 outline-none appearance-none cursor-pointer font-bold">
+                        <option value="normal">{{ _('Normal') }}</option>
+                        <option value="urgent">{{ _('Urgent') }}</option>
+                    </select>
+                </div>
+
+                <!-- Notes (new) -->
+                <div class="lg:col-span-3">
+                    <label class="block text-[10px] font-black text-white/40 uppercase tracking-widest mb-3">{{ _('Notes') }}</label>
+                    <textarea name="notes" rows="2" placeholder="{{ _('Optional notes about the visit...') }}"
+                              class="w-full glass-input px-5 py-4 focus:ring-0 outline-none font-medium resize-none"></textarea>
+                </div>
+            </div>
+            <div class="mt-8 flex justify-end">
+                <button type="submit" class="px-10 py-4 btn-gradient rounded-xl text-sm font-black uppercase tracking-widest shadow-lg shadow-indigo-500/20 hover:shadow-indigo-500/40 transition-all">
+                    <i class="fas fa-plus-circle mr-2"></i>{{ _('Register New Walk-in') }}
+                </button>
+            </div>
+        </form>
+    </div>
+
+    <!-- ============================================================ -->
+    <!-- 3. TODAY'S WALK-IN QUEUE + 4. WAITLIST PANEL                 -->
+    <!-- ============================================================ -->
+    <div class="grid grid-cols-1 xl:grid-cols-3 gap-8 relative z-10">
+
+        <!-- Walk-in Queue Table (spans 2 cols) -->
+        <div class="xl:col-span-2 glass p-8" id="queue-panel">
+            <div class="flex items-center justify-between border-b border-white/5 pb-6 mb-8">
+                <div class="flex items-center gap-3">
+                    <span class="w-10 h-10 rounded-xl bg-blue-500/20 flex items-center justify-center">
+                        <i class="fas fa-list-ol text-blue-400"></i>
+                    </span>
+                    <div>
+                        <h2 class="text-xl font-black text-white uppercase">{{ _("Today's Walk-in Queue") }}</h2>
+                        <p class="text-[10px] font-black text-white/40 uppercase tracking-widest mt-0.5">{{ _('Sorted by token number') }}</p>
+                    </div>
+                </div>
+                <span class="px-4 py-2 glass text-xs font-black text-white/60 uppercase tracking-widest">
+                    {{ walkin_appointments|length }} {{ _('entries') }}
+                </span>
+            </div>
+
+            {% if walkin_appointments %}
+            <div class="overflow-x-auto">
+                <table class="w-full text-sm" id="queue-table">
+                    <thead>
+                        <tr class="border-b border-white/10">
+                            <th class="px-4 py-3 text-left text-[10px] font-black text-white/40 uppercase tracking-widest">{{ _('Token #') }}</th>
+                            <th class="px-4 py-3 text-left text-[10px] font-black text-white/40 uppercase tracking-widest">{{ _('Patient Name') }}</th>
+                            <th class="px-4 py-3 text-left text-[10px] font-black text-white/40 uppercase tracking-widest hidden md:table-cell">{{ _('Phone') }}</th>
+                            <th class="px-4 py-3 text-left text-[10px] font-black text-white/40 uppercase tracking-widest">{{ _('Doctor') }}</th>
+                            <th class="px-4 py-3 text-left text-[10px] font-black text-white/40 uppercase tracking-widest hidden lg:table-cell">{{ _('Time') }}</th>
+                            <th class="px-4 py-3 text-center text-[10px] font-black text-white/40 uppercase tracking-widest">{{ _('Status') }}</th>
+                            <th class="px-4 py-3 text-center text-[10px] font-black text-white/40 uppercase tracking-widest">{{ _('Actions') }}</th>
+                        </tr>
+                    </thead>
+                    <tbody class="divide-y divide-white/5">
+                        {% for appt in walkin_appointments|sort(attribute='token_number') %}
+                        <tr class="hover:bg-white/5 transition-colors group" id="queue-row-{{ appt.id }}">
+                            <!-- Token -->
+                            <td class="px-4 py-4">
+                                <span class="inline-flex items-center justify-center w-10 h-10 rounded-xl bg-indigo-500/20 border border-indigo-500/30 text-indigo-300 font-black text-sm">
+                                    {{ appt.token_number }}
+                                </span>
+                            </td>
+                            <!-- Patient -->
+                            <td class="px-4 py-4">
+                                <p class="font-bold text-white">{{ appt.patient.name }}</p>
+                                {% if appt.notes %}
+                                <p class="text-[10px] text-white/40 mt-0.5 truncate max-w-[150px]">{{ appt.notes }}</p>
+                                {% endif %}
+                            </td>
+                            <!-- Phone -->
+                            <td class="px-4 py-4 hidden md:table-cell">
+                                <span class="text-white/60 text-xs font-medium">{{ appt.patient.phone }}</span>
+                            </td>
+                            <!-- Doctor -->
+                            <td class="px-4 py-4">
+                                <p class="font-bold text-white text-xs">{{ appt.slot.doctor.name }}</p>
+                                <p class="text-[10px] text-indigo-400/80">{{ appt.slot.doctor.specialization }}</p>
+                            </td>
+                            <!-- Time -->
+                            <td class="px-4 py-4 hidden lg:table-cell">
+                                <span class="text-white/60 text-xs font-medium">{{ appt.slot.time_label }}</span>
+                            </td>
+                            <!-- Status Badge -->
+                            <td class="px-4 py-4 text-center">
+                                {% if appt.status == 'waiting' %}
+                                    <span class="status-waiting px-3 py-1 rounded-full text-xs font-bold inline-block">
+                                        <i class="fas fa-clock mr-1 text-[10px]"></i>{{ _('Waiting') }}
+                                    </span>
+                                {% elif appt.status == 'called' %}
+                                    <span class="status-called px-3 py-1 rounded-full text-xs font-bold inline-block animate-pulse">
+                                        <i class="fas fa-bullhorn mr-1 text-[10px]"></i>{{ _('Called') }}
+                                    </span>
+                                {% elif appt.status == 'seen' %}
+                                    <span class="status-seen px-3 py-1 rounded-full text-xs font-bold inline-block">
+                                        <i class="fas fa-check mr-1 text-[10px]"></i>{{ _('Seen') }}
+                                    </span>
+                                {% elif appt.status == 'cancelled' %}
+                                    <span class="px-3 py-1 rounded-full text-xs font-bold inline-block bg-red-500/20 text-red-400 border border-red-500/30">
+                                        <i class="fas fa-times mr-1 text-[10px]"></i>{{ _('Cancelled') }}
+                                    </span>
+                                {% else %}
+                                    <span class="px-3 py-1 rounded-full text-xs font-bold inline-block bg-white/10 text-white/60">
+                                        {{ appt.status }}
+                                    </span>
+                                {% endif %}
+                            </td>
+                            <!-- Actions -->
+                            <td class="px-4 py-4 text-center">
+                                <div class="flex items-center justify-center gap-2">
+                                    {% if appt.status == 'waiting' %}
+                                    <form method="POST" action="/walk-in/check-in/{{ appt.id }}" class="inline">
+                                        <button type="submit" class="px-3 py-2 bg-blue-500/20 hover:bg-blue-500/30 text-blue-400 hover:text-blue-300 rounded-lg text-[10px] font-black uppercase tracking-widest transition-all border border-blue-500/20 hover:border-blue-500/40" title="{{ _('Call Patient') }}">
+                                            <i class="fas fa-bullhorn mr-1"></i>{{ _('Call') }}
+                                        </button>
+                                    </form>
+                                    {% endif %}
+                                    {% if appt.status in ['waiting', 'called'] %}
+                                    <form method="POST" action="/cancel/{{ appt.id }}" class="inline" onsubmit="return confirm('{{ _('Cancel this walk-in appointment?') }}')">
+                                        <button type="submit" class="px-3 py-2 bg-red-500/10 hover:bg-red-500/20 text-red-400/70 hover:text-red-400 rounded-lg text-[10px] font-black uppercase tracking-widest transition-all border border-red-500/15 hover:border-red-500/30" title="{{ _('Cancel') }}">
+                                            <i class="fas fa-times"></i>
+                                        </button>
+                                    </form>
+                                    {% endif %}
+                                </div>
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+            {% else %}
+            <!-- Empty State -->
+            <div class="text-center py-16">
+                <div class="w-20 h-20 rounded-full bg-white/5 flex items-center justify-center mx-auto mb-6">
+                    <i class="fas fa-inbox text-3xl text-white/20"></i>
+                </div>
+                <p class="text-white/40 font-bold text-sm">{{ _('No walk-in appointments today') }}</p>
+                <p class="text-white/20 text-xs mt-1">{{ _('Register a walk-in above to get started') }}</p>
+            </div>
+            {% endif %}
+        </div>
+
+        <!-- Waitlist Panel (sidebar) -->
+        <div class="xl:col-span-1 glass p-8" id="waitlist-panel">
+            <div class="flex items-center justify-between border-b border-white/5 pb-6 mb-8">
+                <div class="flex items-center gap-3">
+                    <span class="w-10 h-10 rounded-xl bg-purple-500/20 flex items-center justify-center">
+                        <i class="fas fa-clipboard-list text-purple-400"></i>
+                    </span>
+                    <h2 class="text-lg font-black text-white uppercase">{{ _('Waitlist') }}</h2>
+                </div>
+                <span class="px-3 py-1.5 glass text-[10px] font-black text-purple-400 uppercase tracking-widest">
+                    {{ waitlist_entries|length }}
+                </span>
+            </div>
+
+            {% if waitlist_entries %}
+            <div class="space-y-4 max-h-[600px] overflow-y-auto pr-2" id="waitlist-list">
+                {% for entry in waitlist_entries %}
+                <div class="glass p-5 border-white/5 hover:bg-white/5 transition-all group" id="waitlist-entry-{{ entry.id }}">
+                    <!-- Position & Priority -->
+                    <div class="flex items-start justify-between mb-3">
+                        <div class="flex items-center gap-2">
+                            <span class="w-8 h-8 rounded-lg bg-indigo-500/25 border border-indigo-500/30 flex items-center justify-center text-indigo-300 text-xs font-black">
+                                #{{ entry.position }}
+                            </span>
+                            {% if entry.priority == 'urgent' %}
+                            <span class="px-2 py-0.5 rounded-full text-[9px] font-black uppercase tracking-wider bg-red-500/20 text-red-400 border border-red-500/30 animate-pulse">
+                                <i class="fas fa-exclamation-triangle mr-0.5"></i>{{ _('Urgent') }}
+                            </span>
+                            {% else %}
+                            <span class="px-2 py-0.5 rounded-full text-[9px] font-black uppercase tracking-wider bg-white/10 text-white/50">
+                                {{ _('Normal') }}
+                            </span>
+                            {% endif %}
+                        </div>
+                        {% if entry.status == 'waiting' %}
+                        <span class="status-waiting px-2 py-0.5 rounded-full text-[9px] font-bold">{{ _('Pending') }}</span>
+                        {% elif entry.status == 'promoted' %}
+                        <span class="status-seen px-2 py-0.5 rounded-full text-[9px] font-bold">{{ _('Promoted') }}</span>
+                        {% endif %}
+                    </div>
+
+                    <!-- Patient Info -->
+                    <div class="mb-3">
+                        <p class="font-bold text-white text-sm">{{ entry.patient.name }}</p>
+                        <p class="text-[10px] text-white/40 font-medium">{{ entry.patient.phone }}</p>
+                    </div>
+
+                    <!-- Doctor & Date -->
+                    <div class="flex items-center gap-4 text-[10px] text-white/50 font-bold mb-3">
+                        <span><i class="fas fa-user-md mr-1 text-indigo-400/60"></i>{{ entry.doctor.name }}</span>
+                        <span><i class="far fa-calendar mr-1 text-indigo-400/60"></i>{{ entry.requested_date }}</span>
+                    </div>
+
+                    <!-- Time & Preferred -->
+                    <div class="flex items-center gap-4 text-[10px] text-white/30 font-medium mb-4">
+                        {% if entry.preferred_time %}
+                        <span><i class="far fa-clock mr-1"></i>{{ _('Preferred') }}: {{ entry.preferred_time }}</span>
+                        {% endif %}
+                        <span><i class="fas fa-history mr-1"></i>{{ _('Added') }}: {{ entry.created_at.strftime('%H:%M') if entry.created_at else '--' }}</span>
+                    </div>
+
+                    <!-- Actions -->
+                    {% if entry.status == 'waiting' %}
+                    <div class="flex gap-2">
+                        <form method="POST" action="/waitlist/promote/{{ entry.id }}" class="flex-1">
+                            <button type="submit" class="w-full py-2.5 bg-emerald-500/15 hover:bg-emerald-500/25 text-emerald-400 text-[9px] font-black uppercase tracking-widest rounded-lg border border-emerald-500/20 hover:border-emerald-500/40 transition-all">
+                                <i class="fas fa-arrow-up mr-1"></i>{{ _('Promote') }}
+                            </button>
+                        </form>
+                        <form method="POST" action="/waitlist/remove/{{ entry.id }}" onsubmit="return confirm('{{ _('Remove this waitlist entry?') }}')">
+                            <button type="submit" class="px-3 py-2.5 bg-red-500/10 hover:bg-red-500/20 text-red-400/60 hover:text-red-400 rounded-lg text-[9px] font-black uppercase tracking-widest transition-all border border-red-500/15 hover:border-red-500/30" title="{{ _('Remove') }}">
+                                <i class="fas fa-trash-alt"></i>
+                            </button>
+                        </form>
+                    </div>
+                    {% endif %}
+                </div>
+                {% endfor %}
+            </div>
+            {% else %}
+            <!-- Empty State -->
+            <div class="text-center py-12">
+                <div class="w-16 h-16 rounded-full bg-white/5 flex items-center justify-center mx-auto mb-4">
+                    <i class="fas fa-check-double text-2xl text-white/20"></i>
+                </div>
+                <p class="text-white/40 font-bold text-sm">{{ _('Waitlist is clear') }}</p>
+                <p class="text-white/20 text-xs mt-1">{{ _('No patients are currently waitlisted') }}</p>
+            </div>
+            {% endif %}
+        </div>
+    </div>
+</div>
+
+<!-- Custom styles -->
+<style>
+    @keyframes counterPulse {
+        0%, 100% { transform: scale(1); }
+        50% { transform: scale(1.05); }
+    }
+    .counter-animate { animation: counterPulse 0.3s ease-out; }
+
+    @keyframes slideUp {
+        from { opacity: 0; transform: translateY(20px); }
+        to { opacity: 1; transform: translateY(0); }
+    }
+    .slide-up { animation: slideUp 0.4s ease-out forwards; }
+
+    #autocomplete-dropdown .ac-item {
+        padding: 12px 16px;
+        cursor: pointer;
+        transition: background 0.15s ease;
+        border-bottom: 1px solid rgba(255,255,255,0.05);
+    }
+    #autocomplete-dropdown .ac-item:last-child { border-bottom: none; }
+    #autocomplete-dropdown .ac-item:hover {
+        background: rgba(102, 126, 234, 0.15);
+    }
+    #autocomplete-dropdown .ac-item .ac-name {
+        font-weight: 700;
+        font-size: 13px;
+        color: white;
+    }
+    #autocomplete-dropdown .ac-item .ac-detail {
+        font-size: 10px;
+        color: rgba(255,255,255,0.4);
+        margin-top: 2px;
+    }
+</style>
+{% endblock %}
+
+{% block scripts %}
+<script>
+(function() {
+    // ==================== PATIENT DATA ====================
+    const patients = [
+        {% for p in patients %}
+        { id: {{ p.id }}, name: "{{ p.name|e }}", phone: "{{ p.phone|e }}", email: "{{ p.email|e if p.email else '' }}" }{% if not loop.last %},{% endif %}
+        {% endfor %}
+    ];
+
+    // ==================== ANIMATED COUNTERS ====================
+    document.querySelectorAll('.counter').forEach(counter => {
+        const target = parseInt(counter.getAttribute('data-target')) || 0;
+        const duration = 1200;
+        const startTime = performance.now();
+
+        function easeOutQuart(t) { return 1 - Math.pow(1 - t, 4); }
+
+        function updateCounter(currentTime) {
+            const elapsed = currentTime - startTime;
+            const progress = Math.min(elapsed / duration, 1);
+            const easedProgress = easeOutQuart(progress);
+            counter.textContent = Math.round(easedProgress * target);
+            if (progress < 1) {
+                requestAnimationFrame(updateCounter);
+            } else {
+                counter.textContent = target;
+                counter.classList.add('counter-animate');
+            }
+        }
+        requestAnimationFrame(updateCounter);
+    });
+
+    // ==================== PATIENT MODE TOGGLE ====================
+    window.setPatientMode = function(mode) {
+        const formExisting = document.getElementById('form-existing');
+        const formNew = document.getElementById('form-new');
+        const btnExisting = document.getElementById('mode-existing');
+        const btnNew = document.getElementById('mode-new');
+
+        const activeClass = 'px-6 py-3 rounded-xl text-xs font-black uppercase tracking-widest transition-all bg-indigo-500/25 border border-indigo-500/40 text-white shadow-[0_0_15px_rgba(99,102,241,0.2)]';
+        const inactiveClass = 'px-6 py-3 rounded-xl text-xs font-black uppercase tracking-widest transition-all bg-white/5 border border-white/10 text-white/50 hover:bg-white/10 hover:text-white';
+
+        if (mode === 'existing') {
+            formExisting.classList.remove('hidden');
+            formNew.classList.add('hidden');
+            btnExisting.className = activeClass;
+            btnNew.className = inactiveClass;
+        } else {
+            formExisting.classList.add('hidden');
+            formNew.classList.remove('hidden');
+            btnNew.className = activeClass;
+            btnExisting.className = inactiveClass;
+        }
+    };
+
+    // ==================== PATIENT SEARCH AUTOCOMPLETE ====================
+    const searchInput = document.getElementById('patient-search');
+    const dropdown = document.getElementById('autocomplete-dropdown');
+    const patientIdField = document.getElementById('patient-id-field');
+    const selectedBadge = document.getElementById('selected-patient-badge');
+    const selectedName = document.getElementById('selected-patient-name');
+
+    searchInput.addEventListener('input', function() {
+        const query = this.value.trim().toLowerCase();
+        dropdown.innerHTML = '';
+
+        if (query.length < 2) {
+            dropdown.classList.add('hidden');
+            return;
+        }
+
+        const matches = patients.filter(p =>
+            p.name.toLowerCase().includes(query) || p.phone.includes(query)
+        ).slice(0, 8);
+
+        if (matches.length === 0) {
+            dropdown.innerHTML = `<div class="p-4 text-center text-white/30 text-xs font-bold">{{ _('No patients found') }}</div>`;
+            dropdown.classList.remove('hidden');
+            return;
+        }
+
+        matches.forEach(p => {
+            const item = document.createElement('div');
+            item.className = 'ac-item';
+            item.innerHTML = `
+                <div class="ac-name">${p.name}</div>
+                <div class="ac-detail"><i class="fas fa-phone mr-1"></i>${p.phone}${p.email ? ' · <i class="fas fa-envelope mr-1 ml-2"></i>' + p.email : ''}</div>
+            `;
+            item.addEventListener('click', () => {
+                selectPatient(p);
+            });
+            dropdown.appendChild(item);
+        });
+
+        dropdown.classList.remove('hidden');
+    });
+
+    function selectPatient(p) {
+        searchInput.value = p.name;
+        patientIdField.value = p.id;
+        dropdown.classList.add('hidden');
+        selectedBadge.classList.remove('hidden');
+        selectedName.textContent = `${p.name} (${p.phone})`;
+    }
+
+    // Close dropdown on outside click
+    document.addEventListener('click', function(e) {
+        if (!searchInput.contains(e.target) && !dropdown.contains(e.target)) {
+            dropdown.classList.add('hidden');
+        }
+    });
+
+    // ==================== DOCTOR FILTER BY DEPARTMENT ====================
+    window.filterDoctors = function() {
+        const deptId = document.getElementById('dept-select').value;
+        const docSelect = document.getElementById('doctor-select');
+        const options = docSelect.querySelectorAll('option[data-dept]');
+
+        docSelect.value = '';
+        options.forEach(opt => {
+            if (!deptId || opt.getAttribute('data-dept') === deptId) {
+                opt.style.display = '';
+            } else {
+                opt.style.display = 'none';
+            }
+        });
+    };
+
+    window.filterDoctorsNew = function() {
+        const deptId = document.getElementById('dept-select-new').value;
+        const docSelect = document.getElementById('doctor-select-new');
+        const options = docSelect.querySelectorAll('option[data-dept]');
+
+        docSelect.value = '';
+        options.forEach(opt => {
+            if (!deptId || opt.getAttribute('data-dept') === deptId) {
+                opt.style.display = '';
+            } else {
+                opt.style.display = 'none';
+            }
+        });
+    };
+
+    // ==================== SOCKET.IO REAL-TIME UPDATES ====================
+    // `socket` is already defined globally in base.html
+
+    socket.on('queue_update', function(data) {
+        console.log('🔄 Queue update received:', data);
+        playNotificationSound();
+        // Reload to refresh the queue table with updated data
+        setTimeout(() => { window.location.reload(); }, 500);
+    });
+
+    socket.on('waitlist_update', function(data) {
+        console.log('📋 Waitlist update received:', data);
+        playNotificationSound();
+        // Reload to refresh the waitlist panel
+        setTimeout(() => { window.location.reload(); }, 500);
+    });
+
+})();
+</script>
+{% endblock %}

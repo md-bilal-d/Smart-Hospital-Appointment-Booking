@@ -1,0 +1,584 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>MediSlot — Queue Display Board</title>
+
+    <!-- Tailwind CSS CDN -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    fontFamily: { outfit: ['Outfit', 'sans-serif'] },
+                    colors: {
+                        deep: {
+                            900: '#1a1a2e',
+                            800: '#16213e',
+                            700: '#0f3460',
+                            600: '#533483'
+                        }
+                    }
+                }
+            }
+        };
+    </script>
+
+    <!-- Google Fonts — Outfit -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700;800;900&display=swap" rel="stylesheet">
+
+    <!-- Font Awesome 6.4.0 -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+
+    <!-- Socket.IO 4.7.2 -->
+    <script src="https://cdn.socket.io/4.7.2/socket.io.min.js"></script>
+
+    <style>
+        *, *::before, *::after { margin: 0; padding: 0; box-sizing: border-box; }
+
+        html, body {
+            height: 100%;
+            overflow: hidden;
+            font-family: 'Outfit', sans-serif;
+            background: linear-gradient(135deg, #0a0a1a, #1a1a2e, #0f1f3a);
+            background-attachment: fixed;
+            color: #ffffff;
+        }
+
+        body.cursor-hidden { cursor: none; }
+
+        /* ── Glass Card ──────────────────────────────── */
+        .glass-card {
+            background: rgba(255, 255, 255, 0.05);
+            backdrop-filter: blur(20px);
+            -webkit-backdrop-filter: blur(20px);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            border-radius: 20px;
+            transition: transform 0.3s ease, box-shadow 0.3s ease;
+        }
+        .glass-card:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 8px 40px rgba(102, 126, 234, 0.15);
+        }
+
+        /* ── NOW SERVING token glow ──────────────────── */
+        @keyframes tokenGlow {
+            0%   { text-shadow: 0 0 20px rgba(102, 126, 234, 0.8), 0 0 60px rgba(102, 126, 234, 0.4), 0 0 100px rgba(102, 126, 234, 0.2); }
+            33%  { text-shadow: 0 0 20px rgba(118, 75, 162, 0.8),  0 0 60px rgba(118, 75, 162, 0.4),  0 0 100px rgba(118, 75, 162, 0.2); }
+            66%  { text-shadow: 0 0 20px rgba(16, 185, 129, 0.8),  0 0 60px rgba(16, 185, 129, 0.4),  0 0 100px rgba(16, 185, 129, 0.2); }
+            100% { text-shadow: 0 0 20px rgba(102, 126, 234, 0.8), 0 0 60px rgba(102, 126, 234, 0.4), 0 0 100px rgba(102, 126, 234, 0.2); }
+        }
+
+        .token-number {
+            font-size: clamp(48px, 8vw, 80px);
+            font-weight: 900;
+            line-height: 1;
+            animation: tokenGlow 4s ease-in-out infinite;
+        }
+
+        /* ── Pulse ring behind token ─────────────────── */
+        @keyframes pulseRing {
+            0%   { transform: scale(0.85); opacity: 0.6; }
+            50%  { transform: scale(1.15); opacity: 0; }
+            100% { transform: scale(0.85); opacity: 0; }
+        }
+        .pulse-ring {
+            position: absolute;
+            inset: -10px;
+            border-radius: 50%;
+            border: 2px solid rgba(16, 185, 129, 0.5);
+            animation: pulseRing 2s ease-out infinite;
+        }
+
+        /* ── Slide-up animation for list items ───────── */
+        @keyframes slideUp {
+            from { opacity: 0; transform: translateY(16px); }
+            to   { opacity: 1; transform: translateY(0); }
+        }
+        .slide-up {
+            animation: slideUp 0.4s ease-out forwards;
+        }
+
+        /* ── Notification banner ─────────────────────── */
+        @keyframes bannerSlide {
+            0%   { transform: translateY(-100%); opacity: 0; }
+            10%  { transform: translateY(0); opacity: 1; }
+            85%  { transform: translateY(0); opacity: 1; }
+            100% { transform: translateY(-100%); opacity: 0; }
+        }
+        .notification-banner {
+            animation: bannerSlide 4s ease-in-out forwards;
+        }
+
+        /* ── Available dot pulse ─────────────────────── */
+        @keyframes dotPulse {
+            0%, 100% { opacity: 1; transform: scale(1); }
+            50%      { opacity: 0.5; transform: scale(1.3); }
+        }
+        .available-dot {
+            width: 12px; height: 12px;
+            background: #10b981;
+            border-radius: 50%;
+            display: inline-block;
+            animation: dotPulse 2s ease-in-out infinite;
+        }
+
+        /* ── Marquee ─────────────────────────────────── */
+        @keyframes marquee {
+            0%   { transform: translateX(100%); }
+            100% { transform: translateX(-100%); }
+        }
+        .marquee-text {
+            display: inline-block;
+            white-space: nowrap;
+            animation: marquee 30s linear infinite;
+        }
+
+        /* ── Heartbeat icon ──────────────────────────── */
+        @keyframes heartbeat {
+            0%, 100% { transform: scale(1); }
+            14%      { transform: scale(1.2); }
+            28%      { transform: scale(1); }
+            42%      { transform: scale(1.15); }
+            56%      { transform: scale(1); }
+        }
+        .heartbeat-icon {
+            animation: heartbeat 1.8s ease-in-out infinite;
+            display: inline-block;
+        }
+
+        /* ── Fade transition helper ──────────────────── */
+        .fade-enter {
+            animation: fadeIn 0.5s ease forwards;
+        }
+        @keyframes fadeIn {
+            from { opacity: 0; transform: scale(0.97); }
+            to   { opacity: 1; transform: scale(1); }
+        }
+
+        /* ── Next-in-line highlight ──────────────────── */
+        .next-highlight {
+            background: rgba(251, 191, 36, 0.1);
+            border-left: 3px solid #fbbf24;
+        }
+
+        /* ── Scrollbar hide ──────────────────────────── */
+        ::-webkit-scrollbar { display: none; }
+    </style>
+</head>
+
+<body>
+
+    <!-- ╔══════════════════════════════════════════════╗
+         ║            NOTIFICATION BANNER               ║
+         ╚══════════════════════════════════════════════╝ -->
+    <div id="notificationArea" class="fixed top-0 left-0 right-0 z-50 pointer-events-none"></div>
+
+    <!-- ╔══════════════════════════════════════════════╗
+         ║               MAIN WRAPPER                   ║
+         ╚══════════════════════════════════════════════╝ -->
+    <div class="h-screen flex flex-col">
+
+        <!-- ── Header Bar ────────────────────────────── -->
+        <header class="flex-shrink-0 px-6 py-4" style="background: linear-gradient(135deg, rgba(102,126,234,0.3), rgba(118,75,162,0.3), rgba(83,52,131,0.3)); border-bottom: 1px solid rgba(255,255,255,0.1);">
+            <div class="flex items-center justify-between">
+                <!-- Left: Logo -->
+                <div class="flex items-center gap-3">
+                    <span class="heartbeat-icon text-3xl text-rose-400">
+                        <i class="fas fa-heartbeat"></i>
+                    </span>
+                    <span class="text-3xl font-bold tracking-tight bg-gradient-to-r from-blue-400 via-purple-400 to-pink-400 bg-clip-text text-transparent">
+                        {{ hospital_name }}
+                    </span>
+                </div>
+
+                <!-- Center: Title -->
+                <div class="text-center">
+                    <h1 class="text-2xl md:text-3xl font-semibold tracking-wide text-white/90">
+                        <i class="fas fa-tv mr-2 text-blue-400"></i>Queue Display Board
+                    </h1>
+                </div>
+
+                <!-- Right: Clock -->
+                <div class="text-right">
+                    <div id="liveClock" class="text-3xl font-bold tabular-nums tracking-wider text-white/95">
+                        --:--:--
+                    </div>
+                    <div id="liveDate" class="text-sm text-white/50 font-light mt-0.5">
+                        Loading...
+                    </div>
+                </div>
+            </div>
+        </header>
+
+        <!-- ── Main Content (Doctor Cards Grid) ──────── -->
+        <main id="queueGrid" class="flex-1 overflow-hidden p-4 md:p-6 grid gap-4 md:gap-5 auto-rows-fr"
+              style="grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));">
+
+            {% for doc in doctors_queue %}
+            <div class="glass-card p-5 flex flex-col fade-enter" data-doctor="{{ doc.doctor_name }}">
+
+                <!-- Doctor Info -->
+                <div class="flex items-center gap-3 mb-4 pb-3" style="border-bottom: 1px solid rgba(255,255,255,0.08);">
+                    <div class="w-10 h-10 rounded-full flex items-center justify-center flex-shrink-0" style="background: linear-gradient(135deg, #667eea, #764ba2);">
+                        <i class="fas fa-user-md text-white text-lg"></i>
+                    </div>
+                    <div class="min-w-0">
+                        <h2 class="text-lg font-bold text-white truncate">{{ doc.doctor_name }}</h2>
+                        <p class="text-xs text-white/40 font-light truncate">{{ doc.doctor_specialization }}</p>
+                    </div>
+                </div>
+
+                {% if doc.current_token is not none %}
+                <!-- ── NOW SERVING ────────────────────── -->
+                <div class="flex-1 flex flex-col items-center justify-center text-center mb-4">
+                    <span class="text-[10px] uppercase tracking-[0.3em] font-semibold text-emerald-400 mb-2 flex items-center gap-2">
+                        <span class="w-2 h-2 rounded-full bg-emerald-400 animate-pulse"></span>
+                        Now Serving
+                    </span>
+                    <div class="relative inline-flex items-center justify-center my-2">
+                        <div class="pulse-ring"></div>
+                        <span class="token-number text-white">{{ doc.current_token }}</span>
+                    </div>
+                    {% if doc.current_patient_name %}
+                    <p class="text-base text-white/60 font-light mt-1">
+                        <i class="fas fa-user text-xs mr-1 text-white/30"></i>{{ doc.current_patient_name }}
+                    </p>
+                    {% endif %}
+                </div>
+
+                {% elif doc.waiting_list and doc.waiting_list|length > 0 %}
+                <!-- ── No one serving but has waiting ──── -->
+                <div class="flex-1 flex flex-col items-center justify-center text-center mb-4">
+                    <span class="text-[10px] uppercase tracking-[0.3em] font-semibold text-amber-400/70 mb-2">
+                        Now Serving
+                    </span>
+                    <p class="text-white/25 text-sm italic">Preparing next patient...</p>
+                </div>
+
+                {% else %}
+                <!-- ── AVAILABLE ──────────────────────── -->
+                <div class="flex-1 flex flex-col items-center justify-center text-center mb-4">
+                    <div class="available-dot mb-3"></div>
+                    <span class="text-emerald-400/80 text-sm font-medium tracking-wide">Available</span>
+                    <p class="text-white/20 text-xs mt-1">No patients in queue</p>
+                </div>
+                {% endif %}
+
+                <!-- ── UP NEXT ────────────────────────── -->
+                {% if doc.waiting_list and doc.waiting_list|length > 0 %}
+                <div class="mt-auto">
+                    <div class="flex items-center gap-2 mb-2">
+                        <span class="text-[10px] uppercase tracking-[0.25em] font-semibold text-amber-400/70">Up Next</span>
+                        <div class="flex-1 h-px bg-white/5"></div>
+                        <span class="text-[10px] text-white/20">{{ doc.waiting_list|length }} waiting</span>
+                    </div>
+                    <div class="space-y-1">
+                        {% for patient in doc.waiting_list[:5] %}
+                        <div class="flex items-center justify-between px-3 py-1.5 rounded-lg text-sm slide-up {{ 'next-highlight' if loop.first else '' }}"
+                             style="animation-delay: {{ loop.index0 * 0.08 }}s; {% if not loop.first %}background: rgba(255,255,255,0.02);{% endif %}">
+                            <div class="flex items-center gap-2">
+                                <span class="font-bold text-white/80 w-7 text-center">{{ patient.token_number }}</span>
+                                <span class="text-white/40 text-xs truncate max-w-[100px]">{{ patient.patient_first_name }}</span>
+                            </div>
+                            <span class="text-white/20 text-xs tabular-nums">
+                                <i class="far fa-clock mr-1"></i>{{ patient.estimated_time }}
+                            </span>
+                        </div>
+                        {% endfor %}
+                    </div>
+                </div>
+                {% endif %}
+
+            </div>
+            {% endfor %}
+
+            {% if not doctors_queue or doctors_queue|length == 0 %}
+            <!-- ── Empty State ────────────────────────── -->
+            <div class="col-span-full flex flex-col items-center justify-center text-center opacity-40">
+                <i class="fas fa-hospital text-6xl mb-4 text-white/20"></i>
+                <p class="text-xl text-white/30 font-light">No active queues at the moment</p>
+                <p class="text-sm text-white/15 mt-1">The display will update automatically</p>
+            </div>
+            {% endif %}
+
+        </main>
+
+        <!-- ── Bottom Marquee Bar ────────────────────── -->
+        <footer class="flex-shrink-0 py-2.5 overflow-hidden relative" style="background: rgba(255,255,255,0.03); border-top: 1px solid rgba(102,126,234,0.2);">
+            <div class="marquee-text text-sm text-white/40 font-light tracking-wide">
+                <i class="fas fa-circle text-[4px] align-middle mx-4 text-blue-400/50"></i>
+                Welcome to {{ hospital_name }}
+                <i class="fas fa-circle text-[4px] align-middle mx-4 text-purple-400/50"></i>
+                Please wait for your token number to be displayed
+                <i class="fas fa-circle text-[4px] align-middle mx-4 text-pink-400/50"></i>
+                Thank you for your patience
+                <i class="fas fa-circle text-[4px] align-middle mx-4 text-blue-400/50"></i>
+                For emergencies, please contact the front desk immediately
+                <i class="fas fa-circle text-[4px] align-middle mx-4 text-purple-400/50"></i>
+                {{ hospital_name }} — Smart Hospital Appointment Booking
+            </div>
+        </footer>
+
+    </div>
+
+    <!-- ╔══════════════════════════════════════════════╗
+         ║              JAVASCRIPT                      ║
+         ╚══════════════════════════════════════════════╝ -->
+    <script>
+    (function () {
+        'use strict';
+
+        /* ─── 1. Live Clock ───────────────────────── */
+        const clockEl  = document.getElementById('liveClock');
+        const dateEl   = document.getElementById('liveDate');
+        const dateOpts = { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' };
+
+        function updateClock() {
+            const now = new Date();
+            clockEl.textContent = now.toLocaleTimeString('en-US', { hour12: false, hour: '2-digit', minute: '2-digit', second: '2-digit' });
+            dateEl.textContent  = now.toLocaleDateString('en-US', dateOpts);
+        }
+        updateClock();
+        setInterval(updateClock, 1000);
+
+        /* ─── 2. Auto-hide Cursor ─────────────────── */
+        let cursorTimer = null;
+
+        function showCursor() {
+            document.body.classList.remove('cursor-hidden');
+            clearTimeout(cursorTimer);
+            cursorTimer = setTimeout(() => {
+                document.body.classList.add('cursor-hidden');
+            }, 3000);
+        }
+
+        document.addEventListener('mousemove', showCursor);
+        document.addEventListener('mousedown', showCursor);
+        showCursor();
+
+        /* ─── 3. Web Audio API — Double-Chime ─────── */
+        let audioCtx = null;
+
+        function playChime() {
+            try {
+                if (!audioCtx) audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+                const now = audioCtx.currentTime;
+
+                function playTone(freq, startTime, duration) {
+                    const osc  = audioCtx.createOscillator();
+                    const gain = audioCtx.createGain();
+
+                    osc.type = 'sine';
+                    osc.frequency.setValueAtTime(freq, startTime);
+
+                    gain.gain.setValueAtTime(0, startTime);
+                    gain.gain.linearRampToValueAtTime(0.3, startTime + 0.05);
+                    gain.gain.exponentialRampToValueAtTime(0.001, startTime + duration);
+
+                    osc.connect(gain);
+                    gain.connect(audioCtx.destination);
+
+                    osc.start(startTime);
+                    osc.stop(startTime + duration);
+                }
+
+                // D5 (587.33 Hz) then A5 (880 Hz) — pleasant double chime
+                playTone(587.33, now, 0.4);
+                playTone(880.00, now + 0.25, 0.5);
+            } catch (e) {
+                console.warn('Audio chime failed:', e);
+            }
+        }
+
+        /* ─── 4. Notification Banner ──────────────── */
+        const notifArea = document.getElementById('notificationArea');
+
+        function showBanner(tokenNum, doctorName) {
+            const banner = document.createElement('div');
+            banner.className = 'notification-banner mx-4 mt-3 px-6 py-4 rounded-2xl text-center';
+            banner.style.cssText = 'background: linear-gradient(135deg, rgba(16,185,129,0.25), rgba(102,126,234,0.25)); border: 1px solid rgba(16,185,129,0.4); backdrop-filter: blur(20px);';
+            banner.innerHTML = `
+                <div class="flex items-center justify-center gap-4">
+                    <i class="fas fa-bell text-2xl text-amber-400 animate-bounce"></i>
+                    <div>
+                        <span class="text-2xl font-bold text-white">Token #${tokenNum}</span>
+                        <span class="text-white/60 mx-2">—</span>
+                        <span class="text-lg text-white/80">${doctorName}</span>
+                    </div>
+                    <i class="fas fa-bell text-2xl text-amber-400 animate-bounce"></i>
+                </div>
+            `;
+            notifArea.appendChild(banner);
+            setTimeout(() => { banner.remove(); }, 4200);
+        }
+
+        /* ─── 5. Track Current Tokens ─────────────── */
+        let currentTokens = {};
+
+        // Initialize from server-rendered data
+        document.querySelectorAll('#queueGrid .glass-card').forEach(card => {
+            const doctorName = card.dataset.doctor;
+            const tokenEl    = card.querySelector('.token-number');
+            if (doctorName && tokenEl) {
+                currentTokens[doctorName] = parseInt(tokenEl.textContent, 10) || null;
+            } else if (doctorName) {
+                currentTokens[doctorName] = null;
+            }
+        });
+
+        /* ─── 6. Render Queue Data ────────────────── */
+        const queueGrid = document.getElementById('queueGrid');
+
+        function renderQueue(doctorsQueue) {
+            if (!doctorsQueue || doctorsQueue.length === 0) {
+                queueGrid.innerHTML = `
+                    <div class="col-span-full flex flex-col items-center justify-center text-center opacity-40">
+                        <i class="fas fa-hospital text-6xl mb-4 text-white/20"></i>
+                        <p class="text-xl text-white/30 font-light">No active queues at the moment</p>
+                        <p class="text-sm text-white/15 mt-1">The display will update automatically</p>
+                    </div>`;
+                return;
+            }
+
+            let html = '';
+
+            doctorsQueue.forEach(doc => {
+                const hasCurrentToken = doc.current_token !== null && doc.current_token !== undefined;
+                const hasWaiting      = doc.waiting_list && doc.waiting_list.length > 0;
+
+                // Detect token change → play chime + show banner
+                const prevToken = currentTokens[doc.doctor_name];
+                if (hasCurrentToken && prevToken !== doc.current_token) {
+                    playChime();
+                    showBanner(doc.current_token, doc.doctor_name);
+                }
+                currentTokens[doc.doctor_name] = hasCurrentToken ? doc.current_token : null;
+
+                html += `<div class="glass-card p-5 flex flex-col fade-enter" data-doctor="${doc.doctor_name}">`;
+
+                // Doctor info header
+                html += `
+                    <div class="flex items-center gap-3 mb-4 pb-3" style="border-bottom: 1px solid rgba(255,255,255,0.08);">
+                        <div class="w-10 h-10 rounded-full flex items-center justify-center flex-shrink-0" style="background: linear-gradient(135deg, #667eea, #764ba2);">
+                            <i class="fas fa-user-md text-white text-lg"></i>
+                        </div>
+                        <div class="min-w-0">
+                            <h2 class="text-lg font-bold text-white truncate">${doc.doctor_name}</h2>
+                            <p class="text-xs text-white/40 font-light truncate">${doc.doctor_specialization}</p>
+                        </div>
+                    </div>`;
+
+                if (hasCurrentToken) {
+                    // NOW SERVING
+                    html += `
+                    <div class="flex-1 flex flex-col items-center justify-center text-center mb-4">
+                        <span class="text-[10px] uppercase tracking-[0.3em] font-semibold text-emerald-400 mb-2 flex items-center gap-2">
+                            <span class="w-2 h-2 rounded-full bg-emerald-400 animate-pulse"></span>
+                            Now Serving
+                        </span>
+                        <div class="relative inline-flex items-center justify-center my-2">
+                            <div class="pulse-ring"></div>
+                            <span class="token-number text-white">${doc.current_token}</span>
+                        </div>
+                        ${doc.current_patient_name ? `<p class="text-base text-white/60 font-light mt-1"><i class="fas fa-user text-xs mr-1 text-white/30"></i>${doc.current_patient_name}</p>` : ''}
+                    </div>`;
+                } else if (hasWaiting) {
+                    // No current but has waiting
+                    html += `
+                    <div class="flex-1 flex flex-col items-center justify-center text-center mb-4">
+                        <span class="text-[10px] uppercase tracking-[0.3em] font-semibold text-amber-400/70 mb-2">Now Serving</span>
+                        <p class="text-white/25 text-sm italic">Preparing next patient...</p>
+                    </div>`;
+                } else {
+                    // AVAILABLE
+                    html += `
+                    <div class="flex-1 flex flex-col items-center justify-center text-center mb-4">
+                        <div class="available-dot mb-3"></div>
+                        <span class="text-emerald-400/80 text-sm font-medium tracking-wide">Available</span>
+                        <p class="text-white/20 text-xs mt-1">No patients in queue</p>
+                    </div>`;
+                }
+
+                // UP NEXT
+                if (hasWaiting) {
+                    const waitSlice = doc.waiting_list.slice(0, 5);
+                    html += `
+                    <div class="mt-auto">
+                        <div class="flex items-center gap-2 mb-2">
+                            <span class="text-[10px] uppercase tracking-[0.25em] font-semibold text-amber-400/70">Up Next</span>
+                            <div class="flex-1 h-px bg-white/5"></div>
+                            <span class="text-[10px] text-white/20">${doc.waiting_list.length} waiting</span>
+                        </div>
+                        <div class="space-y-1">`;
+
+                    waitSlice.forEach((patient, idx) => {
+                        const isFirst     = idx === 0;
+                        const highlightCl = isFirst ? 'next-highlight' : '';
+                        const bgStyle     = isFirst ? '' : 'background: rgba(255,255,255,0.02);';
+                        html += `
+                            <div class="flex items-center justify-between px-3 py-1.5 rounded-lg text-sm slide-up ${highlightCl}"
+                                 style="animation-delay: ${idx * 0.08}s; ${bgStyle}">
+                                <div class="flex items-center gap-2">
+                                    <span class="font-bold text-white/80 w-7 text-center">${patient.token_number}</span>
+                                    <span class="text-white/40 text-xs truncate max-w-[100px]">${patient.patient_first_name}</span>
+                                </div>
+                                <span class="text-white/20 text-xs tabular-nums">
+                                    <i class="far fa-clock mr-1"></i>${patient.estimated_time}
+                                </span>
+                            </div>`;
+                    });
+
+                    html += `</div></div>`;
+                }
+
+                html += `</div>`;
+            });
+
+            queueGrid.innerHTML = html;
+        }
+
+        /* ─── 7. Fetch Queue Data ─────────────────── */
+        async function fetchQueueData() {
+            try {
+                const resp = await fetch('/api/queue-display');
+                if (!resp.ok) throw new Error(`HTTP ${resp.status}`);
+                const data = await resp.json();
+                if (data.doctors_queue) {
+                    renderQueue(data.doctors_queue);
+                }
+            } catch (err) {
+                console.warn('Failed to fetch queue data:', err);
+            }
+        }
+
+        /* ─── 8. Socket.IO Real-time Updates ──────── */
+        try {
+            const socket = io({ transports: ['websocket', 'polling'] });
+
+            socket.on('connect', () => {
+                console.log('Socket.IO connected for queue display');
+            });
+
+            socket.on('queue_update', () => {
+                fetchQueueData();
+            });
+
+            socket.on('disconnect', () => {
+                console.warn('Socket.IO disconnected — falling back to polling');
+            });
+        } catch (e) {
+            console.warn('Socket.IO initialization failed:', e);
+        }
+
+        /* ─── 9. Auto-refresh Fallback (30s) ──────── */
+        setInterval(fetchQueueData, 30000);
+
+    })();
+    </script>
+
+</body>
+</html>
