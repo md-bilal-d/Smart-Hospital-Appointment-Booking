@@ -183,6 +183,7 @@ class MedicalRecord(db.Model):
     patient_id = db.Column(db.Integer, db.ForeignKey('patients.id'), nullable=False)
     file_path = db.Column(db.String(300), nullable=False)
     description = db.Column(db.String(200), default='')
+    category = db.Column(db.String(50), default='Other')
     uploaded_at = db.Column(db.DateTime, default=datetime.utcnow)
 
     patient = db.relationship('Patient', backref='medical_records')

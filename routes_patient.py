@@ -466,23 +466,166 @@ def symptom_checker():
 def upload_record():
     file = request.files.get('medical_record')
     description = request.form.get('description', '')
+    category = request.form.get('category', 'Other')
     
+    referrer = request.referrer
+    if referrer and 'medical-records' in referrer:
+        redirect_url = url_for('patient.medical_records')
+    else:
+        redirect_url = url_for('patient.profile')
+
     if not file or file.filename == '':
         flash('No file selected.', 'error')
-        return redirect(url_for('patient.profile'))
+        return redirect(redirect_url)
         
     filename = secure_filename(f"record_{current_user.id}_{datetime.now().strftime('%Y%m%d%H%M%S')}_{file.filename}")
     os.makedirs(os.path.join(current_app.root_path, 'static', 'records'), exist_ok=True)
     path = os.path.join('static', 'records', filename)
     file.save(os.path.join(current_app.root_path, path))
     
-    record = MedicalRecord(patient_id=current_user.id, file_path=path, description=description)
+    record = MedicalRecord(patient_id=current_user.id, file_path=path, description=description, category=category)
     db.session.add(record)
     db.session.commit()
     
-    audit_logger.log_action('Medical Record Uploaded', f'Patient {current_user.name} uploaded record: {description}')
+    audit_logger.log_action('Medical Record Uploaded', f'Patient {current_user.name} uploaded record: {description} under category {category}')
     flash('Medical record uploaded successfully!', 'success')
+    return redirect(redirect_url)
+
+
+@patient_bp.route('/delete-record/<int:record_id>', methods=['POST'])
+@login_required
+def delete_record(record_id):
+    record = MedicalRecord.query.get_or_404(record_id)
+    if record.patient_id != current_user.id:
+        flash('Unauthorized to delete this record.', 'error')
+        return redirect(url_for('patient.profile'))
+        
+    try:
+        file_abs_path = os.path.join(current_app.root_path, record.file_path)
+        if os.path.exists(file_abs_path):
+            os.remove(file_abs_path)
+    except Exception as e:
+        print(f"Error removing physical file: {e}")
+        
+    db.session.delete(record)
+    db.session.commit()
+    
+    audit_logger.log_action('Medical Record Deleted', f'Patient {current_user.name} deleted record: {record.description}')
+    flash('Medical record deleted successfully!', 'success')
+    
+    referrer = request.referrer
+    if referrer and 'medical-records' in referrer:
+        return redirect(url_for('patient.medical_records'))
     return redirect(url_for('patient.profile'))
+
+
+@patient_bp.route('/medical-records')
+@login_required
+def medical_records():
+    # 1. Fetch appointments (with Doctor details, ordered by date desc)
+    appointments = Appointment.query.join(Slot).filter(
+        Appointment.patient_id == current_user.id
+    ).order_by(Slot.date.desc(), Slot.time_label.desc()).all()
+
+    # 2. Fetch prescriptions (ordered by uploaded_at desc)
+    prescriptions = Prescription.query.filter_by(
+        patient_id=current_user.id
+    ).order_by(Prescription.uploaded_at.desc()).all()
+
+    # 3. Fetch uploaded medical records (ordered by uploaded_at desc)
+    records = MedicalRecord.query.filter_by(
+        patient_id=current_user.id
+    ).order_by(MedicalRecord.uploaded_at.desc()).all()
+
+    # 4. Fetch vitals readings (ordered by logged_at desc)
+    vitals = VitalsReading.query.filter_by(
+        patient_id=current_user.id
+    ).order_by(VitalsReading.logged_at.desc()).all()
+
+    # Create a unified timeline
+    timeline = []
+
+    for appt in appointments:
+        timeline.append({
+            'type': 'appointment',
+            'date': datetime.strptime(appt.slot.date, '%Y-%m-%d'),
+            'date_str': appt.slot.date,
+            'time': appt.slot.time_label,
+            'title': f"Appointment with Dr. {appt.slot.doctor.name}",
+            'subtitle': appt.slot.doctor.specialization,
+            'details': appt.notes or 'No notes provided by patient.',
+            'status': appt.status,
+            'doctor_notes': appt.notes if appt.status == 'seen' else '', 
+            'badge_class': f"status-{appt.status}",
+            'icon_class': 'fa-stethoscope text-indigo-400',
+            'id': appt.id
+        })
+
+    for pr in prescriptions:
+        timeline.append({
+            'type': 'prescription',
+            'date': pr.uploaded_at,
+            'date_str': pr.uploaded_at.strftime('%Y-%m-%d'),
+            'time': pr.uploaded_at.strftime('%I:%M %p'),
+            'title': f"Prescription from Dr. {pr.doctor.name if pr.doctor else 'General'}",
+            'subtitle': pr.doctor.specialization if pr.doctor else '',
+            'details': pr.notes or 'No prescription notes.',
+            'file_path': url_for('static', filename=pr.file_path),
+            'icon_class': 'fa-file-prescription text-purple-400',
+            'id': pr.id
+        })
+
+    for rec in records:
+        timeline.append({
+            'type': 'record',
+            'date': rec.uploaded_at,
+            'date_str': rec.uploaded_at.strftime('%Y-%m-%d'),
+            'time': rec.uploaded_at.strftime('%I:%M %p'),
+            'title': rec.description or 'Uploaded Health Document',
+            'subtitle': rec.category or 'Other',
+            'details': f"Category: {rec.category or 'Other'}",
+            'file_path': url_for('static', filename=rec.file_path),
+            'category': rec.category or 'Other',
+            'icon_class': 'fa-file-medical text-emerald-400',
+            'id': rec.id
+        })
+
+    for v in vitals:
+        vitals_details = f"BP: {v.blood_pressure_sys}/{v.blood_pressure_dia} mmHg | Sugar: {v.blood_sugar} mg/dL | HR: {v.heart_rate} bpm | Weight: {v.weight} kg"
+        timeline.append({
+            'type': 'vitals',
+            'date': v.logged_at,
+            'date_str': v.logged_at.strftime('%Y-%m-%d'),
+            'time': v.logged_at.strftime('%I:%M %p'),
+            'title': 'Logged Vitals Reading',
+            'subtitle': f"BMI: {v.bmi or 'N/A'}",
+            'details': vitals_details,
+            'vitals_data': {
+                'bp': f"{v.blood_pressure_sys}/{v.blood_pressure_dia}" if (v.blood_pressure_sys and v.blood_pressure_dia) else None,
+                'sugar': v.blood_sugar,
+                'hr': v.heart_rate,
+                'weight': v.weight,
+                'height': v.height,
+                'bmi': v.bmi,
+                'notes': v.notes
+            },
+            'icon_class': 'fa-heartbeat text-rose-400',
+            'id': v.id
+        })
+
+    # Sort timeline by date descending
+    timeline.sort(key=lambda x: x['date'], reverse=True)
+
+    # Get latest vitals for the summary widget
+    latest_vitals = vitals[0] if vitals else None
+
+    # Categories list for filtering
+    categories = ["Lab Report", "Prescription", "Scan/X-ray", "Vaccination", "Other"]
+
+    return render_template('medical_records.html', 
+                           timeline=timeline, 
+                           latest_vitals=latest_vitals, 
+                           categories=categories)
 
 
 @patient_bp.route('/health-tracker')

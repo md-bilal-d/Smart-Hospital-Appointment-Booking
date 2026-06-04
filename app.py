@@ -67,6 +67,20 @@ def create_app():
 
     # Ensure directories exist
     os.makedirs(os.path.join(app.root_path, 'static', 'prescriptions'), exist_ok=True)
+    os.makedirs(os.path.join(app.root_path, 'static', 'records'), exist_ok=True)
+
+    # Ensure database schema is up-to-date with category column
+    with app.app_context():
+        try:
+            from sqlalchemy import text
+            result = db.session.execute(text("PRAGMA table_info(medical_records)")).fetchall()
+            columns = [row[1] for row in result]
+            if 'category' not in columns:
+                db.session.execute(text("ALTER TABLE medical_records ADD COLUMN category VARCHAR(50) DEFAULT 'Other'"))
+                db.session.commit()
+                print("Database migrated: added category column to medical_records.")
+        except Exception as e:
+            print(f"Database migration error: {e}")
 
     socketio.init_app(app, cors_allowed_origins="*")
 
