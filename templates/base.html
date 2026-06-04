@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html lang="en" class="scroll-smooth">
+<html lang="{{ session.get('lang', 'en') }}" class="scroll-smooth">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -116,6 +116,19 @@
         body.light-theme .bg-black\/30 { background-color: rgba(255,255,255,0.7) !important; }
         body.light-theme footer p.text-white\/40 { color: rgba(0,0,0,0.5) !important; }
         
+        /* Light Theme - Language Dropdown */
+        body.light-theme #lang-dropdown {
+            background: linear-gradient(135deg, rgba(255,255,255,0.97), rgba(240,242,248,0.97)) !important;
+            border-color: rgba(0,0,0,0.1) !important;
+        }
+        body.light-theme #lang-dropdown p { color: rgba(0,0,0,0.35) !important; }
+        body.light-theme .lang-option p:first-child { color: #1f2937 !important; }
+        body.light-theme .lang-option p:last-child { color: rgba(0,0,0,0.4) !important; }
+        body.light-theme .lang-option:hover { background: rgba(0,0,0,0.05) !important; }
+
+        /* Language chevron rotation */
+        #lang-chevron.rotate { transform: rotate(180deg); }
+        
         /* Hide Scrollbar */
         ::-webkit-scrollbar { width: 8px; }
         ::-webkit-scrollbar-track { background: rgba(0,0,0,0.1); }
@@ -201,14 +214,44 @@
                         <a href="/register" class="px-5 py-2 btn-gradient rounded-full text-sm font-black shadow-xl">{{ _('JOIN NOW') }}</a>
                     {% endif %}
                     
-                    <!-- Language Selector -->
-                    <div class="relative ml-2">
-                        <select onchange="window.location.href='/set-language/' + this.value" class="text-xs font-bold bg-white/10 border border-white/10 rounded-lg px-2.5 py-1 text-white cursor-pointer focus:outline-none focus:ring-1 focus:ring-indigo-400 transition-all select-lang">
-                            <option value="en" {% if session.get('lang', 'en') == 'en' %}selected{% endif %}>🇬🇧 EN</option>
-                            <option value="es" {% if session.get('lang', 'en') == 'es' %}selected{% endif %}>🇪🇸 ES</option>
-                            <option value="fr" {% if session.get('lang', 'en') == 'fr' %}selected{% endif %}>🇫🇷 FR</option>
-                            <option value="hi" {% if session.get('lang', 'en') == 'hi' %}selected{% endif %}>🇮🇳 HI</option>
-                        </select>
+                    <!-- Language Toggle Widget -->
+                    <div class="relative ml-2" id="lang-switcher">
+                        <button id="lang-toggle-btn" class="flex items-center gap-1.5 px-3 py-1.5 bg-white/10 hover:bg-white/20 border border-white/10 rounded-full cursor-pointer transition-all duration-300 group" aria-label="Change language" aria-expanded="false">
+                            <span class="text-base leading-none" id="lang-current-flag">
+                                {% if session.get('lang', 'en') == 'es' %}🇪🇸{% elif session.get('lang', 'en') == 'fr' %}🇫🇷{% elif session.get('lang', 'en') == 'hi' %}🇮🇳{% else %}🇬🇧{% endif %}
+                            </span>
+                            <span class="text-[10px] font-black tracking-widest uppercase text-white/80 group-hover:text-white transition-colors">{{ session.get('lang', 'en')|upper }}</span>
+                            <i class="fas fa-chevron-down text-[8px] text-white/50 group-hover:text-white/80 transition-all duration-300" id="lang-chevron"></i>
+                        </button>
+                        <!-- Language Dropdown Panel -->
+                        <div id="lang-dropdown" class="absolute right-0 top-full mt-2 w-52 rounded-2xl overflow-hidden shadow-2xl border border-white/15 opacity-0 scale-95 pointer-events-none transition-all duration-300 origin-top-right z-[100]" style="background: linear-gradient(135deg, rgba(26,26,46,0.97), rgba(15,52,96,0.97)); backdrop-filter: blur(24px); -webkit-backdrop-filter: blur(24px);">
+                            <div class="px-3 pt-3 pb-1.5">
+                                <p class="text-[9px] font-black uppercase tracking-[0.2em] text-white/30">{{ _('Select Language') if _('Select Language') != 'Select Language' else 'Select Language' }}</p>
+                            </div>
+                            <div class="px-1.5 pb-2 flex flex-col gap-0.5">
+                                {% set current_lang = session.get('lang', 'en') %}
+                                {% set languages = [
+                                    ('en', '🇬🇧', 'English', 'English'),
+                                    ('es', '🇪🇸', 'Español', 'Spanish'),
+                                    ('fr', '🇫🇷', 'Français', 'French'),
+                                    ('hi', '🇮🇳', 'हिन्दी', 'Hindi')
+                                ] %}
+                                {% for code, flag, native_name, eng_name in languages %}
+                                <a href="/set-language/{{ code }}" class="lang-option flex items-center gap-3 px-3 py-2.5 rounded-xl transition-all duration-200 {{ 'bg-indigo-500/20 border border-indigo-400/30' if current_lang == code else 'hover:bg-white/10 border border-transparent' }}" data-lang="{{ code }}">
+                                    <span class="text-xl leading-none">{{ flag }}</span>
+                                    <div class="flex-1 min-w-0">
+                                        <p class="text-sm font-bold text-white leading-tight">{{ native_name }}</p>
+                                        <p class="text-[10px] text-white/40 font-medium">{{ eng_name }}</p>
+                                    </div>
+                                    {% if current_lang == code %}
+                                    <div class="w-5 h-5 rounded-full bg-indigo-500 flex items-center justify-center shrink-0">
+                                        <i class="fas fa-check text-[8px] text-white"></i>
+                                    </div>
+                                    {% endif %}
+                                </a>
+                                {% endfor %}
+                            </div>
+                        </div>
                     </div>
                     
                     <!-- Theme Toggle -->
@@ -219,6 +262,50 @@
                 <button onclick="document.getElementById('mobile-menu').classList.toggle('hidden')" class="md:hidden text-white p-2">
                     <i class="fas fa-bars"></i>
                 </button>
+            </div>
+        </div>
+        <!-- Mobile Menu -->
+        <div id="mobile-menu" class="hidden md:hidden border-t border-white/10 bg-black/30 backdrop-blur-lg px-4 pb-4 pt-3">
+            <div class="flex flex-col gap-2">
+                {% if session.get('patient_id') %}
+                    <a href="/symptom-checker" class="flex items-center gap-2 px-3 py-2.5 rounded-xl bg-white/5 hover:bg-white/10 text-sm font-bold text-white/80 transition-colors"><i class="fas fa-stethoscope text-indigo-400 w-5 text-center"></i> {{ _('Symptom Checker') }}</a>
+                    <a href="/book" class="flex items-center gap-2 px-3 py-2.5 rounded-xl hover:bg-white/10 text-sm font-bold text-white/70 transition-colors"><i class="fas fa-calendar-plus text-indigo-400 w-5 text-center"></i> {{ _('Book') }}</a>
+                    <a href="/dashboard" class="flex items-center gap-2 px-3 py-2.5 rounded-xl hover:bg-white/10 text-sm font-bold text-white/70 transition-colors"><i class="fas fa-th-large text-indigo-400 w-5 text-center"></i> {{ _('Dashboard') }}</a>
+                    <a href="/health-tracker" class="flex items-center gap-2 px-3 py-2.5 rounded-xl hover:bg-white/10 text-sm font-bold text-white/70 transition-colors"><i class="fas fa-heartbeat text-red-400 w-5 text-center"></i> {{ _('Vitals') }}</a>
+                    <a href="/calendar" class="flex items-center gap-2 px-3 py-2.5 rounded-xl hover:bg-white/10 text-sm font-bold text-white/70 transition-colors"><i class="fas fa-calendar text-indigo-400 w-5 text-center"></i> {{ _('Calendar') }}</a>
+                {% elif session.get('user_role') == 'super_admin' or session.get('user_role') == 'receptionist' %}
+                    <a href="{{ url_for('superadmin.dashboard') }}" class="flex items-center gap-2 px-3 py-2.5 rounded-xl hover:bg-white/10 text-sm font-bold text-amber-400 transition-colors"><i class="fas fa-shield-alt w-5 text-center"></i> {{ _('RBAC') }}</a>
+                    <a href="/admin" class="flex items-center gap-2 px-3 py-2.5 rounded-xl hover:bg-white/10 text-sm font-bold text-white/70 transition-colors"><i class="fas fa-cog w-5 text-center"></i> {{ _('Admin') }}</a>
+                {% elif session.get('doctor_id') %}
+                    <a href="{{ url_for('doctor.doctor_dashboard', doctor_id=session.get('doctor_id')) }}" class="flex items-center gap-2 px-3 py-2.5 rounded-xl hover:bg-white/10 text-sm font-bold text-white/70 transition-colors"><i class="fas fa-th-large text-indigo-400 w-5 text-center"></i> {{ _('My Dashboard') }}</a>
+                {% else %}
+                    <a href="{{ url_for('auth.doctor_login') }}" class="flex items-center gap-2 px-3 py-2.5 rounded-xl hover:bg-white/10 text-sm font-bold text-white/70 transition-colors"><i class="fas fa-user-md text-indigo-400 w-5 text-center"></i> {{ _('Doctors') }}</a>
+                    <a href="/login" class="flex items-center gap-2 px-3 py-2.5 rounded-xl hover:bg-white/10 text-sm font-bold text-white/70 transition-colors"><i class="fas fa-sign-in-alt text-indigo-400 w-5 text-center"></i> {{ _('Login') }}</a>
+                    <a href="/register" class="flex items-center gap-2 px-3 py-2.5 rounded-xl bg-indigo-500/20 hover:bg-indigo-500/30 text-sm font-bold text-indigo-300 transition-colors"><i class="fas fa-user-plus w-5 text-center"></i> {{ _('JOIN NOW') }}</a>
+                {% endif %}
+                <!-- Mobile Language Switcher -->
+                <div class="mt-2 pt-3 border-t border-white/10">
+                    <p class="text-[9px] font-black uppercase tracking-[0.2em] text-white/30 mb-2 px-1">{{ _('Select Language') if _('Select Language') != 'Select Language' else 'Language' }}</p>
+                    <div class="grid grid-cols-4 gap-1.5">
+                        {% set current_lang = session.get('lang', 'en') %}
+                        {% set languages = [
+                            ('en', '🇬🇧', 'EN'),
+                            ('es', '🇪🇸', 'ES'),
+                            ('fr', '🇫🇷', 'FR'),
+                            ('hi', '🇮🇳', 'HI')
+                        ] %}
+                        {% for code, flag, label in languages %}
+                        <a href="/set-language/{{ code }}" class="flex flex-col items-center gap-1 py-2.5 rounded-xl transition-all duration-200 {{ 'bg-indigo-500/25 border border-indigo-400/30 shadow-lg' if current_lang == code else 'bg-white/5 hover:bg-white/10 border border-transparent' }}">
+                            <span class="text-xl">{{ flag }}</span>
+                            <span class="text-[9px] font-black tracking-wider {{ 'text-indigo-300' if current_lang == code else 'text-white/50' }}">{{ label }}</span>
+                        </a>
+                        {% endfor %}
+                    </div>
+                </div>
+                <!-- Mobile Logout -->
+                {% if session.get('patient_id') or session.get('doctor_id') or session.get('user_role') %}
+                <a href="/logout" class="mt-2 flex items-center justify-center gap-2 px-3 py-2.5 rounded-xl bg-red-500/15 hover:bg-red-500/25 text-sm font-bold text-red-400 transition-colors"><i class="fas fa-sign-out-alt"></i> {{ _('LOGOUT') }}</a>
+                {% endif %}
             </div>
         </div>
     </nav>
@@ -467,6 +554,48 @@
                 }
             });
         }
+
+        // Language Dropdown Toggle
+        const langToggleBtn = document.getElementById('lang-toggle-btn');
+        const langDropdown = document.getElementById('lang-dropdown');
+        const langChevron = document.getElementById('lang-chevron');
+        let langDropdownOpen = false;
+
+        function toggleLangDropdown(forceClose) {
+            if (forceClose === true || langDropdownOpen) {
+                langDropdown.classList.add('opacity-0', 'scale-95', 'pointer-events-none');
+                langDropdown.classList.remove('opacity-100', 'scale-100', 'pointer-events-auto');
+                if (langChevron) langChevron.classList.remove('rotate');
+                if (langToggleBtn) langToggleBtn.setAttribute('aria-expanded', 'false');
+                langDropdownOpen = false;
+            } else {
+                langDropdown.classList.remove('opacity-0', 'scale-95', 'pointer-events-none');
+                langDropdown.classList.add('opacity-100', 'scale-100', 'pointer-events-auto');
+                if (langChevron) langChevron.classList.add('rotate');
+                if (langToggleBtn) langToggleBtn.setAttribute('aria-expanded', 'true');
+                langDropdownOpen = true;
+            }
+        }
+
+        if (langToggleBtn) {
+            langToggleBtn.addEventListener('click', (e) => {
+                e.stopPropagation();
+                toggleLangDropdown();
+            });
+        }
+
+        // Close dropdown on click outside
+        document.addEventListener('click', (e) => {
+            const switcher = document.getElementById('lang-switcher');
+            if (switcher && !switcher.contains(e.target)) {
+                toggleLangDropdown(true);
+            }
+        });
+
+        // Close dropdown on Escape key
+        document.addEventListener('keydown', (e) => {
+            if (e.key === 'Escape') toggleLangDropdown(true);
+        });
     </script>
     {% block scripts %}{% endblock %}
 </body>

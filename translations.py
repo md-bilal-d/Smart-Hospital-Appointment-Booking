@@ -89,6 +89,7 @@ TRANSLATIONS = {
         'Cancel': 'Cancelar',
         'Cancel Appointment': 'Cancelar cita',
         'Language changed successfully.': 'Idioma cambiado correctamente.',
+        'Select Language': 'Seleccionar idioma',
         
         # Chatbot
         "Hi! I'm your AI Medical Assistant. Please describe your symptoms, and I'll help you find the right department.": "¡Hola! Soy su Asistente Médico de IA. Describa sus síntomas y le ayudaré a encontrar el departamento adecuado.",
@@ -439,6 +440,7 @@ TRANSLATIONS = {
         'Cancel': 'Annuler',
         'Cancel Appointment': 'Annuler le rendez-vous',
         'Language changed successfully.': 'Langue changée avec succès.',
+        'Select Language': 'Choisir la langue',
         
         # Chatbot
         "Hi! I'm your AI Medical Assistant. Please describe your symptoms, and I'll help you find the right department.": "Bonjour ! Je suis votre assistant médical IA. Veuillez décrire vos symptômes et je vous aiderai à trouver le bon département.",
@@ -790,6 +792,7 @@ TRANSLATIONS = {
         'Cancel': 'रद्द करें',
         'Cancel Appointment': 'अपॉइंटमेंट रद्द करें',
         'Language changed successfully.': 'भाषा सफलतापूर्वक बदल दी गई।',
+        'Select Language': 'भाषा चुनें',
         
         # Chatbot
         "Hi! I'm your AI Medical Assistant. Please describe your symptoms, and I'll help you find the right department.": "नमस्ते! मैं आपका एआई मेडिकल असिस्टेंट हूँ। कृपया अपने लक्षणों का वर्णन करें, और मैं आपको सही विभाग खोजने में मदद करूँगा।",
