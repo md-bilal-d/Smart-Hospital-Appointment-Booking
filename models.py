@@ -313,3 +313,16 @@ class WaitlistEntry(db.Model):
     department = db.relationship('Department', backref='waitlist_entries')
     appointment = db.relationship('Appointment', backref=db.backref('waitlist_entry', uselist=False))
 
+
+class TelehealthMessage(db.Model):
+    __tablename__ = 'telehealth_messages'
+    id = db.Column(db.Integer, primary_key=True)
+    appointment_id = db.Column(db.Integer, db.ForeignKey('appointments.id'), nullable=False)
+    sender_role = db.Column(db.String(20), nullable=False)  # 'patient' or 'doctor'
+    sender_name = db.Column(db.String(100), nullable=False)
+    message = db.Column(db.Text, nullable=False)
+    timestamp = db.Column(db.DateTime, default=datetime.utcnow)
+
+    appointment = db.relationship('Appointment', backref='telehealth_messages')
+
+

@@ -3,7 +3,7 @@ import io
 from fpdf import FPDF
 from flask import Blueprint, render_template, request, redirect, url_for, flash, session, current_app, send_file
 from flask_login import login_required, current_user
-from models import db, Doctor, Department, Slot, Appointment, QueueLog, Patient, Prescription, Review, MedicalRecord, VitalsReading, Invoice, Article, WaitlistEntry
+from models import db, Doctor, Department, Slot, Appointment, QueueLog, Patient, Prescription, Review, MedicalRecord, VitalsReading, Invoice, Article, WaitlistEntry, TelehealthMessage
 from smart_scheduling import recommend_slot, recommend_alternative_doctor, assign_token
 from datetime import datetime, date, timedelta
 from extensions import socketio
@@ -1107,4 +1107,34 @@ def cancel_waitlist(entry_id):
 
     flash('Removed from waitlist.', 'info')
     return redirect(url_for('patient.dashboard'))
+
+
+@patient_bp.route('/telehealth/<int:appt_id>')
+def telehealth(appt_id):
+    if 'user_role' not in session:
+        flash('Please login to access the telehealth room.', 'error')
+        return redirect(url_for('auth.login'))
+        
+    appt = Appointment.query.get_or_404(appt_id)
+    
+    is_patient = (session.get('user_role') == 'patient' and session.get('patient_id') == appt.patient_id)
+    is_doctor = (session.get('user_role') == 'doctor' and session.get('doctor_id') == appt.slot.doctor_id)
+    is_admin = (session.get('user_role') in ['super_admin', 'receptionist'])
+    
+    if not (is_patient or is_doctor or is_admin):
+        flash('Unauthorized access to telehealth room.', 'error')
+        if session.get('user_role') == 'patient':
+            return redirect(url_for('patient.dashboard'))
+        elif session.get('user_role') == 'doctor':
+            return redirect(url_for('doctor.doctor_dashboard', doctor_id=session.get('doctor_id')))
+        else:
+            return redirect(url_for('admin.dashboard'))
+            
+    # Get previous chat messages
+    messages = TelehealthMessage.query.filter_by(appointment_id=appt_id).order_by(TelehealthMessage.timestamp.asc()).all()
+    
+    role = 'patient' if is_patient else ('doctor' if is_doctor else 'admin')
+    name = session.get('patient_name') if is_patient else session.get('doctor_name', 'Staff')
+    
+    return render_template('telehealth.html', appt=appt, messages=messages, current_role=role, current_name=name)
 

@@ -79,6 +79,23 @@ def create_app():
                 db.session.execute(text("ALTER TABLE medical_records ADD COLUMN category VARCHAR(50) DEFAULT 'Other'"))
                 db.session.commit()
                 print("Database migrated: added category column to medical_records.")
+                
+            # Check and create telehealth_messages table if not exists
+            table_check = db.session.execute(text("SELECT name FROM sqlite_master WHERE type='table' AND name='telehealth_messages'")).fetchone()
+            if not table_check:
+                db.session.execute(text("""
+                    CREATE TABLE telehealth_messages (
+                        id INTEGER PRIMARY KEY AUTOINCREMENT,
+                        appointment_id INTEGER NOT NULL,
+                        sender_role VARCHAR(20) NOT NULL,
+                        sender_name VARCHAR(100) NOT NULL,
+                        message TEXT NOT NULL,
+                        timestamp DATETIME DEFAULT CURRENT_TIMESTAMP,
+                        FOREIGN KEY(appointment_id) REFERENCES appointments(id)
+                    )
+                """))
+                db.session.commit()
+                print("Database migrated: created telehealth_messages table.")
         except Exception as e:
             print(f"Database migration error: {e}")
 
@@ -224,6 +241,43 @@ def create_app():
     scheduler.add_job(func=check_reminders, trigger='interval', seconds=300)
     scheduler.start()
     atexit.register(lambda: scheduler.shutdown())
+
+    # Telehealth Socket.IO Room & Message Handlers
+    @socketio.on('join_telehealth')
+    def handle_join_telehealth(data):
+        from flask_socketio import join_room
+        appt_id = data.get('appt_id')
+        if appt_id:
+            room = f"telehealth_{appt_id}"
+            join_room(room)
+            print(f"Socket joined telehealth room: {room}")
+
+    @socketio.on('send_telehealth_msg')
+    def handle_send_telehealth_msg(data):
+        from flask_socketio import emit
+        from models import db, TelehealthMessage
+        appt_id = data.get('appt_id')
+        sender_role = data.get('sender_role')
+        sender_name = data.get('sender_name')
+        message = data.get('message')
+        
+        if appt_id and sender_role and sender_name and message:
+            msg = TelehealthMessage(
+                appointment_id=appt_id,
+                sender_role=sender_role,
+                sender_name=sender_name,
+                message=message
+            )
+            db.session.add(msg)
+            db.session.commit()
+            
+            room = f"telehealth_{appt_id}"
+            emit('telehealth_receive_message', {
+                'sender_role': sender_role,
+                'sender_name': sender_name,
+                'message': message,
+                'timestamp': msg.timestamp.strftime('%I:%M %p')
+            }, to=room)
 
     return app
 

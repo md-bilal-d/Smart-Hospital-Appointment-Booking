@@ -124,6 +124,19 @@ def complete_appointment(appt_id):
         db.session.add(presc)
         
     db.session.commit()
+    
+    # Emit telehealth room completion event with notes and prescription url
+    try:
+        from flask import url_for
+        presc = Prescription.query.filter_by(appointment_id=appt.id).first()
+        presc_url = url_for('static', filename=presc.file_path) if presc else None
+        socketio.emit('telehealth_completed', {
+            'notes': notes,
+            'prescription_url': presc_url
+        }, to=f"telehealth_{appt.id}")
+    except Exception as e:
+        print(f"Error emitting telehealth completion: {e}")
+        
     socketio.emit('queue_update', {'slot_id': appt.slot_id})
     audit_logger.log_action('complete_appointment', f"Completed Appt #{appt.id}")
     
