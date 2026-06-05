@@ -15,6 +15,7 @@ patient_bp = Blueprint('patient', __name__)
 def book():
     departments = Department.query.all()
     dept_id = request.args.get('department', type=int)
+    doctor_id = request.args.get('doctor_id', type=int)
     
     active_appts = Appointment.query.filter_by(patient_id=current_user.id).filter(
         Appointment.status.in_(['waiting', 'called'])
@@ -24,12 +25,51 @@ def book():
         doctors = Doctor.query.filter_by(department_id=dept_id, is_available=True).all()
     else:
         doctors = Doctor.query.filter_by(is_available=True).all()
+        
     # Add recommendation info
     for doc in doctors:
         rec = recommend_slot(doc.id)
         doc.recommended_slot = rec
+        
+    preselected_doctor = None
+    if doctor_id:
+        preselected_doctor = Doctor.query.get(doctor_id)
+        
     return render_template('book.html', departments=departments, doctors=doctors,
-                           selected_dept=dept_id, active_appts=active_appts, current_step=1)
+                           selected_dept=dept_id, active_appts=active_appts, current_step=1,
+                           preselected_doctor=preselected_doctor)
+
+@patient_bp.route('/doctor/<int:doctor_id>/profile')
+@login_required
+def doctor_profile(doctor_id):
+    doctor = Doctor.query.get_or_404(doctor_id)
+    reviews = Review.query.filter_by(doctor_id=doctor_id).order_by(Review.created_at.desc()).all()
+    
+    # Calculate star distribution
+    distribution = {1: 0, 2: 0, 3: 0, 4: 0, 5: 0}
+    for r in reviews:
+        if r.rating in distribution:
+            distribution[r.rating] += 1
+            
+    total_reviews = len(reviews)
+    dist_pct = {}
+    for stars in range(1, 6):
+        count = distribution[stars]
+        dist_pct[stars] = round((count / total_reviews * 100), 1) if total_reviews else 0
+        
+    # Process reviews list with masked patient names
+    processed_reviews = []
+    for r in reviews:
+        name_parts = r.patient.name.split()
+        masked_name = name_parts[0] + ' ' + (name_parts[-1][0] + '.' if len(name_parts) > 1 else '')
+        processed_reviews.append({
+            'patient_name': masked_name,
+            'rating': r.rating,
+            'feedback': r.feedback or '',
+            'created_at': r.created_at.strftime('%d %b %Y')
+        })
+        
+    return render_template('doctor_profile.html', doctor=doctor, reviews=processed_reviews, dist_pct=dist_pct)
 
 @patient_bp.route('/book/slots/<int:doctor_id>/<string:selected_date>')
 @login_required

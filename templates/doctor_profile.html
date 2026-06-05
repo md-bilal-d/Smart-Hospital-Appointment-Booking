@@ -1,0 +1,170 @@
+{% extends 'base.html' %}
+{% block title %}{{ doctor.name }} - Profile{% endblock %}
+{% block content %}
+<div class="max-w-5xl mx-auto px-4 py-12">
+    <!-- Back Navigation -->
+    <div class="mb-8 flex justify-between items-center">
+        <a href="javascript:history.back()" class="px-5 py-2.5 bg-white/5 hover:bg-white/10 text-white/60 hover:text-white rounded-xl text-[11px] font-black uppercase tracking-widest transition-all inline-flex items-center gap-2">
+            <i class="fas fa-arrow-left"></i> {{ _('Go Back') }}
+        </a>
+        <a href="/book" class="px-5 py-2.5 bg-indigo-500/20 hover:bg-indigo-500/30 text-indigo-300 rounded-xl text-[11px] font-black uppercase tracking-widest transition-all">
+            {{ _('Book Portal') }}
+        </a>
+    </div>
+
+    <!-- Doctor Main Info & Bio Card -->
+    <div class="glass p-8 md:p-10 mb-10 relative overflow-hidden group">
+        <!-- Background Glowing Orbs -->
+        <div class="absolute -right-24 -top-24 w-60 h-60 bg-indigo-500/10 rounded-full blur-3xl transition-transform group-hover:scale-110"></div>
+        <div class="absolute -left-24 -bottom-24 w-60 h-60 bg-purple-500/10 rounded-full blur-3xl transition-transform group-hover:scale-110"></div>
+        
+        <div class="flex flex-col md:flex-row gap-8 items-center md:items-start relative z-10">
+            <!-- Profile Image and Availability Badge -->
+            <div class="relative flex-shrink-0">
+                <img src="{{ doctor.profile_pic_url or 'https://ui-avatars.com/api/?name=' + doctor.name + '&background=random' }}" 
+                     alt="{{ doctor.name }}" 
+                     class="w-36 h-36 rounded-3xl shadow-2xl object-cover border-2 border-white/10 group-hover:border-white/20 transition-all">
+                <div class="absolute -bottom-2 -right-2 px-3.5 py-1.5 rounded-full border-4 border-deep-900 text-[10px] font-black uppercase tracking-wider shadow-lg
+                     {% if doctor.is_available %}bg-emerald-500 text-white shadow-[0_0_15px_rgba(16,185,129,0.5)]{% else %}bg-gray-500 text-white{% endif %}">
+                    {% if doctor.is_available %}{{ _('Available') }}{% else %}{{ _('Away') }}{% endif %}
+                </div>
+            </div>
+
+            <!-- Doctor Specifications and Quick CTA -->
+            <div class="flex-1 text-center md:text-left">
+                <div class="mb-4">
+                    <span class="inline-block px-3 py-1 rounded-full text-[9px] font-black uppercase tracking-widest bg-indigo-500/20 text-indigo-300 border border-indigo-500/30 mb-2">
+                        {{ doctor.department.name if doctor.department else _('General Health') }}
+                    </span>
+                    <h1 class="text-3xl md:text-4xl font-black text-white tracking-tight">{{ doctor.name }}</h1>
+                    <p class="text-indigo-400 font-bold text-sm mt-1 uppercase tracking-wider">{{ doctor.specialization }}</p>
+                </div>
+
+                <p class="text-white/60 text-sm font-semibold leading-relaxed mb-6 max-w-2xl">
+                    Dr. {{ doctor.name }} is a highly accomplished specialist in {{ doctor.specialization }} with over {{ doctor.experience_years }} years of clinical expertise. Dedicated to personalized, empathetic care and cutting-edge therapeutics, ensuring every patient's visit is smooth and tailored to their health goals.
+                </p>
+
+                <!-- Experience and Rating Summary Pills -->
+                <div class="flex flex-wrap gap-4 justify-center md:justify-start">
+                    <div class="glass px-5 py-3.5 border-white/5 flex flex-col min-w-[120px] items-center md:items-start">
+                        <span class="text-[9px] font-black text-white/40 uppercase tracking-widest mb-1">{{ _('Experience') }}</span>
+                        <span class="text-lg font-black text-white">{{ doctor.experience_years }} {{ _('Years') }}</span>
+                    </div>
+                    <div class="glass px-5 py-3.5 border-white/5 flex flex-col min-w-[120px] items-center md:items-start">
+                        <span class="text-[9px] font-black text-white/40 uppercase tracking-widest mb-1">{{ _('Rating') }}</span>
+                        <span class="text-lg font-black text-amber-400 flex items-center gap-1.5">
+                            ⭐ {{ doctor.average_rating }}
+                        </span>
+                    </div>
+                    <div class="glass px-5 py-3.5 border-white/5 flex flex-col min-w-[120px] items-center md:items-start">
+                        <span class="text-[9px] font-black text-white/40 uppercase tracking-widest mb-1">{{ _('Reviews') }}</span>
+                        <span class="text-lg font-black text-indigo-400">{{ doctor.reviews_count }} {{ _('Logs') }}</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Feedback Analytics & Detailed Reviews Grid -->
+    <div class="grid grid-cols-1 lg:grid-cols-3 gap-8">
+        <!-- Rating Distribution Panel -->
+        <div class="lg:col-span-1 space-y-6">
+            <div class="glass p-8 sticky top-24">
+                <h3 class="text-[10px] font-black text-white/40 uppercase tracking-widest mb-6 border-b border-white/5 pb-4">{{ _('Rating Distribution') }}</h3>
+                
+                <!-- Average Big Number -->
+                <div class="text-center bg-white/5 p-6 rounded-2xl border border-white/5 mb-8">
+                    <span class="text-5xl font-black text-white">{{ doctor.average_rating }}</span>
+                    <span class="text-xs font-black text-white/40 block mt-2">OUT OF 5 STARS</span>
+                    <div class="flex justify-center gap-1 mt-3 text-sm text-amber-400">
+                        {% set full_stars = doctor.average_rating|int %}
+                        {% for i in range(5) %}
+                            {% if i < full_stars %}
+                                ★
+                            {% else %}
+                                ☆
+                            {% endif %}
+                        {% endfor %}
+                    </div>
+                </div>
+
+                <!-- Star Breakdown bars -->
+                <div class="space-y-4">
+                    {% for stars in [5, 4, 3, 2, 1] %}
+                    {% set pct = dist_pct.get(stars, 0) %}
+                    <div class="flex items-center gap-3">
+                        <span class="text-[10px] font-black text-white/40 w-10 text-right">{{ stars }} {{ _('Star') }}</span>
+                        <div class="flex-1 h-2.5 bg-white/5 rounded-full overflow-hidden border border-white/5">
+                            <div class="h-full rounded-full transition-all duration-1000
+                                 {% if stars == 5 %}bg-emerald-500 shadow-[0_0_8px_rgba(16,185,129,0.4)]
+                                 {% elif stars == 4 %}bg-indigo-500 shadow-[0_0_8px_rgba(99,102,241,0.4)]
+                                 {% elif stars == 3 %}bg-yellow-500 shadow-[0_0_8px_rgba(234,179,8,0.4)]
+                                 {% elif stars == 2 %}bg-orange-500
+                                 {% else %}bg-red-500
+                                 {% endif %}" 
+                                 style="width: {{ pct }}%;"></div>
+                        </div>
+                        <span class="text-[10px] font-black text-white/40 w-10 text-left">{{ pct }}%</span>
+                    </div>
+                    {% endfor %}
+                </div>
+
+                <!-- Booking CTA Direct Button -->
+                {% if doctor.is_available %}
+                <div class="mt-8 border-t border-white/5 pt-6">
+                    <a href="/book?doctor_id={{ doctor.id }}" class="w-full py-4 btn-gradient rounded-xl font-black uppercase tracking-widest text-[11px] shadow-lg flex items-center justify-center gap-2 hover:scale-[1.02] transition-transform">
+                        <i class="fas fa-calendar-check text-xs"></i> {{ _('Book Session') }}
+                    </a>
+                </div>
+                {% endif %}
+            </div>
+        </div>
+
+        <!-- Scrollable Reviews Timeline -->
+        <div class="lg:col-span-2 space-y-6">
+            <div class="glass p-8">
+                <h3 class="text-[10px] font-black text-white/40 uppercase tracking-widest mb-6 border-b border-white/5 pb-4 flex items-center justify-between">
+                    <span>{{ _('Patient Review Feed') }}</span>
+                    <span class="text-[9px] bg-indigo-500/20 text-indigo-300 border border-indigo-500/30 px-2.5 py-0.5 rounded-full font-black uppercase">{{ reviews|length }} {{ _('Verified reviews') }}</span>
+                </h3>
+
+                {% if reviews %}
+                <div class="space-y-6">
+                    {% for rev in reviews %}
+                    <div class="glass p-6 border-white/5 hover:border-white/10 transition-all bg-white/5 hover:bg-white/[0.07] relative overflow-hidden group">
+                        <!-- Rating Stars -->
+                        <div class="flex justify-between items-center mb-3">
+                            <span class="text-xs font-black text-white/80">{{ rev.patient_name }}</span>
+                            <div class="text-amber-400 text-xs drop-shadow-[0_0_8px_rgba(250,204,21,0.3)]">
+                                {% for i in range(5) %}
+                                    {% if i < rev.rating %}★{% else %}☆{% endif %}
+                                {% endfor %}
+                            </div>
+                        </div>
+
+                        <!-- Feedback Comment -->
+                        <p class="text-white/60 text-xs font-semibold leading-relaxed italic pr-10">
+                            "{{ rev.feedback or _('No written comments provided. Rating score only.') }}"
+                        </p>
+
+                        <!-- Timestamp -->
+                        <div class="mt-4 pt-2 border-t border-white/5 flex justify-end">
+                            <span class="text-[9px] font-black text-white/30 uppercase tracking-widest">{{ rev.created_at }}</span>
+                        </div>
+                    </div>
+                    {% endfor %}
+                </div>
+                {% else %}
+                <div class="py-16 text-center">
+                    <div class="text-5xl mb-4">💬</div>
+                    <h4 class="text-lg font-black text-white mb-2">{{ _('No reviews yet') }}</h4>
+                    <p class="text-white/40 text-xs leading-relaxed max-w-sm mx-auto">
+                        {{ _('This specialist has not received any patient reviews yet. Be the first to leave a rating and feedback after a completed consultation.') }}
+                    </p>
+                </div>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
