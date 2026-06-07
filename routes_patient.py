@@ -1138,3 +1138,49 @@ def telehealth(appt_id):
     
     return render_template('telehealth.html', appt=appt, messages=messages, current_role=role, current_name=name)
 
+
+# ---------- Vitals Chart Feature ----------
+@patient_bp.route('/patient/<int:patient_id>/vitals')
+@login_required
+def patient_vitals(patient_id):
+    if current_user.id != patient_id:
+        flash('Unauthorized access to vitals.', 'error')
+        return redirect(url_for('patient.dashboard'))
+    return render_template('patient_vitals.html', patient_id=patient_id)
+
+@patient_bp.route('/api/patient/<int:patient_id>/vitals')
+@login_required
+def api_patient_vitals(patient_id):
+    if current_user.id != patient_id:
+        return {"error": "Unauthorized"}, 403
+    # Optional date range filter
+    start = request.args.get('start')
+    end = request.args.get('end')
+    query = VitalsReading.query.filter_by(patient_id=patient_id).order_by(VitalsReading.logged_at.asc())
+    if start:
+        try:
+            start_dt = datetime.strptime(start, '%Y-%m-%d')
+            query = query.filter(VitalsReading.logged_at >= start_dt)
+        except Exception:
+            pass
+    if end:
+        try:
+            end_dt = datetime.strptime(end, '%Y-%m-%d')
+            query = query.filter(VitalsReading.logged_at <= end_dt)
+        except Exception:
+            pass
+    readings = query.all()
+    data = []
+    for r in readings:
+        data.append({
+            "timestamp": r.logged_at.isoformat(),
+            "bp_sys": r.blood_pressure_sys,
+            "bp_dia": r.blood_pressure_dia,
+            "sugar": r.blood_sugar,
+            "hr": r.heart_rate,
+            "weight": r.weight,
+            "bmi": r.bmi,
+            "notes": r.notes
+        })
+    return {"readings": data}, 200
+# ------------------------------------------

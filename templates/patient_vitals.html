@@ -1,0 +1,81 @@
+{% extends 'base.html' %}
+{% block title %}{{ _('Vitals Chart') }}{% endblock %}
+{% block content %}
+<div class="max-w-4xl mx-auto px-4 py-12">
+    <div class="glass p-6">
+        <h1 class="text-3xl font-black text-white mb-4">{{ _('Your Health Vitals Over Time') }}</h1>
+        <div class="flex gap-4 mb-4">
+            <label class="text-white">{{ _('Start Date') }}:
+                <input type="date" id="startDate" class="ml-2 px-2 py-1 glass text-white" />
+            </label>
+            <label class="text-white">{{ _('End Date') }}:
+                <input type="date" id="endDate" class="ml-2 px-2 py-1 glass text-white" />
+            </label>
+            <button id="filterBtn" class="px-4 py-2 btn-gradient text-white font-black uppercase tracking-widest">{{ _('Filter') }}</button>
+        </div>
+        <canvas id="vitalsChart" class="w-full h-96"></canvas>
+    </div>
+</div>
+{% endblock %}
+{% block scripts %}
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<script>
+    const ctx = document.getElementById('vitalsChart').getContext('2d');
+    let chart;
+    function renderChart(data) {
+        const labels = data.map(d => new Date(d.timestamp).toLocaleDateString());
+        const bpSys = data.map(d => d.bp_sys);
+        const bpDia = data.map(d => d.bp_dia);
+        const sugar = data.map(d => d.sugar);
+        const hr = data.map(d => d.hr);
+        const weight = data.map(d => d.weight);
+        const bmi = data.map(d => d.bmi);
+        const datasets = [];
+        if (bpSys.some(v => v !== null)) {
+            datasets.push({label: 'BP Systolic', data: bpSys, borderColor: '#EF4444', tension: 0.2, fill: false});
+        }
+        if (bpDia.some(v => v !== null)) {
+            datasets.push({label: 'BP Diastolic', data: bpDia, borderColor: '#F97316', tension: 0.2, fill: false});
+        }
+        if (sugar.some(v => v !== null)) {
+            datasets.push({label: 'Blood Sugar', data: sugar, borderColor: '#10B981', tension: 0.2, fill: false});
+        }
+        if (hr.some(v => v !== null)) {
+            datasets.push({label: 'Heart Rate', data: hr, borderColor: '#3B82F6', tension: 0.2, fill: false});
+        }
+        if (weight.some(v => v !== null)) {
+            datasets.push({label: 'Weight (kg)', data: weight, borderColor: '#A78BFA', tension: 0.2, fill: false});
+        }
+        if (bmi.some(v => v !== null)) {
+            datasets.push({label: 'BMI', data: bmi, borderColor: '#F59E0B', tension: 0.2, fill: false});
+        }
+        if (chart) chart.destroy();
+        chart = new Chart(ctx, {
+            type: 'line',
+            data: {labels, datasets},
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                plugins: {legend: {labels: {color: '#fff'}}, tooltip: {mode: 'index', intersect: false}},
+                scales: {x: {ticks: {color: '#fff'}}, y: {ticks: {color: '#fff'}}}
+            }
+        });
+    }
+    async function fetchData() {
+        const patientId = {{ patient_id }};
+        const start = document.getElementById('startDate').value;
+        const end = document.getElementById('endDate').value;
+        let url = `/api/patient/${patientId}/vitals`;
+        const params = [];
+        if (start) params.push(`start=${start}`);
+        if (end) params.push(`end=${end}`);
+        if (params.length) url += `?${params.join('&')}`;
+        const res = await fetch(url);
+        const json = await res.json();
+        renderChart(json.readings);
+    }
+    document.getElementById('filterBtn').addEventListener('click', fetchData);
+    // Initial load
+    fetchData();
+</script>
+{% endblock %}

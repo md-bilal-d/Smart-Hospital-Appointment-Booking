@@ -157,6 +157,19 @@
             </a>
         </div>
 
+            <!-- Vitals Chart Quick Portal -->
+            <div class="glass p-8 border-l-4 border-pink-500/50 bg-pink-950/10 relative overflow-hidden group flex flex-col justify-between">
+                <div class="absolute -right-16 -top-16 w-40 h-40 bg-pink-500/10 rounded-full blur-3xl"></div>
+                <div class="mb-6">
+                    <span class="inline-block px-3 py-1 rounded-full text-[9px] font-black uppercase tracking-widest bg-pink-500/20 text-pink-300 border border-pink-500/30 mb-3">{{ _('Vitals Chart') }}</span>
+                    <h3 class="text-2xl font-black text-white mb-2"><i class="fas fa-chart-line text-pink-400 mr-2"></i> {{ _('Health Vitals Chart') }}</h3>
+                    <p class="text-white/60 text-xs font-semibold leading-relaxed">{{ _('Visualize your blood pressure, sugar, heart rate, weight, and BMI trends over time.') }}</p>
+                </div>
+                <a href="{{ url_for('patient.patient_vitals', patient_id=current_user.id) }}" class="w-full text-center px-6 py-3.5 btn-gradient rounded-xl font-black uppercase tracking-widest text-[10px] shadow-2xl transition-all hover:scale-[1.02]">
+                    {{ _('Open Vitals Chart') }}
+                </a>
+            </div>
+
         <!-- Medical Records Quick Portal -->
         <div class="glass p-8 border-l-4 border-emerald-500/50 bg-emerald-950/10 relative overflow-hidden group flex flex-col justify-between">
             <div class="absolute -right-16 -top-16 w-40 h-40 bg-emerald-500/10 rounded-full blur-3xl"></div>
