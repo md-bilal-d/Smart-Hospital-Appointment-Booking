@@ -64,6 +64,62 @@ def doctor_dashboard(doctor_id):
         total_rating = sum(r.rating for r in reviews)
         avg_rating = round(total_rating / len(reviews), 1)
 
+    # Fetch recent vitals for today's patients
+    today_appts = Appointment.query.join(Slot).filter(
+        Slot.doctor_id == doctor_id, Slot.date == today_str
+    ).all()
+    
+    patient_ids = list(set(a.patient_id for a in today_appts))
+    patient_vitals = []
+    
+    for pid in patient_ids:
+        latest_vital = VitalsReading.query.filter_by(patient_id=pid).order_by(VitalsReading.logged_at.desc()).first()
+        if latest_vital:
+            patient = Patient.query.get(pid)
+            
+            # Determine alert status
+            alert_level = 'normal'
+            alerts = []
+            
+            if latest_vital.blood_pressure_sys and latest_vital.blood_pressure_sys > 140:
+                alert_level = 'warning'
+                alerts.append('High BP (Sys)')
+            elif latest_vital.blood_pressure_sys and latest_vital.blood_pressure_sys < 90:
+                alert_level = 'warning'
+                alerts.append('Low BP (Sys)')
+                
+            if latest_vital.blood_pressure_dia and latest_vital.blood_pressure_dia > 90:
+                alert_level = 'warning'
+                alerts.append('High BP (Dia)')
+            elif latest_vital.blood_pressure_dia and latest_vital.blood_pressure_dia < 60:
+                alert_level = 'warning'
+                alerts.append('Low BP (Dia)')
+                
+            if latest_vital.blood_sugar and latest_vital.blood_sugar > 140:
+                alert_level = 'warning'
+                alerts.append('High Sugar')
+            elif latest_vital.blood_sugar and latest_vital.blood_sugar < 70:
+                alert_level = 'critical'
+                alerts.append('Low Sugar')
+                
+            if latest_vital.heart_rate and latest_vital.heart_rate > 100:
+                alert_level = 'warning' if alert_level != 'critical' else 'critical'
+                alerts.append('High HR')
+            elif latest_vital.heart_rate and latest_vital.heart_rate < 60:
+                alert_level = 'warning' if alert_level != 'critical' else 'critical'
+                alerts.append('Low HR')
+                
+            # Elevate warning to critical if multiple warnings
+            if len(alerts) >= 3 and alert_level == 'warning':
+                alert_level = 'critical'
+                
+            patient_vitals.append({
+                'patient': patient,
+                'vitals': latest_vital,
+                'alert_level': alert_level,
+                'alerts': alerts
+            })
+
     return render_template('doctor/dashboard.html', 
                          doctor=doctor, 
                          queue=queue_appts,
@@ -73,7 +129,8 @@ def doctor_dashboard(doctor_id):
                          waiting_today=waiting_today,
                          timeline=timeline,
                          reviews=reviews,
-                         avg_rating=avg_rating)
+                         avg_rating=avg_rating,
+                         patient_vitals=patient_vitals)
 
 @doctor_bp.route('/doctor/call/<int:appt_id>', methods=['POST'])
 @role_required(['doctor'])

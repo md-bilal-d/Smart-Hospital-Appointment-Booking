@@ -110,6 +110,88 @@
         <!-- RIGHT PANEL: Queue & Real-time Patients -->
         <div class="lg:w-2/3 space-y-8">
             
+            <!-- Vitals Summary Card -->
+            <div class="glass p-8">
+                <div class="flex justify-between items-center mb-6">
+                    <div>
+                        <h3 class="text-xl font-black text-white mb-1"><i class="fas fa-heartbeat text-rose-400 mr-2"></i> Patient Vitals Monitor</h3>
+                        <p class="text-[10px] font-bold text-white/40 uppercase tracking-widest">Latest logged vitals for today's patients</p>
+                    </div>
+                </div>
+                
+                {% if patient_vitals %}
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    {% for pv in patient_vitals %}
+                    <div class="glass p-5 rounded-xl border border-white/5 relative overflow-hidden group hover:border-white/20 transition-all">
+                        <!-- Alert Indicator Background glow -->
+                        {% if pv.alert_level == 'critical' %}
+                        <div class="absolute -right-10 -top-10 w-32 h-32 bg-red-500/20 rounded-full blur-2xl"></div>
+                        {% elif pv.alert_level == 'warning' %}
+                        <div class="absolute -right-10 -top-10 w-32 h-32 bg-amber-500/20 rounded-full blur-2xl"></div>
+                        {% else %}
+                        <div class="absolute -right-10 -top-10 w-32 h-32 bg-teal-500/10 rounded-full blur-2xl"></div>
+                        {% endif %}
+                        
+                        <div class="flex justify-between items-start mb-3 relative z-10">
+                            <div>
+                                <h4 class="text-sm font-black text-white">{{ pv.patient.name }}</h4>
+                                <p class="text-[9px] text-white/40 font-bold uppercase">{{ pv.vitals.logged_at.strftime('%d %b %H:%M') }}</p>
+                            </div>
+                            {% if pv.alert_level == 'critical' %}
+                            <span class="px-2 py-1 bg-red-500/20 text-red-400 border border-red-500/30 rounded text-[9px] font-black uppercase flex items-center gap-1 animate-pulse">
+                                <i class="fas fa-exclamation-circle"></i> Critical
+                            </span>
+                            {% elif pv.alert_level == 'warning' %}
+                            <span class="px-2 py-1 bg-amber-500/20 text-amber-400 border border-amber-500/30 rounded text-[9px] font-black uppercase flex items-center gap-1">
+                                <i class="fas fa-exclamation-triangle"></i> Review
+                            </span>
+                            {% else %}
+                            <span class="px-2 py-1 bg-teal-500/20 text-teal-400 border border-teal-500/30 rounded text-[9px] font-black uppercase flex items-center gap-1">
+                                <i class="fas fa-check-circle"></i> Normal
+                            </span>
+                            {% endif %}
+                        </div>
+                        
+                        <div class="grid grid-cols-2 gap-2 text-[10px] relative z-10">
+                            <div class="bg-white/5 rounded p-2 border border-white/5">
+                                <span class="text-white/40 uppercase block mb-0.5 font-bold">BP (mmHg)</span>
+                                <span class="text-white font-black text-xs {% if 'High BP' in pv.alerts|join or 'Low BP' in pv.alerts|join %}text-amber-400{% endif %}">
+                                    {{ pv.vitals.blood_pressure_sys or '--' }}/{{ pv.vitals.blood_pressure_dia or '--' }}
+                                </span>
+                            </div>
+                            <div class="bg-white/5 rounded p-2 border border-white/5">
+                                <span class="text-white/40 uppercase block mb-0.5 font-bold">Sugar (mg/dL)</span>
+                                <span class="text-white font-black text-xs {% if 'High Sugar' in pv.alerts|join or 'Low Sugar' in pv.alerts|join %}text-amber-400{% endif %}">
+                                    {{ pv.vitals.blood_sugar or '--' }}
+                                </span>
+                            </div>
+                            <div class="bg-white/5 rounded p-2 border border-white/5">
+                                <span class="text-white/40 uppercase block mb-0.5 font-bold">Heart Rate</span>
+                                <span class="text-white font-black text-xs {% if 'High HR' in pv.alerts|join or 'Low HR' in pv.alerts|join %}text-amber-400{% endif %}">
+                                    {{ pv.vitals.heart_rate or '--' }} bpm
+                                </span>
+                            </div>
+                            <div class="bg-white/5 rounded p-2 border border-white/5">
+                                <span class="text-white/40 uppercase block mb-0.5 font-bold">BMI</span>
+                                <span class="text-white font-black text-xs">{{ pv.vitals.bmi or '--' }}</span>
+                            </div>
+                        </div>
+                        
+                        {% if pv.alerts %}
+                        <div class="mt-3 text-[9px] font-bold text-red-400 bg-red-500/10 p-2 rounded relative z-10 border border-red-500/20">
+                            Alerts: {{ pv.alerts|join(', ') }}
+                        </div>
+                        {% endif %}
+                    </div>
+                    {% endfor %}
+                </div>
+                {% else %}
+                <div class="p-6 text-center border border-white/5 rounded-xl bg-white/5">
+                    <p class="text-xs text-white/40 font-medium italic">No vitals logged for today's patients.</p>
+                </div>
+                {% endif %}
+            </div>
+            
             <div class="glass p-10 min-h-[600px] relative flex flex-col">
                 <div class="flex flex-col md:flex-row justify-between items-start md:items-center gap-6 mb-10">
                     <div>

@@ -1140,12 +1140,43 @@ def telehealth(appt_id):
 
 
 # ---------- Vitals Chart Feature ----------
-@patient_bp.route('/patient/<int:patient_id>/vitals')
+@patient_bp.route('/patient/<int:patient_id>/vitals', methods=['GET', 'POST'])
 @login_required
 def patient_vitals(patient_id):
     if current_user.id != patient_id:
         flash('Unauthorized access to vitals.', 'error')
         return redirect(url_for('patient.dashboard'))
+    if request.method == 'POST':
+        try:
+            bp_sys = request.form.get('blood_pressure_sys', type=int)
+            bp_dia = request.form.get('blood_pressure_dia', type=int)
+            sugar = request.form.get('blood_sugar', type=int)
+            hr = request.form.get('heart_rate', type=int)
+            weight = request.form.get('weight', type=float)
+            height = request.form.get('height', type=float)
+            notes = request.form.get('notes', '')
+            bmi = None
+            if weight and height:
+                bmi = round(weight / ((height/100) ** 2), 1)
+            reading = VitalsReading(
+                patient_id=current_user.id,
+                blood_pressure_sys=bp_sys,
+                blood_pressure_dia=bp_dia,
+                blood_sugar=sugar,
+                heart_rate=hr,
+                weight=weight,
+                height=height,
+                bmi=bmi,
+                notes=notes
+            )
+            db.session.add(reading)
+            db.session.commit()
+            audit_logger.log_action('Vitals Logged', f'Patient {current_user.name} logged vitals')
+            flash('Vitals saved successfully!', 'success')
+        except Exception as e:
+            db.session.rollback()
+            flash(f'Error saving vitals: {e}', 'error')
+        return redirect(url_for('patient.patient_vitals', patient_id=patient_id))
     return render_template('patient_vitals.html', patient_id=patient_id)
 
 @patient_bp.route('/api/patient/<int:patient_id>/vitals')
