@@ -1,10 +1,12 @@
 """Auth routes: register, login, OTP, logout"""
-from flask import Blueprint, render_template, request, redirect, url_for, session, flash
+from flask import Blueprint, render_template, request, redirect, url_for, session, flash, current_app
 from flask_login import login_user, logout_user
-from models import db, Patient, Staff
+import secrets
+from datetime import timedelta
+from models import db, Patient, Staff, PasswordResetToken
 import bcrypt, random
 from datetime import datetime
-from utils import audit_logger
+from utils import audit_logger, send_password_reset_email
 from translations import gettext as _
 
 auth_bp = Blueprint('auth', __name__)
@@ -191,6 +193,56 @@ def resend_otp():
     print(f"[SMS] New OTP for {patient.email}: {otp}")
     
     return redirect(url_for('auth.verify_otp'))
+
+@auth_bp.route('/reset-password', methods=['GET', 'POST'])
+def reset_password_request():
+    """Render form & process email submission for password reset."""
+    if request.method == 'POST':
+        email = request.form.get('email')
+        user = Patient.query.filter_by(email=email).first() or Staff.query.filter_by(email=email).first()
+        if not user:
+            flash(_('No account associated with that email.'), 'error')
+            return redirect(url_for('auth.reset_password_request'))
+        token_str = secrets.token_urlsafe(48)
+        expiry = datetime.utcnow() + timedelta(hours=1)
+        reset_entry = PasswordResetToken(user_id=user.id,
+                                         user_type='patient' if isinstance(user, Patient) else 'staff',
+                                         token=token_str,
+                                         expires_at=expiry)
+        db.session.add(reset_entry)
+        db.session.commit()
+        reset_url = url_for('auth.reset_password', token=token_str, _external=True)
+        send_password_reset_email(email, reset_url)
+        flash(_('Password reset email sent. Check your inbox.'), 'info')
+        return redirect(url_for('auth.login'))
+    return render_template('reset_password_request.html')
+
+@auth_bp.route('/reset/<token>', methods=['GET', 'POST'])
+def reset_password(token):
+    """Validate token & allow user to set a new password."""
+    reset_entry = PasswordResetToken.query.filter_by(token=token).first_or_404()
+    if not reset_entry.is_valid():
+        flash(_('Reset link has expired.'), 'error')
+        db.session.delete(reset_entry)
+        db.session.commit()
+        return redirect(url_for('auth.reset_password_request'))
+    if request.method == 'POST':
+        new_pw = request.form.get('password')
+        confirm_pw = request.form.get('confirm_password')
+        if not new_pw or new_pw != confirm_pw:
+            flash(_('Passwords do not match.'), 'error')
+            return redirect(url_for('auth.reset_password', token=token))
+        if reset_entry.user_type == 'patient':
+            user = Patient.query.get(reset_entry.user_id)
+        else:
+            user = Staff.query.get(reset_entry.user_id)
+        user.password_hash = bcrypt.hashpw(new_pw.encode(), bcrypt.gensalt()).decode()
+        db.session.delete(reset_entry)
+        db.session.commit()
+        audit_logger.log_action('Password Reset', f'User {user.email} reset password')
+        flash(_('Password updated successfully. Please log in.'), 'success')
+        return redirect(url_for('auth.login'))
+    return render_template('reset_password_form.html', token=token)
 
 @auth_bp.route('/logout')
 def logout():

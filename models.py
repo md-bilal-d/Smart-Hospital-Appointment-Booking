@@ -326,3 +326,15 @@ class TelehealthMessage(db.Model):
     appointment = db.relationship('Appointment', backref='telehealth_messages')
 
 
+
+class PasswordResetToken(db.Model):
+    __tablename__ = 'password_reset_tokens'
+    id = db.Column(db.Integer, primary_key=True)
+    user_id = db.Column(db.Integer, nullable=False)          # points to Patient.id or Staff.id
+    user_type = db.Column(db.String(20), nullable=False)    # 'patient' or 'staff'
+    token = db.Column(db.String(120), unique=True, nullable=False)
+    expires_at = db.Column(db.DateTime, nullable=False)
+    created_at = db.Column(db.DateTime, default=datetime.utcnow)
+
+    def is_valid(self):
+        return datetime.utcnow() < self.expires_at

@@ -21,6 +21,20 @@ class AuditLogger:
 
 audit_logger = AuditLogger()
 
+def send_password_reset_email(recipient_email, reset_url):
+    """Send password reset email using Flask‑Mail configuration."""
+    from flask_mail import Message, Mail
+    from flask import current_app, render_template
+    mail = Mail()
+    subject = _("Password Reset Request")
+    html_body = render_template('reset_password_email.html', reset_url=reset_url)
+    msg = Message(subject=subject,
+                  recipients=[recipient_email],
+                  html=html_body,
+                  sender=current_app.config.get('MAIL_DEFAULT_SENDER'))
+    mail.send(msg)
+
+
 def predict_no_show(patient_id):
     """
     Calculates no-show risk based on patient history.
