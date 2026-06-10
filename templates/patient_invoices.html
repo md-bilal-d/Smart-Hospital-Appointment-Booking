@@ -2,31 +2,89 @@
 {% block title %}My Invoices{% endblock %}
 
 {% block content %}
-<div class="max-w-5xl mx-auto px-4 py-8">
+<div class="max-w-6xl mx-auto px-4 py-8">
     <div class="mb-8 flex items-center justify-between">
         <div>
             <h1 class="text-3xl font-black text-white tracking-tight">My Invoices</h1>
-            <p class="text-indigo-200 mt-2">View and pay your hospital bills</p>
+            <p class="text-indigo-200 mt-2">View and pay your hospital bills securely via Razorpay</p>
         </div>
         <a href="{{ url_for('patient.dashboard') }}" class="text-indigo-300 hover:text-white transition-colors text-sm font-bold uppercase tracking-wider flex items-center gap-2">
             <i class="fas fa-arrow-left"></i> Back to Dashboard
         </a>
     </div>
 
+    <!-- Summary Stats -->
+    {% set paid_invoices = invoices | selectattr('status', 'equalto', 'paid') | list %}
+    {% set unpaid_invoices = invoices | selectattr('status', 'equalto', 'unpaid') | list %}
+    {% set total_paid = paid_invoices | sum(attribute='amount') %}
+    {% set total_pending = unpaid_invoices | sum(attribute='amount') %}
+
+    <div class="grid grid-cols-1 md:grid-cols-3 gap-4 mb-8">
+        <!-- Total Invoices -->
+        <div class="glass p-5 rounded-2xl flex items-center gap-4">
+            <div class="w-12 h-12 rounded-xl bg-indigo-500/20 flex items-center justify-center">
+                <i class="fas fa-file-invoice-dollar text-indigo-400 text-xl"></i>
+            </div>
+            <div>
+                <p class="text-[10px] font-black text-white/40 uppercase tracking-widest">Total Invoices</p>
+                <p class="text-2xl font-black text-white">{{ invoices|length }}</p>
+            </div>
+        </div>
+        <!-- Total Paid -->
+        <div class="glass p-5 rounded-2xl flex items-center gap-4">
+            <div class="w-12 h-12 rounded-xl bg-emerald-500/20 flex items-center justify-center">
+                <i class="fas fa-check-circle text-emerald-400 text-xl"></i>
+            </div>
+            <div>
+                <p class="text-[10px] font-black text-white/40 uppercase tracking-widest">Total Paid</p>
+                <p class="text-2xl font-black text-emerald-400">₹{{ "%.2f"|format(total_paid) }}</p>
+            </div>
+        </div>
+        <!-- Pending -->
+        <div class="glass p-5 rounded-2xl flex items-center gap-4 {% if unpaid_invoices %}border-l-4 border-amber-500{% endif %}">
+            <div class="w-12 h-12 rounded-xl bg-amber-500/20 flex items-center justify-center">
+                <i class="fas fa-exclamation-triangle text-amber-400 text-xl"></i>
+            </div>
+            <div>
+                <p class="text-[10px] font-black text-white/40 uppercase tracking-widest">Pending</p>
+                <p class="text-2xl font-black text-amber-400">₹{{ "%.2f"|format(total_pending) }}</p>
+            </div>
+        </div>
+    </div>
+
+    <!-- Unpaid Alert Banner -->
+    {% if unpaid_invoices %}
+    <div class="glass p-4 rounded-2xl mb-8 border-l-4 border-amber-500 bg-amber-500/5 flex items-center justify-between">
+        <div class="flex items-center gap-3">
+            <div class="w-10 h-10 rounded-full bg-amber-500/20 flex items-center justify-center animate-pulse">
+                <i class="fas fa-bell text-amber-400"></i>
+            </div>
+            <div>
+                <p class="text-white font-bold text-sm">You have {{ unpaid_invoices|length }} pending payment{{ 's' if unpaid_invoices|length > 1 else '' }}</p>
+                <p class="text-white/50 text-xs">Total: ₹{{ "%.2f"|format(total_pending) }} — Pay securely via UPI, Cards, or Netbanking</p>
+            </div>
+        </div>
+    </div>
+    {% endif %}
+
     <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
         {% for inv in invoices %}
-            <div class="glass p-6 rounded-2xl shadow-xl flex flex-col justify-between border-t-4 {% if inv.status == 'paid' %}border-emerald-500{% else %}border-amber-500{% endif %}">
+            <div class="glass p-6 rounded-2xl shadow-xl flex flex-col justify-between border-t-4 {% if inv.status == 'paid' %}border-emerald-500{% else %}border-amber-500{% endif %} hover:shadow-2xl transition-shadow duration-300">
                 <div>
                     <div class="flex justify-between items-start mb-4">
                         <span class="text-white/60 font-mono text-sm">#{{ inv.id }}</span>
                         {% if inv.status == 'paid' %}
-                            <span class="px-3 py-1 bg-emerald-500/20 text-emerald-300 rounded-full text-[10px] font-black uppercase tracking-widest border border-emerald-500/30">Paid</span>
+                            <span class="px-3 py-1 bg-emerald-500/20 text-emerald-300 rounded-full text-[10px] font-black uppercase tracking-widest border border-emerald-500/30 flex items-center gap-1.5">
+                                <i class="fas fa-check-circle text-[8px]"></i> Paid
+                            </span>
                         {% else %}
-                            <span class="px-3 py-1 bg-amber-500/20 text-amber-300 rounded-full text-[10px] font-black uppercase tracking-widest border border-amber-500/30">Pending Payment</span>
+                            <span class="px-3 py-1 bg-amber-500/20 text-amber-300 rounded-full text-[10px] font-black uppercase tracking-widest border border-amber-500/30 flex items-center gap-1.5">
+                                <i class="fas fa-clock text-[8px]"></i> Pending
+                            </span>
                         {% endif %}
                     </div>
                     
-                    <h3 class="text-2xl font-black text-white mb-2">${{ "%.2f"|format(inv.amount) }}</h3>
+                    <h3 class="text-2xl font-black text-white mb-2">₹{{ "%.2f"|format(inv.amount) }}</h3>
                     <p class="text-sm text-indigo-200 mb-4">{{ inv.description or 'Medical Consultation' }}</p>
                     
                     <div class="space-y-2 mb-6 border-t border-white/10 pt-4">
@@ -38,6 +96,18 @@
                             <span class="text-white/50">Related Appt:</span>
                             <span class="text-white">Token #{{ inv.appointment.token_number }}</span>
                         </div>
+                        {% if inv.status == 'paid' and inv.payment %}
+                        <div class="flex justify-between text-xs">
+                            <span class="text-white/50">Method:</span>
+                            <span class="text-indigo-300 font-bold flex items-center gap-1">
+                                <i class="fas fa-credit-card text-[10px]"></i> Razorpay
+                            </span>
+                        </div>
+                        <div class="flex justify-between text-xs">
+                            <span class="text-white/50">Txn ID:</span>
+                            <span class="text-white font-mono text-[10px]">{{ inv.payment.razorpay_payment_id[:20] }}...</span>
+                        </div>
+                        {% endif %}
                         {% if inv.paid_at %}
                         <div class="flex justify-between text-xs">
                             <span class="text-emerald-400/80">Paid on:</span>
@@ -48,14 +118,19 @@
                 </div>
 
                 {% if inv.status == 'unpaid' %}
-                    <form action="{{ url_for('patient.pay_invoice', invoice_id=inv.id) }}" method="POST" class="mt-auto" onsubmit="return confirm('Proceed to simulate secure payment of ${{ \"%.2f\"|format(inv.amount) }}?');">
-                        <button type="submit" class="w-full btn-gradient py-3 rounded-xl text-sm font-black tracking-widest uppercase flex items-center justify-center gap-2 shadow-lg group-hover:scale-[1.02] transition-transform">
-                            <i class="fas fa-credit-card"></i> Pay Now
-                        </button>
-                    </form>
+                    <a href="{{ url_for('payment.checkout', invoice_id=inv.id) }}" class="mt-auto w-full btn-gradient py-3 rounded-xl text-sm font-black tracking-widest uppercase flex items-center justify-center gap-2 shadow-lg hover:scale-[1.02] transition-transform text-center">
+                        <i class="fas fa-lock text-xs"></i> Pay with Razorpay
+                    </a>
                 {% else %}
-                    <div class="mt-auto bg-white/5 py-3 rounded-xl text-center text-sm font-bold text-white/50 cursor-not-allowed">
-                        Payment Complete
+                    <div class="mt-auto flex gap-2">
+                        {% if inv.payment %}
+                        <a href="{{ url_for('payment.download_receipt', payment_id=inv.payment.id) }}" class="flex-1 bg-white/5 hover:bg-white/10 py-3 rounded-xl text-center text-sm font-bold text-white/70 hover:text-white transition-colors flex items-center justify-center gap-2">
+                            <i class="fas fa-download text-xs"></i> Receipt
+                        </a>
+                        {% endif %}
+                        <div class="flex-1 bg-emerald-500/10 py-3 rounded-xl text-center text-sm font-bold text-emerald-400/60 cursor-default flex items-center justify-center gap-2">
+                            <i class="fas fa-check text-xs"></i> Complete
+                        </div>
                     </div>
                 {% endif %}
             </div>

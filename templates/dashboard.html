@@ -36,6 +36,24 @@
         </div>
     </div>
 
+    <!-- Pending Payment Alert -->
+    {% if pending_invoices_count and pending_invoices_count > 0 %}
+    <div class="glass p-5 rounded-2xl mb-12 border-l-4 border-amber-500 bg-amber-500/5 flex items-center justify-between hover:bg-amber-500/10 transition-colors">
+        <div class="flex items-center gap-4">
+            <div class="w-12 h-12 rounded-xl bg-amber-500/20 flex items-center justify-center">
+                <i class="fas fa-file-invoice-dollar text-amber-400 text-xl animate-pulse"></i>
+            </div>
+            <div>
+                <p class="text-white font-bold">{{ _('You have') }} {{ pending_invoices_count }} {{ _('pending payment') }}{{ 's' if pending_invoices_count > 1 else '' }}</p>
+                <p class="text-white/50 text-xs">{{ _('Total:') }} ₹{{ "%.2f"|format(pending_invoices_total) }} — {{ _('Pay securely via Razorpay') }}</p>
+            </div>
+        </div>
+        <a href="{{ url_for('patient.invoices') }}" class="px-5 py-2.5 btn-gradient rounded-xl text-[10px] font-black uppercase tracking-widest shadow-lg flex items-center gap-2 shrink-0">
+            <i class="fas fa-credit-card"></i> {{ _('Pay Now') }}
+        </a>
+    </div>
+    {% endif %}
+
     <!-- Active Appointments -->
     <div class="mb-16">
         <h2 class="text-xl font-black text-white mb-6 flex items-center gap-3">

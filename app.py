@@ -48,6 +48,7 @@ def create_app():
     from routes_superadmin import superadmin_bp
     from routes_analytics import analytics_bp
     from routes_walkin import walkin_bp
+    from routes_payment import payment_bp
 
     app.register_blueprint(auth_bp)
     app.register_blueprint(patient_bp)
@@ -57,6 +58,7 @@ def create_app():
     app.register_blueprint(superadmin_bp)
     app.register_blueprint(analytics_bp)
     app.register_blueprint(walkin_bp)
+    app.register_blueprint(payment_bp)
     
     @app.route('/debug-paths')
     def debug_paths():

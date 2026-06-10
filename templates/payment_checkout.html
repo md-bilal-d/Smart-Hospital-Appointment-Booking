@@ -1,0 +1,235 @@
+{% extends 'base.html' %}
+{% block title %}Payment Checkout{% endblock %}
+
+{% block content %}
+<div class="min-h-screen flex items-center justify-center py-16 px-4">
+    <div class="max-w-lg w-full space-y-8 fade-in">
+
+        <!-- Header -->
+        <div class="text-center">
+            <div class="w-20 h-20 mx-auto rounded-2xl btn-gradient flex items-center justify-center shadow-2xl mb-6">
+                <i class="fas fa-shield-alt text-3xl text-white"></i>
+            </div>
+            <h1 class="text-3xl font-black text-white tracking-tight">Secure Payment</h1>
+            <p class="text-white/50 mt-2 text-sm">Powered by Razorpay · 256-bit SSL Encrypted</p>
+        </div>
+
+        <!-- Invoice Summary Card -->
+        <div class="glass p-8 space-y-6">
+            <div class="flex items-center justify-between border-b border-white/10 pb-5">
+                <div>
+                    <p class="text-[10px] font-black text-white/40 uppercase tracking-[0.2em]">Invoice</p>
+                    <p class="text-white font-bold text-lg">#{{ invoice.id }}</p>
+                </div>
+                <span class="px-4 py-1.5 bg-amber-500/20 text-amber-300 rounded-full text-[10px] font-black uppercase tracking-widest border border-amber-500/30">
+                    Unpaid
+                </span>
+            </div>
+
+            <!-- Details Grid -->
+            <div class="space-y-4">
+                {% if doctor %}
+                <div class="flex items-center gap-4">
+                    <div class="w-10 h-10 rounded-xl bg-indigo-500/20 flex items-center justify-center">
+                        <i class="fas fa-user-md text-indigo-400"></i>
+                    </div>
+                    <div>
+                        <p class="text-[10px] font-black text-white/40 uppercase tracking-widest">Doctor</p>
+                        <p class="text-white font-bold text-sm">{{ doctor.name }} <span class="text-white/50 font-normal">· {{ doctor.specialization }}</span></p>
+                    </div>
+                </div>
+                {% endif %}
+
+                {% if slot %}
+                <div class="flex items-center gap-4">
+                    <div class="w-10 h-10 rounded-xl bg-emerald-500/20 flex items-center justify-center">
+                        <i class="fas fa-calendar-check text-emerald-400"></i>
+                    </div>
+                    <div>
+                        <p class="text-[10px] font-black text-white/40 uppercase tracking-widest">Appointment</p>
+                        <p class="text-white font-bold text-sm">{{ slot.date }} <span class="text-white/50 font-normal">at {{ slot.time_label }}</span></p>
+                    </div>
+                </div>
+                {% endif %}
+
+                <div class="flex items-center gap-4">
+                    <div class="w-10 h-10 rounded-xl bg-purple-500/20 flex items-center justify-center">
+                        <i class="fas fa-file-invoice text-purple-400"></i>
+                    </div>
+                    <div>
+                        <p class="text-[10px] font-black text-white/40 uppercase tracking-widest">Description</p>
+                        <p class="text-white font-bold text-sm">{{ invoice.description or 'Medical Consultation' }}</p>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Amount -->
+            <div class="bg-white/5 rounded-2xl p-6 border border-white/10 text-center">
+                <p class="text-[10px] font-black text-white/40 uppercase tracking-[0.3em] mb-2">Total Amount</p>
+                <p class="text-5xl font-black text-white">
+                    <span class="text-2xl text-white/60 align-top">₹</span>{{ "%.2f"|format(invoice.amount) }}
+                </p>
+                <p class="text-white/30 text-xs mt-2">Indian Rupees (INR)</p>
+            </div>
+
+            <!-- Pay Button -->
+            <button id="pay-btn" onclick="initiatePayment()" class="w-full py-4 btn-gradient rounded-2xl font-black uppercase tracking-widest text-sm shadow-2xl flex items-center justify-center gap-3 hover:shadow-[0_8px_40px_rgba(102,126,234,0.4)] transition-all duration-300">
+                <i class="fas fa-lock text-xs"></i>
+                <span id="pay-btn-text">Pay ₹{{ "%.2f"|format(invoice.amount) }} Securely</span>
+            </button>
+
+            <!-- Loading State (hidden by default) -->
+            <div id="payment-loading" class="hidden text-center py-6">
+                <div class="inline-flex items-center gap-3">
+                    <div class="w-6 h-6 border-2 border-indigo-400 border-t-transparent rounded-full animate-spin"></div>
+                    <span class="text-white/70 font-bold text-sm">Processing payment...</span>
+                </div>
+            </div>
+
+            <!-- Error State (hidden by default) -->
+            <div id="payment-error" class="hidden glass p-4 border-l-4 border-red-500 bg-red-500/10 rounded-xl">
+                <p class="text-red-300 text-sm font-bold"><i class="fas fa-exclamation-circle mr-2"></i><span id="error-msg">Payment failed.</span></p>
+                <button onclick="resetPaymentUI()" class="mt-3 px-4 py-2 bg-white/10 hover:bg-white/20 rounded-lg text-xs font-bold text-white transition-colors">
+                    <i class="fas fa-redo mr-1"></i> Try Again
+                </button>
+            </div>
+        </div>
+
+        <!-- Trust Badges -->
+        <div class="flex items-center justify-center gap-6 text-white/30">
+            <div class="flex items-center gap-2">
+                <i class="fas fa-lock text-xs"></i>
+                <span class="text-[10px] font-bold uppercase tracking-wider">SSL Secured</span>
+            </div>
+            <div class="flex items-center gap-2">
+                <i class="fas fa-shield-alt text-xs"></i>
+                <span class="text-[10px] font-bold uppercase tracking-wider">PCI Compliant</span>
+            </div>
+            <div class="flex items-center gap-2">
+                <i class="fas fa-check-circle text-xs"></i>
+                <span class="text-[10px] font-bold uppercase tracking-wider">Razorpay Verified</span>
+            </div>
+        </div>
+
+        <!-- Back Link -->
+        <div class="text-center">
+            <a href="{{ url_for('patient.invoices') }}" class="text-indigo-300 hover:text-white text-sm font-bold transition-colors">
+                <i class="fas fa-arrow-left mr-1"></i> Back to Invoices
+            </a>
+        </div>
+    </div>
+</div>
+
+<!-- Razorpay Checkout.js -->
+<script src="https://checkout.razorpay.com/v1/checkout.js"></script>
+<script>
+    const INVOICE_ID = {{ invoice.id }};
+    const RAZORPAY_KEY = "{{ razorpay_key }}";
+    const PATIENT_NAME = "{{ current_user.name }}";
+    const PATIENT_EMAIL = "{{ current_user.email }}";
+    const PATIENT_PHONE = "{{ current_user.phone }}";
+    const AMOUNT_DISPLAY = "₹{{ '%.2f'|format(invoice.amount) }}";
+
+    function resetPaymentUI() {
+        document.getElementById('pay-btn').classList.remove('hidden');
+        document.getElementById('payment-loading').classList.add('hidden');
+        document.getElementById('payment-error').classList.add('hidden');
+    }
+
+    function showError(msg) {
+        document.getElementById('pay-btn').classList.add('hidden');
+        document.getElementById('payment-loading').classList.add('hidden');
+        document.getElementById('payment-error').classList.remove('hidden');
+        document.getElementById('error-msg').textContent = msg || 'Payment failed. Please try again.';
+    }
+
+    async function initiatePayment() {
+        const payBtn = document.getElementById('pay-btn');
+        const loadingEl = document.getElementById('payment-loading');
+
+        payBtn.classList.add('hidden');
+        loadingEl.classList.remove('hidden');
+
+        try {
+            // 1. Create Razorpay order on our server
+            const res = await fetch(`/payment/create-order/${INVOICE_ID}`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+            });
+            const data = await res.json();
+
+            if (!res.ok || data.error) {
+                showError(data.error || 'Failed to create payment order.');
+                return;
+            }
+
+            loadingEl.classList.add('hidden');
+
+            // 2. Open Razorpay Checkout
+            const options = {
+                key: RAZORPAY_KEY,
+                amount: data.amount,
+                currency: data.currency,
+                name: 'MediSlot Hospital',
+                description: `Invoice #${INVOICE_ID}`,
+                order_id: data.order_id,
+                image: 'https://api.dicebear.com/9.x/initials/svg?seed=MS&backgroundColor=667eea',
+                prefill: {
+                    name: PATIENT_NAME,
+                    email: PATIENT_EMAIL,
+                    contact: PATIENT_PHONE,
+                },
+                theme: {
+                    color: '#667eea',
+                    backdrop_color: 'rgba(26, 26, 46, 0.85)',
+                },
+                handler: async function(response) {
+                    // 3. Verify payment on server
+                    payBtn.classList.add('hidden');
+                    loadingEl.classList.remove('hidden');
+
+                    try {
+                        const verifyRes = await fetch('/payment/verify', {
+                            method: 'POST',
+                            headers: { 'Content-Type': 'application/json' },
+                            body: JSON.stringify({
+                                razorpay_order_id: response.razorpay_order_id,
+                                razorpay_payment_id: response.razorpay_payment_id,
+                                razorpay_signature: response.razorpay_signature,
+                                payment_id: data.payment_id,
+                            }),
+                        });
+                        const verifyData = await verifyRes.json();
+
+                        if (verifyData.success) {
+                            window.location.href = verifyData.redirect;
+                        } else {
+                            showError(verifyData.error || 'Verification failed.');
+                        }
+                    } catch (err) {
+                        showError('Server error during verification.');
+                    }
+                },
+                modal: {
+                    ondismiss: function() {
+                        resetPaymentUI();
+                    },
+                    escape: true,
+                    animation: true,
+                },
+            };
+
+            const rzp = new Razorpay(options);
+
+            rzp.on('payment.failed', function(response) {
+                showError(response.error.description || 'Payment failed.');
+            });
+
+            rzp.open();
+
+        } catch (err) {
+            showError('Network error. Please check your connection.');
+        }
+    }
+</script>
+{% endblock %}

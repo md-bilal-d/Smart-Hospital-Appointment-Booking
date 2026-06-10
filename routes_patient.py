@@ -211,9 +211,16 @@ def dashboard():
         status='waiting'
     ).order_by(WaitlistEntry.created_at).all()
 
+    # Pending invoices for payment alert
+    pending_invoices = Invoice.query.filter_by(patient_id=current_user.id, status='unpaid').all()
+    pending_invoices_count = len(pending_invoices)
+    pending_invoices_total = sum(inv.amount for inv in pending_invoices)
+
     return render_template('dashboard.html', active=active, past=past, positions=positions, etas=etas, prescriptions=prescriptions,
                            total_count=total_count, seen_count=seen_count, waiting_count=waiting_count,
-                           waitlist_entries=waitlist_entries)
+                           waitlist_entries=waitlist_entries,
+                           pending_invoices_count=pending_invoices_count,
+                           pending_invoices_total=pending_invoices_total)
 
 @patient_bp.route('/cancel/<int:appt_id>', methods=['POST'])
 @login_required
@@ -906,19 +913,11 @@ def pay_invoice(invoice_id):
     if invoice.patient_id != current_user.id:
         flash('Unauthorized.', 'error')
         return redirect(url_for('patient.invoices'))
-        
     if invoice.status == 'paid':
         flash('Invoice is already paid.', 'info')
         return redirect(url_for('patient.invoices'))
-        
-    # Simulate payment processing
-    invoice.status = 'paid'
-    invoice.paid_at = datetime.utcnow()
-    db.session.commit()
-    
-    audit_logger.log_action('pay_invoice', f"Patient paid Invoice #{invoice.id} for {invoice.amount}")
-    flash('Payment successful! Thank you.', 'success')
-    return redirect(url_for('patient.invoices'))
+    # Redirect to the Razorpay checkout page
+    return redirect(url_for('payment.checkout', invoice_id=invoice.id))
 
 @patient_bp.route('/articles')
 def articles():

@@ -245,9 +245,29 @@ class Invoice(db.Model):
     issued_at = db.Column(db.DateTime, default=datetime.utcnow)
     paid_at = db.Column(db.DateTime, nullable=True)
     description = db.Column(db.Text, default='')
+    payment_method = db.Column(db.String(30), default='razorpay')  # razorpay / cash / insurance
 
     appointment = db.relationship('Appointment', backref=db.backref('invoice', uselist=False))
     patient = db.relationship('Patient', backref='invoices')
+
+
+class Payment(db.Model):
+    """Tracks Razorpay payment transactions linked to invoices."""
+    __tablename__ = 'payments'
+    id = db.Column(db.Integer, primary_key=True)
+    invoice_id = db.Column(db.Integer, db.ForeignKey('invoices.id'), nullable=False)
+    patient_id = db.Column(db.Integer, db.ForeignKey('patients.id'), nullable=False)
+    razorpay_order_id = db.Column(db.String(100), nullable=False)
+    razorpay_payment_id = db.Column(db.String(100), nullable=True)
+    razorpay_signature = db.Column(db.String(300), nullable=True)
+    amount = db.Column(db.Float, nullable=False)
+    currency = db.Column(db.String(10), default='INR')
+    status = db.Column(db.String(20), default='created')  # created / paid / failed
+    created_at = db.Column(db.DateTime, default=datetime.utcnow)
+    paid_at = db.Column(db.DateTime, nullable=True)
+
+    invoice = db.relationship('Invoice', backref=db.backref('payment', uselist=False))
+    patient = db.relationship('Patient', backref='payments')
 
 
 class Article(db.Model):

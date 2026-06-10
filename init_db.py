@@ -8,7 +8,7 @@ import os
 sys.path.insert(0, os.path.dirname(__file__))
 
 from app import create_app
-from models import db, Doctor, Department, Slot, Patient, Staff, Review, ReminderLog, ReminderPreference, Article, Appointment, Ward, Bed, TelehealthMessage
+from models import db, Doctor, Department, Slot, Patient, Staff, Review, ReminderLog, ReminderPreference, Article, Appointment, Ward, Bed, TelehealthMessage, Invoice, Payment
 from datetime import date, timedelta
 from utils import generate_time_labels
 import bcrypt
@@ -291,6 +291,69 @@ def seed():
                 
         db.session.flush()
         print(f"Seeded {len(wards)} wards and {bed_count} beds successfully.")
+
+        # --- Seed Sample Invoices ---
+        # Create invoices for the historical appointments (for demo patient)
+        demo_appts = Appointment.query.filter_by(patient_id=demo.id, status='seen').all()
+        if not demo_appts:
+            # Create a few historical appointments for demo patient
+            for i, doctor in enumerate(doctors[:3]):
+                yesterday = (date.today() - timedelta(days=2)).isoformat()
+                demo_slot = Slot(
+                    doctor_id=doctor.id,
+                    date=yesterday,
+                    time_label=time_labels[i % len(time_labels)],
+                    max_capacity=3,
+                    is_blocked=False
+                )
+                db.session.add(demo_slot)
+                db.session.flush()
+
+                demo_appt = Appointment(
+                    patient_id=demo.id,
+                    slot_id=demo_slot.id,
+                    token_number=i + 1,
+                    status='seen',
+                    appointment_type='normal',
+                    notes='Routine consultation',
+                    consultation_mode='In-Person'
+                )
+                db.session.add(demo_appt)
+                db.session.flush()
+                demo_appts.append(demo_appt)
+
+        import random
+        invoice_descriptions = [
+            'Cardiology Consultation',
+            'Orthopedic Evaluation',
+            'Dermatology Check-up',
+            'General Health Screening',
+            'Neurology Follow-up',
+            'Pediatric Consultation',
+        ]
+        invoice_amounts = [500.0, 800.0, 1200.0, 350.0, 1500.0, 650.0]
+
+        invoice_count = 0
+        for i, appt in enumerate(demo_appts[:6]):
+            amount = invoice_amounts[i % len(invoice_amounts)]
+            desc = invoice_descriptions[i % len(invoice_descriptions)]
+            is_paid = (i < 2)  # First 2 are paid, rest are unpaid
+
+            inv = Invoice(
+                appointment_id=appt.id,
+                patient_id=appt.patient_id,
+                amount=amount,
+                status='paid' if is_paid else 'unpaid',
+                issued_at=appt.booked_at,
+                paid_at=appt.booked_at if is_paid else None,
+                description=desc,
+                payment_method='razorpay' if is_paid else 'razorpay'
+            )
+            db.session.add(inv)
+            invoice_count += 1
+
+        db.session.flush()
+        print(f"Seeded {invoice_count} sample invoices for demo patient.")
 
         db.session.commit()
 
